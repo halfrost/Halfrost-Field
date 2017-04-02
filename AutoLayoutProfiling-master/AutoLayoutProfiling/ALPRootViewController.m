@@ -164,8 +164,6 @@
 }
 
 - (void)addManualIndependent {
-    
-    for (int i = 0; i < 1000; i ++) {
         
         [self clearViews];
         
@@ -176,7 +174,6 @@
         NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
         
         [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"Frame"];
-    }
     
 }
 
