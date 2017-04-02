@@ -67,8 +67,8 @@
         UIView* view = [[UIView alloc] init];
         view.translatesAutoresizingMaskIntoConstraints = NO;
         [self addSubview:view];
-        CGFloat x = [self randomNumber] * 2;
-        CGFloat y = [self randomNumber] * 2;
+        CGFloat x = [self randomNumber] * 2 + 0.0000001;
+        CGFloat y = [self randomNumber] * 2 + 0.0000001;
         [self addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterX multiplier:x constant:0]];
         [self addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterY multiplier:y constant:0]];
         [self addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:20]];

@@ -1,3 +1,3 @@
 # Layout Profiling
 
-这是一个测试Auto Layout，Frame，FlexBox布局性能的例子。
+这是一个测试Autolayout，Frame，FlexBox 布局性能的例子

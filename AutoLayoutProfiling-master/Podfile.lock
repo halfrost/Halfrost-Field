@@ -1,0 +1,21 @@
+PODS:
+  - SocketRocket (0.5.1)
+  - WeexSDK (0.10.3):
+    - SocketRocket
+  - Yoga (1.3.0)
+  - YogaKit (1.3.0):
+    - Yoga (~> 1.3)
+
+DEPENDENCIES:
+  - WeexSDK
+  - YogaKit
+
+SPEC CHECKSUMS:
+  SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
+  WeexSDK: ba8a6c443885afc16d9b0a8eb23220d792ad5b27
+  Yoga: 2ed1d7accfef3610a67f58c0cf101a0662137f2c
+  YogaKit: cddeccc6a8d2aff563e4c738d3bddb290a6de4cb
+
+PODFILE CHECKSUM: d679309bdf5685a705960e72ead1c4531a4af1b5
+
+COCOAPODS: 1.2.0
