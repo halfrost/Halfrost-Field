@@ -1,0 +1,10 @@
+PODS:
+  - FXForms (1.2.14)
+
+DEPENDENCIES:
+  - FXForms
+
+SPEC CHECKSUMS:
+  FXForms: 724500c0c3f3eb3ba1004b3b83abcee55d3daf18
+
+COCOAPODS: 0.39.0
