@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1CF29FC61E9119AC00E29339 /* ALPYogaLayoutView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1CF29FC51E9119AC00E29339 /* ALPYogaLayoutView.m */; };
 		B89B0B56A2CE78AFF4C83705 /* libPods-AutoLayoutProfiling.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 52FF9DFABAF1A355854833E5 /* libPods-AutoLayoutProfiling.a */; };
 		D258909909020A6E718C05EE /* ALPRootViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D258913825B7CECAD62CB1BF /* ALPRootViewController.m */; };
 		D258917CB0AE34119500C90E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D2589805125DB7605F48649A /* README.md */; };
@@ -26,6 +27,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1CF29FC41E9119AC00E29339 /* ALPYogaLayoutView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ALPYogaLayoutView.h; sourceTree = "<group>"; };
+		1CF29FC51E9119AC00E29339 /* ALPYogaLayoutView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ALPYogaLayoutView.m; sourceTree = "<group>"; };
 		52FF9DFABAF1A355854833E5 /* libPods-AutoLayoutProfiling.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AutoLayoutProfiling.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A8A678F3C3A97A3B970AD8B /* Pods-AutoLayoutProfiling.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AutoLayoutProfiling.debug.xcconfig"; path = "Pods/Target Support Files/Pods-AutoLayoutProfiling/Pods-AutoLayoutProfiling.debug.xcconfig"; sourceTree = "<group>"; };
 		D258913825B7CECAD62CB1BF /* ALPRootViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ALPRootViewController.m; sourceTree = "<group>"; };
@@ -84,14 +87,16 @@
 			children = (
 				D25892317E2CB7CED6E08064 /* ALPAppDelegate.h */,
 				D25894CE2EF65199CAF51BE3 /* ALPAppDelegate.m */,
-				D258913825B7CECAD62CB1BF /* ALPRootViewController.m */,
 				D2589BC4437B0C19115D171A /* ALPRootViewController.h */,
-				D258925158D890D0EE9C1E01 /* ALPAutoLayoutView.m */,
+				D258913825B7CECAD62CB1BF /* ALPRootViewController.m */,
 				D25899546FA30E4DBD42CCC3 /* ALPAutoLayoutView.h */,
-				D25896F887B619D29A992910 /* ALPNonAutoLayoutView.m */,
+				D258925158D890D0EE9C1E01 /* ALPAutoLayoutView.m */,
 				D25896F8602A32204D10756F /* ALPNonAutoLayoutView.h */,
-				D2589F90BCEB27C99C91B710 /* UIView+Helpers.m */,
+				D25896F887B619D29A992910 /* ALPNonAutoLayoutView.m */,
+				1CF29FC41E9119AC00E29339 /* ALPYogaLayoutView.h */,
+				1CF29FC51E9119AC00E29339 /* ALPYogaLayoutView.m */,
 				D258959C365CFD2C199063C9 /* UIView+Helpers.h */,
+				D2589F90BCEB27C99C91B710 /* UIView+Helpers.m */,
 				D25898F4F1F3ACC15F2F66D1 /* ALPAutoLayoutTypes.h */,
 				D2589EAA6A226AD9F10EEE64 /* Supporting Files */,
 			);
@@ -262,6 +267,7 @@
 			files = (
 				D258982371D4706E9C27670F /* main.m in Sources */,
 				D2589709F34A8D3BB0878120 /* ALPAppDelegate.m in Sources */,
+				1CF29FC61E9119AC00E29339 /* ALPYogaLayoutView.m in Sources */,
 				D258909909020A6E718C05EE /* ALPRootViewController.m in Sources */,
 				D2589D874323CED9BC60954F /* ALPAutoLayoutView.m in Sources */,
 				D25892C64DD16A94809BA678 /* ALPNonAutoLayoutView.m in Sources */,

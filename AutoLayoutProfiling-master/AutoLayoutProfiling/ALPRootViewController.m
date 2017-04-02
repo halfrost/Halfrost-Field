@@ -6,6 +6,7 @@
 #import "ALPRootViewController.h"
 #import "ALPAutoLayoutView.h"
 #import "ALPNonAutoLayoutView.h"
+#import "ALPYogaLayoutView.h"
 #import <UIView+Yoga.h>
 #import "YGLayout.h"
 
@@ -21,21 +22,6 @@
     [super viewDidLoad];
     [self setupContainer];
     [self addControls];
-    
-    UIView *view = [[UIView alloc]init];
-    view.backgroundColor = [UIColor redColor];
-    
-    [view configureLayoutWithBlock:^(YGLayout * _Nonnull layout) {
-        layout.isEnabled = YES;
-        layout.width = 100;
-        layout.height = 200;
-        layout.marginLeft = 200;
-        layout.marginTop = 200;
-    }];
-    [self.view addSubview:view];
-    
-    [view.yoga applyLayoutPreservingOrigin:YES];
-    
 }
 
 - (void)setupContainer {
@@ -81,14 +67,38 @@
     [autoLayoutNestedButton addTarget:self action:@selector(addAutoLayoutNested) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:autoLayoutNestedButton];
 
+    UIButton* weexIndependentButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    weexIndependentButton.frame = CGRectMake(300, 50, 300, 30);
+    [weexIndependentButton setTitle:@"用weex创建相互无关联的View" forState:UIControlStateNormal];
+    [weexIndependentButton addTarget:self action:@selector(addWeexIndependent) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:weexIndependentButton];
+    
+    UIButton* weexNestedButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    weexNestedButton.frame = CGRectMake(300, 80, 300, 30);
+    [weexNestedButton setTitle:@"用weex创建嵌套的View" forState:UIControlStateNormal];
+    [weexNestedButton addTarget:self action:@selector(addWeexNested) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:weexNestedButton];
+    
+    UIButton* yogaIndependentButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    yogaIndependentButton.frame = CGRectMake(300, 110, 300, 30);
+    [yogaIndependentButton setTitle:@"用Yoga创建相互无关联的View" forState:UIControlStateNormal];
+    [yogaIndependentButton addTarget:self action:@selector(addYogaIndependent) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:yogaIndependentButton];
+    
+    UIButton* yogaNestedButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    yogaNestedButton.frame = CGRectMake(300, 140, 300, 30);
+    [yogaNestedButton setTitle:@"用yoga创建嵌套的View" forState:UIControlStateNormal];
+    [yogaNestedButton addTarget:self action:@selector(addYogaNested) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:yogaNestedButton];
+    
     UIButton* clearButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    clearButton.frame = CGRectMake(300, 50, 200, 30);
+    clearButton.frame = CGRectMake(300, 170, 100, 30);
     [clearButton setTitle:@"Clear" forState:UIControlStateNormal];
     [clearButton addTarget:self action:@selector(clearViews) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:clearButton];
     
     UIButton* printfButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    printfButton.frame = CGRectMake(300, 80, 200, 30);
+    printfButton.frame = CGRectMake(600, 170, 150, 30);
     [printfButton setTitle:@"打印结果" forState:UIControlStateNormal];
     [printfButton addTarget:self action:@selector(printfResult) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:printfButton];
@@ -98,7 +108,7 @@
     label.text = @"Number of views:";
     [self.view addSubview:label];
 
-    textField = [[UITextField alloc] initWithFrame:CGRectMake(490, 50, 200, 40)];
+    textField = [[UITextField alloc] initWithFrame:CGRectMake(400, 170, 200, 30)];
     textField.borderStyle = UITextBorderStyleRoundedRect;
     textField.placeholder = @"输入要创建View的个数";
     [self.view addSubview:textField];
@@ -164,6 +174,8 @@
 }
 
 - (void)addManualIndependent {
+    
+    for (int i = 0; i < 1000; i ++) {
         
         [self clearViews];
         
@@ -174,6 +186,7 @@
         NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
         
         [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"Frame"];
+    }
     
 }
 
@@ -196,6 +209,50 @@
     viewCount = (NSUInteger) [textField.text intValue];
     ALPNonAutoLayoutView* nonAutoLayoutView = [[ALPNonAutoLayoutView alloc] initWithFrame:CGRectMake(0, 0, size.width, size.height) type:type viewCount:viewCount];
     [container addSubview:nonAutoLayoutView];
+}
+
+- (void)addWeexIndependent {
+    
+    
+}
+
+- (void)addWeexNested {
+    
+    
+}
+
+- (void)addYogaIndependent {
+    
+    [self clearViews];
+    
+    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    [self addYogaLayoutView:(ALPLayoutTypeIndependent)];
+    
+    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"Yoga"];
+}
+
+- (void)addYogaNested {
+    
+    [self clearViews];
+    
+    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    [self addYogaLayoutView:(ALPLayoutTypeNested)];
+    
+    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedYoga"];
+}
+
+- (void)addYogaLayoutView:(ALPLayoutType)type {
+    
+    CGSize size = self.view.bounds.size;
+    viewCount = (NSUInteger) [textField.text intValue];
+    ALPYogaLayoutView* yogaLayoutView = [[ALPYogaLayoutView alloc] initWithFrame:CGRectMake(0, 0, size.width, size.height) type:type viewCount:viewCount];
+    [container addSubview:yogaLayoutView];
 }
 
 - (void)calculateTimeWithStartTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime resultName:(NSString *)resultName {
