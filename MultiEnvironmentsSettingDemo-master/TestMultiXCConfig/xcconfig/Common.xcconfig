@@ -1,0 +1,13 @@
+//
+//  Debug.xcconfig
+//  TestMultiXCConfig
+//
+//  Created by apple on 16-7-20.
+//  Copyright (c) 2016年 boyce. All rights reserved.
+//
+#include "Pods/Target Support Files/Pods-TestMultiXCConfig/Pods-TestMultiXCConfig.debug.xcconfig"
+#include "Pods/Target Support Files/Pods-TestMultiXCConfig/Pods-TestMultiXCConfig.enterprise.xcconfig"
+#include "Pods/Target Support Files/Pods-TestMultiXCConfig/Pods-TestMultiXCConfig.jiehe.xcconfig"
+#include "Pods/Target Support Files/Pods-TestMultiXCConfig/Pods-TestMultiXCConfig.appstore.xcconfig"
+
+BuildVersion = 2.6.8

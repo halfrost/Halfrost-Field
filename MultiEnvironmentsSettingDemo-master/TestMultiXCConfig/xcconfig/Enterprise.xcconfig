@@ -1,0 +1,12 @@
+//
+//  Release.xcconfig
+//  TestMultiXCConfig
+//
+//  Created by apple on 16-7-20.
+//  Copyright (c) 2016年 boyce. All rights reserved.
+//
+#include "Common.xcconfig"
+
+scheme = Enterprise
+ProductDisplayName = 企业版
+BundleId = com.ydz.release
