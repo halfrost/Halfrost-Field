@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11129.15" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11103.10"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="y3c-jy-aDJ"/>
+                        <viewControllerLayoutGuide type="bottom" id="wfy-db-euE"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="mp40843170_1447147056517_2.jpeg" translatesAutoresizingMaskIntoConstraints="NO" id="A9V-Dh-73y">
+                                <frame key="frameInset"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="35° " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Sn1-xq-VCf">
+                                <fontDescription key="fontDescription" type="system" pointSize="70"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="BDCA87E9-7B4E-4809-82DA-F190CECD4835.png" translatesAutoresizingMaskIntoConstraints="NO" id="wai-nb-d9n"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="天气晴朗" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VvY-PJ-b5S">
+                                <fontDescription key="fontDescription" type="system" pointSize="41"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="e8U-hZ-5qt">
+                                <frame key="frameInset" minY="28" height="176"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="A00D3B09-7904-433C-ADC3-BD192F4B6950.png" translatesAutoresizingMaskIntoConstraints="NO" id="Rep-gM-OPF">
+                                        <frame key="frameInset" minX="26" minY="24" width="102" height="107"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="DE05E649-1499-4C5D-A768-9CF6FC20B996.png" translatesAutoresizingMaskIntoConstraints="NO" id="CEe-D4-e42">
+                                        <frame key="frameInset" minY="24" width="114" height="107" maxX="38"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="shanghai" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="28" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-cY-axG">
+                                        <frame key="frameInset" minX="34.51%" minY="24" width="31.12%" height="70.40%"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" heightSizable="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="56"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="VvY-PJ-b5S" firstAttribute="leading" secondItem="Sn1-xq-VCf" secondAttribute="trailing" constant="66" id="Dmf-3d-2JB"/>
+                            <constraint firstItem="Sn1-xq-VCf" firstAttribute="centerY" secondItem="wai-nb-d9n" secondAttribute="centerY" id="KHB-zi-gP7"/>
+                            <constraint firstItem="Sn1-xq-VCf" firstAttribute="leading" secondItem="wai-nb-d9n" secondAttribute="trailing" constant="10" id="NSg-bF-vdq"/>
+                            <constraint firstItem="Sn1-xq-VCf" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="ZRi-BR-xUi"/>
+                            <constraint firstItem="Sn1-xq-VCf" firstAttribute="baseline" secondItem="VvY-PJ-b5S" secondAttribute="baseline" id="r4a-Jv-nDe"/>
+                            <constraint firstItem="Sn1-xq-VCf" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="rQJ-kJ-yaE"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="32.03125" y="37.5"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="A00D3B09-7904-433C-ADC3-BD192F4B6950.png" width="296" height="328"/>
+        <image name="BDCA87E9-7B4E-4809-82DA-F190CECD4835.png" width="278" height="280"/>
+        <image name="DE05E649-1499-4C5D-A768-9CF6FC20B996.png" width="314" height="290"/>
+        <image name="mp40843170_1447147056517_2.jpeg" width="600" height="400"/>
+    </resources>
+</document>
