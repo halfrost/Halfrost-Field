@@ -51,10 +51,7 @@ WX_EXPORT_METHOD(@selector(getComponentRect:callback:))
     WXPerformBlockOnComponentThread(^{
         WXComponentManager *manager = weakSelf.weexInstance.componentManager;
         if (!manager.isValid) {
-            manager->_indexDict = [NSMapTable strongToWeakObjectsMapTable];
-            manager->_fixedComponents = [NSMutableArray wx_mutableArrayUsingWeakReferences];
-            manager->_uiTaskQueue = [NSMutableArray array];
-            [manager _startDisplayLink];
+            return;
         }
         [manager startComponentTasks];
         block(manager);
