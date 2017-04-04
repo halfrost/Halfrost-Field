@@ -10,6 +10,8 @@
 #import <UIView+Yoga.h>
 #import "YGLayout.h"
 
+#define TESTCOUNT 10000
+
 @implementation ALPRootViewController {
     NSUInteger viewCount;
     UILabel* label;
@@ -132,7 +134,7 @@
 - (void)addAutoLayoutIndependent {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -149,7 +151,7 @@
 - (void)addAutoLayoutChained {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -166,7 +168,7 @@
 - (void)addAutoLayoutNested {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -191,7 +193,7 @@
 - (void)addManualIndependent {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -209,7 +211,7 @@
 - (void)addManualNested {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -243,7 +245,7 @@
 - (void)addYogaIndependent {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
@@ -260,7 +262,7 @@
 - (void)addYogaNested {
     
     // 如果去掉这层循环，可以测试单次布局的时间
-    for (int i = 0; i < 10000; i ++) {
+    for (int i = 0; i < TESTCOUNT; i ++) {
         
         [self clearViews];
         
