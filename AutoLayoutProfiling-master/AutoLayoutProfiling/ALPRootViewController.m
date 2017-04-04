@@ -9,7 +9,6 @@
 #import "ALPYogaLayoutView.h"
 #import <UIView+Yoga.h>
 #import "YGLayout.h"
-#import "WXDomModule.h"
 
 @implementation ALPRootViewController {
     NSUInteger viewCount;
@@ -23,10 +22,6 @@
     [super viewDidLoad];
     [self setupContainer];
     [self addControls];
-    
-    
-
-    
 }
 
 - (void)setupContainer {
@@ -76,12 +71,15 @@
     weexIndependentButton.frame = CGRectMake(300, 50, 300, 30);
     [weexIndependentButton setTitle:@"用weex创建相互无关联的View" forState:UIControlStateNormal];
     [weexIndependentButton addTarget:self action:@selector(addWeexIndependent) forControlEvents:UIControlEventTouchUpInside];
+    weexIndependentButton.hidden = YES;
     [self.view addSubview:weexIndependentButton];
+    
     
     UIButton* weexNestedButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     weexNestedButton.frame = CGRectMake(300, 80, 300, 30);
     [weexNestedButton setTitle:@"用weex创建嵌套的View" forState:UIControlStateNormal];
     [weexNestedButton addTarget:self action:@selector(addWeexNested) forControlEvents:UIControlEventTouchUpInside];
+    weexNestedButton.hidden = YES;
     [self.view addSubview:weexNestedButton];
     
     UIButton* yogaIndependentButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
@@ -217,25 +215,6 @@
 }
 
 - (void)addWeexIndependent {
-    
-    NSDictionary *dic = @{
-                          @"attr":@{
-                                  },
-                          @"ref":@"_root",
-                          @"style":@{
-                                  @"backgroundColor":@"#ff0000",
-                                  @"height":@(20),
-                                  @"left":@(100),
-                                  @"top":@(200),
-                                  @"width":@(20)
-                                  },
-                          @"type":@"div"
-                          };
-    
-    
-    WXDomModule *wxDomModule = [[WXDomModule alloc]init];
-    [wxDomModule createBody:dic];
-    
     
 }
 
