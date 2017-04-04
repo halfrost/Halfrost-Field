@@ -9,6 +9,7 @@
 #import "ALPYogaLayoutView.h"
 #import <UIView+Yoga.h>
 #import "YGLayout.h"
+#import "WXDomModule.h"
 
 @implementation ALPRootViewController {
     NSUInteger viewCount;
@@ -22,6 +23,10 @@
     [super viewDidLoad];
     [self setupContainer];
     [self addControls];
+    
+    
+
+    
 }
 
 - (void)setupContainer {
@@ -212,6 +217,24 @@
 }
 
 - (void)addWeexIndependent {
+    
+    NSDictionary *dic = @{
+                          @"attr":@{
+                                  },
+                          @"ref":@"_root",
+                          @"style":@{
+                                  @"backgroundColor":@"#ff0000",
+                                  @"height":@(20),
+                                  @"left":@(100),
+                                  @"top":@(200),
+                                  @"width":@(20)
+                                  },
+                          @"type":@"div"
+                          };
+    
+    
+    WXDomModule *wxDomModule = [[WXDomModule alloc]init];
+    [wxDomModule createBody:dic];
     
     
 }
