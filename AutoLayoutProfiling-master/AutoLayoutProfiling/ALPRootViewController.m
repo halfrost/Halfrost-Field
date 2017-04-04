@@ -123,49 +123,61 @@
     [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"ChainedAutoLayout"];
     [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"Frame"];
     [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"NestedFrame"];
-    [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"Weex"];
-    [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"NestedWeex"];
+//    [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"Weex"];
+//    [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"NestedWeex"];
     [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"Yoga"];
     [_resultDictionary setObject:[[NSMutableDictionary alloc] init] forKey:@"NestedYoga"];
 }
 
 - (void)addAutoLayoutIndependent {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addAutoLayoutView:(ALPLayoutTypeIndependent)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"AutoLayout"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addAutoLayoutView:(ALPLayoutTypeIndependent)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"AutoLayout"];
+    }
 }
 
 - (void)addAutoLayoutChained {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addAutoLayoutView:(ALPLayoutTypeChained)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"ChainedAutoLayout"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addAutoLayoutView:(ALPLayoutTypeChained)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"ChainedAutoLayout"];
+    }
 }
 
 - (void)addAutoLayoutNested {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addAutoLayoutView:(ALPLayoutTypeNested)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedAutoLayout"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addAutoLayoutView:(ALPLayoutTypeNested)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedAutoLayout"];
+    }
 }
 
 
@@ -178,7 +190,8 @@
 
 - (void)addManualIndependent {
     
-    for (int i = 0; i < 1000; i ++) {
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
         
         [self clearViews];
         
@@ -195,15 +208,19 @@
 
 - (void)addManualNested {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addNonAutoLayoutView:(ALPLayoutTypeNested)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedFrame"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addNonAutoLayoutView:(ALPLayoutTypeNested)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedFrame"];
+    }
 }
 
 - (void)addNonAutoLayoutView:(ALPLayoutType)type {
@@ -225,28 +242,36 @@
 
 - (void)addYogaIndependent {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addYogaLayoutView:(ALPLayoutTypeIndependent)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"Yoga"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addYogaLayoutView:(ALPLayoutTypeIndependent)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"Yoga"];
+    }
 }
 
 - (void)addYogaNested {
     
-    [self clearViews];
-    
-    NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self addYogaLayoutView:(ALPLayoutTypeNested)];
-    
-    NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
-    
-    [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedYoga"];
+    // 如果去掉这层循环，可以测试单次布局的时间
+    for (int i = 0; i < 10000; i ++) {
+        
+        [self clearViews];
+        
+        NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self addYogaLayoutView:(ALPLayoutTypeNested)];
+        
+        NSTimeInterval endTime = [NSDate timeIntervalSinceReferenceDate];
+        
+        [self calculateTimeWithStartTime:startTime endTime:endTime resultName:@"NestedYoga"];
+    }
 }
 
 - (void)addYogaLayoutView:(ALPLayoutType)type {
