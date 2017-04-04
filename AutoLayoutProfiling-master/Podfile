@@ -9,5 +9,5 @@ target 'AutoLayoutProfiling' do
   # Pods for AutoLayoutProfiling
   # use_frameworks!
   pod 'YogaKit'
-  pod 'WeexSDK'
+  pod 'WeexSDK', :path=>'../sdk/'
 end

@@ -8,6 +8,7 @@
 
 #import "ALPAppDelegate.h"
 #import "ALPRootViewController.h"
+#import "WXSDKEngine.h"
 
 @implementation ALPAppDelegate
 
@@ -17,6 +18,9 @@
     self.window.rootViewController = [[ALPRootViewController alloc] init];
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
+    
+    [WXSDKEngine initSDKEnvironment];
+    
     return YES;
 }
 
