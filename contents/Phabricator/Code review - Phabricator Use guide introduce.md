@@ -1,7 +1,9 @@
-![](http://upload-images.jianshu.io/upload_images/1194012-dc92dffb821d6ce9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-dc92dffb821d6ce9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
 
 
-##前言    
+## 前言    
    今天给大家分享一下我之前在公司搭建的一个Code Review服务器的一些心得吧。由于现在移动互联网更新迭代速度很快，分布版本的速度基本上决定了创业公司的生命，所以代码质量在决定产品质量上也体现出尤其重要的地位。
 
     目录
@@ -12,7 +14,7 @@
     5.Other Feature Summary
     6.Final
 
-####一.Phabricator Summary
+#### 一.Phabricator Summary
 今天我要向大家分享的是一款非常棒的代码检视工具Phabricator。Phabricator是Facebook保驾护航的11大IT技术之一。在Phabricator的网站中，开发者给出了这样的描述：“Facebook的工程师们毫不掩饰自己对于Phabricator的喜爱之情，他们甚至将它视为’顺利’与’严谨’的代名词”。下面我就将演示使用Phabricator进行代码检视的流程以及它的亮点。
 
 > Facebook 保价护航的11大IT技术
@@ -32,7 +34,7 @@
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-2aac90194fcb247f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-####二.Differential
+#### 二.Differential
 Differential是Phabricator核心功能之一，它是开发者相互检视代码，互相讨论代码的主要平台。
 
 谈到如何生成Diff，此处需要用到Arcanist Tool工具了。
@@ -84,7 +86,7 @@ Differential是Phabricator核心功能之一，它是开发者相互检视代码
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-b8b22e89915cb850.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-####三.Diffusion
+#### 三.Diffusion
 Phabricator提供一个类似于gitlab之类的远程仓库浏览工具diffusion，开发人员可以快速查看以下信息
 1.VCS Repertory information 线上版本控制系统 仓库信息
 
@@ -110,7 +112,7 @@ Phabricator提供一个类似于gitlab之类的远程仓库浏览工具diffusion
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-9ac2dd3a89ea716e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-####四.Audit 审计
+#### 四.Audit 审计
 
 1.区别
 很多人会有疑惑了，我们有了Differential，那么现在为何还需要一个Audit ？
@@ -186,13 +188,13 @@ Add Comment
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-2b0ca4ef38e934b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-####五.Other Feature Summary 其他的一些常用功能
+#### 五.Other Feature Summary 其他的一些常用功能
 - Maniphest：任务管理和缺陷追踪(类似于Github的Issue)
 - CountDown：定时提醒工具
 - Repository：远程VCS仓库管理
 - Herald Rule：创建自定义规则，当某些事件触发了规则时提醒我们(类似于IFTTT)
 
-####六.Final
+#### 六.Final
 最后来谈谈phabricator的优点吧。
 
 - phabricator 中也是通过提交request来展示diff做reivew.但是他的diff不是文件的全部内容，只是diff的部分，所以不需要事先在工具里添加库，可以直接提交diff，也可以粘贴diff的内容来提交。
