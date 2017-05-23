@@ -4,6 +4,15 @@
   <img src='contents/images/background-cover.png'>
   <p align='center'>Explore in every moment of the cudgel thinking</p>
   <p align='center'>在每一个苦思冥想的瞬间求知</p>
+  <img src="https://img.shields.io/badge/platform-iOS-ff69b4.svg">
+<img src="https://img.shields.io/badge/language-Objective--C-orange.svg">
+<a href=""><img src="https://img.shields.io/badge/license-MIT-000000.svg"></a>
+<img src="https://img.shields.io/badge/made%20with-%3C3-blue.svg">
+<a href="https://codebeat.co/projects/github-com-lpd-ios-lpdmvvmkit-master"><img alt="codebeat badge" src="https://codebeat.co/badges/17255a58-8abc-4f16-85ee-a7dbe125b215" /></a>
+<a href="http://cocoapods.org/pods/LPDMvvmRouterKit"><img alt="codebeat badge" src="https://img.shields.io/cocoapods/v/LPDMvvmRouterKit.svg?style=flat" /></a>
+<a href="https://lpd-ios.github.io/"><img src="https://img.shields.io/badge/Blog-LPD--iOS-red.svg?style=flat"></a>
+<a href="https://github.com/LPD-iOS"><img src="https://img.shields.io/badge/Organizations-LPD--iOS-brightgreen.svg?style=flat&colorA=abcdef"></a>
+<img src="https://img.shields.io/chrome-web-store/stars/nimelepbpejjlbmoobocpfnjhihnpked.svg?colorA=a0cd34">
 </p>
 
 ## 为什么要建这个仓库
