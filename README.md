@@ -1,10 +1,13 @@
 # Halfrost-Field 冰霜之地
 
 <p align='center'>
-  <img src='contents/images/background-cover.png'>
-  <p align='center'>Explore in every moment of the cudgel thinking</p>
-  <p align='center'>在每一个苦思冥想的瞬间求知</p>
-  <img src="https://img.shields.io/badge/platform-iOS-ff69b4.svg">
+<img src='contents/images/background-cover.png'>
+<p align='center'>Explore in every moment of the cudgel thinking</p>
+<p align='center'>在每一个苦思冥想的瞬间求知</p>
+</p>
+
+<p align='center'>
+<img src="https://img.shields.io/badge/platform-iOS-ff69b4.svg">
 <img src="https://img.shields.io/badge/language-Objective--C-orange.svg">
 <a href=""><img src="https://img.shields.io/badge/license-MIT-000000.svg"></a>
 <img src="https://img.shields.io/badge/made%20with-%3C3-blue.svg">
