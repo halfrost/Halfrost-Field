@@ -2,8 +2,6 @@
 
 <p align='center'>
 <img src='contents/images/background-cover.png'>
-<p align='center'; style="font-size:40px; font-weight:bold;">Explore in every moment of the cudgel thinking</p>
-<p align='center'>在每一个苦思冥想的瞬间求知</p>
 </p>
 
 <p align='center'>
