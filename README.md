@@ -42,8 +42,8 @@ Latest：[从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5d
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-| JavaScript | 0.10.0 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)|
-| Vue.js | 0.10.0 |
+| JavaScript | ECMAScript 6 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)|
+| Vue.js | | |
 
 -------
 
