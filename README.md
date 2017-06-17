@@ -25,7 +25,55 @@
 
 世人都说阅读开源框架的源代码对于功力有显著的提升，所以我也尝试阅读开源框架的源代码，并对其内容进行详细地分析和理解。在这里将自己阅读开源框架源代码的心得记录下来，希望能对各位开发者有所帮助。我会不断更新这个仓库中的文章，如果想要关注可以点 `star`。
 
+
+
 ## 目录
+
+
+Latest：[从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)
+
+（Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
+
+
+
+--------
+
+# JavaScript
+
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+| JavaScript | 0.10.0 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)|
+
+-------
+
+# iOS
+
+
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+| Weex | 0.10.0 | [Weex 是如何在 iOS 客户端上跑起来的](http://www.jianshu.com/p/41cde2c62b81)<br>[由FlexBox算法强力驱动的Weex布局引擎](http://www.jianshu.com/p/d085032d4788)<br>[Weex 事件传递的那些事儿](http://www.jianshu.com/p/419b96aecc39)<br>[Weex 中别具匠心的 JS Framework](http://www.jianshu.com/p/edaf0448df01)<br>[iOS开发者的Weex伪最佳实践指北](http://www.jianshu.com/p/43adc80ab60b)<br> |
+| BeeHive | v1.2.0 | [BeeHive —— 一个优雅但还在完善中的解耦框架](http://www.jianshu.com/p/24f6299ebe82)<br>|
+| 组件化 | 路由与解耦 | [iOS 组件化 —— 路由设计思路分析](http://www.jianshu.com/p/76da56b3bd55)<br>|
+| ReactiveObjC | 2.1.2 | [ReactiveCocoa 中 RACSignal 是如何发送信号的](http://www.jianshu.com/p/d7d951a99db8) <br> [ReactiveCocoa 中 RACSignal 所有变换操作底层实现分析(上)](http://www.jianshu.com/p/9c4459ae71c5) <br>[ReactiveCocoa 中 RACSignal 所有变换操作底层实现分析(中)](http://www.jianshu.com/p/707ece08257e) <br> [ReactiveCocoa 中 RACSignal 所有变换操作底层实现分析(下)](http://www.jianshu.com/p/d507e534dda0) <br> [ReactiveCocoa 中 RACSignal 冷信号和热信号底层实现分析](http://www.jianshu.com/p/21beb4c59bcc) <br> [ReactiveCocoa 中 集合类RACSequence 和 RACTuple底层实现分析](http://www.jianshu.com/p/5c2119b3f2eb) <br> [ReactiveCocoa 中 RACScheduler是如何封装GCD的](http://www.jianshu.com/p/980ffdf3ed8c) <br> [ReactiveCocoa 中 RACCommand底层实现分析](http://www.jianshu.com/p/50938a5ace87)<br> [ReactiveCocoa 中 奇妙无比的“宏”魔法](http://www.jianshu.com/p/4c5613e256c8)|
+| Aspect |  | [iOS 如何实现Aspect Oriented Programming (下)](http://www.jianshu.com/p/2ad7e90b521b)<br>[iOS 如何实现Aspect Oriented Programming (上)](http://www.jianshu.com/p/dc9dca24d5de)<br> |
+| ObjC | objc runtime 680 |[Objc 对象的今生今世](http://www.jianshu.com/p/f725d2828a2f)<br> [神经病院Objective-C Runtime出院第三天——如何正确使用Runtime](http://www.jianshu.com/p/db6dc23834e3) <br> [神经病院Objective-C Runtime住院第二天——消息发送与转发](http://www.jianshu.com/p/4d619b097e20) <br>[神经病院Objective-C Runtime入院第一天——isa和Class](http://www.jianshu.com/p/9d649ce6d0b8) <br> |
+| iOS Block |  | [深入研究Block用weakSelf、strongSelf、@weakify、@strongify解决循环引用](http://www.jianshu.com/p/701da54bd78c) <br>[深入研究Block捕获外部变量和__block实现原理](http://www.jianshu.com/p/ee9756f3d5f6) <br>  |
+| iOS Simulator |  | [给iOS 模拟器“安装”app文件](http://www.jianshu.com/p/cd4c816111db) <br>  |
+| xcconfig |  | [手把手教你给一个iOS app配置多个环境变量](http://www.jianshu.com/p/83b6e781eb51) <br>  |
+| Jenkins | Weekly Release 2.15 | [手把手教你利用Jenkins持续集成iOS项目](http://www.jianshu.com/p/41ecb06ae95f) <br>  |
+| StoryBoard |  | [关于IB_DESIGNABLE / IBInspectable的那些需要注意的事](http://www.jianshu.com/p/a5351d270ac1) <br>  |
+| WWDC 2016 |  | [WWDC2016 Session笔记 - Xcode 8 Auto Layout新特性](http://www.jianshu.com/p/2521c610fac3) <br>[WWDC2016 Session笔记 - iOS 10 UICollectionView新特性](http://www.jianshu.com/p/e97780a24224) <br>[WWDC2016 Session笔记 - iOS 10  推送Notification新特性](http://www.jianshu.com/p/9b720efe3779) <br>  |
+| Jekyll |  | [如何快速给自己构建一个温馨的"家"——用Jekyll搭建静态博客](http://www.jianshu.com/p/9a6bc31d329d) <br>  |
+| Swift | 2.2 | [iOS如何优雅的处理“回调地狱Callback hell”(二)——使用Swift](http://www.jianshu.com/p/deb65d0a6b8c) <br>  |
+| PromiseKit |  | [iOS如何优雅的处理“回调地狱Callback hell”(一)——使用PromiseKit](http://www.jianshu.com/p/f060cfd52f17) <br>  |
+| WebSocket |  | [谈谈 WebSocket](http://www.jianshu.com/p/bcefda55bce4) <br>  |
+| Realm |  | [Realm数据库 从入门到“放弃”](http://www.jianshu.com/p/50e0efb66bdf) <br>[手把手教你从Core Data迁移到Realm](http://www.jianshu.com/p/d79b2b1bfa72) <br> |
+| Core Data |  | [iOS Core Data 数据迁移 指南](http://www.jianshu.com/p/b3b764fc5191) <br> |
+| Cordova |  | [iOS Hybrid 框架 ——PhoneGap](http://www.jianshu.com/p/fb0149025869)<br> [Remote debugging on iOS with Safari Web Inspector](http://www.jianshu.com/p/774a629343d9) <br>|
+| Phabricator |  | [搭建Phabricator我遇到的那些坑](http://www.jianshu.com/p/db8dc7d480b4)<br> [Code review - Phabricator Use guide introduce](http://www.jianshu.com/p/d9957c1d2339) <br>|
+
+
+
 
 
 
