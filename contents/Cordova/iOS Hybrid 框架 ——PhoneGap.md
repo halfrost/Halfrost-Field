@@ -136,7 +136,7 @@ NSString *ret = [((HFNativeFunction*)strongSelf.actionDict[funcName]) doCall:arg
 
 #### 四.Cordova - Js工作原理
 
-Cordova JS 端请求方法的格式：
+Cordova JS 端请求方法的格式：  
 // successCallback : 成功回调方法  
 // failCallback    : 失败回调方法  
 // server          : 所要请求的服务名字  
