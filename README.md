@@ -71,7 +71,7 @@ Latest：[从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5d
 | Realm |  | [Realm数据库 从入门到“放弃”](http://www.jianshu.com/p/50e0efb66bdf) <br>[手把手教你从Core Data迁移到Realm](http://www.jianshu.com/p/d79b2b1bfa72) <br> |
 | Core Data |  | [iOS Core Data 数据迁移 指南](http://www.jianshu.com/p/b3b764fc5191) <br> |
 | Cordova |  | [iOS Hybrid 框架 ——PhoneGap](http://www.jianshu.com/p/fb0149025869)<br> [Remote debugging on iOS with Safari Web Inspector](http://www.jianshu.com/p/774a629343d9) <br>|
-| Phabricator |  | [搭建Phabricator我遇到的那些坑](http://www.jianshu.com/p/db8dc7d480b4)<br> [Code review - Phabricator Use guide introduce](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Phabricator/Code%20review%20-%20Phabricator%20Use%20guide%20introduce.md) <br>|
+| Phabricator |  | [搭建Phabricator我遇到的那些坑](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Phabricator/%E6%90%AD%E5%BB%BAPhabricator%E6%88%91%E9%81%87%E5%88%B0%E7%9A%84%E9%82%A3%E4%BA%9B%E5%9D%91.md)<br> [Code review - Phabricator Use guide introduce](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Phabricator/Code%20review%20-%20Phabricator%20Use%20guide%20introduce.md) <br>|
 
 
 
