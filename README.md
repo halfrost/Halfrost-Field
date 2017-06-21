@@ -43,7 +43,7 @@ Latest：[从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5d
 | Project | Version | Article |
 |:-------:|:-------:|:------|
 | JavaScript | ECMAScript 6 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)|
-| Vue.js | | |
+| Vue.js | | [Vue 全家桶 + Electron 开发的一个跨三端的应用](https://github.com/halfrost/vue-objccn/blob/master/README.md)🔥🔥🔥🔥 <br>|
 
 -------
 
