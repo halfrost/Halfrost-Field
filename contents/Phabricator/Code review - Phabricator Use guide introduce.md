@@ -218,3 +218,10 @@ Add Comment
 这篇是分享给大家使用Phabricator的方法，公司里面有这个服务器的，或者买了Phabricator服务的，又不会使用的，看了我这篇文章应该能上手用起来啦！！有时间再给大家分享一下我当时自己搭建这个服务器遇到的一些坑吧。这篇分享就到这里了，欢迎大家一起讨论！
 
 这里是我当时在公司给大家分享时用的Keynote，做的一般，也一起分享出来给大家看看吧：http://pan.baidu.com/s/1dFiAaM9
+
+
+> GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
+> 
+> Follow: [halfrost · GitHub](https://github.com/halfrost)
+>
+> Source: [https://halfrost.com/code\_review\_phabricator\_use\_guide\_introduce/](https://halfrost.com/code_review_phabricator_use_guide_introduce/)
