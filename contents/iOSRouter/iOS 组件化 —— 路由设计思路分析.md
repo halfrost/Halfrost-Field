@@ -1891,11 +1891,11 @@ Target-Action方案的缺点，Target_Action在Category中将常规参数打包�
 
 References:
 
-[在现有工程中实施基于CTMediator的组件化方案](http://casatwy.com/modulization_in_action.html)
-[iOS应用架构谈 组件化方案](http://casatwy.com/iOS-Modulization.html)
-[蘑菇街 App 的组件化之路](http://limboy.me/tech/2016/03/10/mgj-components.html)
-[蘑菇街 App 的组件化之路·续](http://limboy.me/tech/2016/03/14/mgj-components-continued.html)
-[ENGINEERING THE ARCHITECTURE BEHIND UBER’S NEW RIDER APP](https://eng.uber.com/new-rider-app/)
+[在现有工程中实施基于CTMediator的组件化方案](http://casatwy.com/modulization_in_action.html)  
+[iOS应用架构谈 组件化方案](http://casatwy.com/iOS-Modulization.html)  
+[蘑菇街 App 的组件化之路](http://limboy.me/tech/2016/03/10/mgj-components.html)  
+[蘑菇街 App 的组件化之路·续](http://limboy.me/tech/2016/03/14/mgj-components-continued.html)  
+[ENGINEERING THE ARCHITECTURE BEHIND UBER’S NEW RIDER APP](https://eng.uber.com/new-rider-app/)  
 
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
