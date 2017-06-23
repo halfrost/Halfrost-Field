@@ -30,7 +30,7 @@
 ## 📖目录
 
 
-Latest：[从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)
+Latest：[Vue 全家桶 + Electron 开发的一个跨三端的应用](https://github.com/halfrost/vue-objccn/blob/master/README.md)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
