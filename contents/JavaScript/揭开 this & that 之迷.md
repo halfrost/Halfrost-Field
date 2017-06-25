@@ -1,8 +1,7 @@
+<p align='center'>
+<img src='../images/EGH_LearnES6_Final.png'>
+</p>
 
-
-<p align="center"> 
-<img src="http://upload-images.jianshu.io/upload_images/1194012-93a93c3034809c7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-</p> 
 
 
 
