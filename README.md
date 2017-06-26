@@ -30,7 +30,7 @@
 ## 📖目录
 
 
-Latest：[Vue 全家桶 + Electron 开发的一个跨三端的应用](https://github.com/halfrost/vue-objccn/blob/master/README.md)
+Latest：[揭开 this & that 之迷](https://github.com/halfrost/Halfrost-Field/blob/master/contents/JavaScript/%E6%8F%AD%E5%BC%80%20this%20%26%20that%20%E4%B9%8B%E8%BF%B7.md)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
@@ -42,7 +42,7 @@ Latest：[Vue 全家桶 + Electron 开发的一个跨三端的应用](https://gi
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-| JavaScript | ECMAScript 6 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)|
+| JavaScript | ECMAScript 6 | [JavaScript 新手的踩坑日记](http://www.jianshu.com/p/6280d0f12feb) <br> [从 JavaScript 作用域说开去](http://www.jianshu.com/p/9ecb728c5db9)<br> [揭开 this & that 之迷](https://github.com/halfrost/Halfrost-Field/blob/master/contents/JavaScript/%E6%8F%AD%E5%BC%80%20this%20%26%20that%20%E4%B9%8B%E8%BF%B7.md)|
 | Vue.js | | [Vue 全家桶 + Electron 开发的一个跨三端的应用](https://github.com/halfrost/vue-objccn/blob/master/README.md)🔥🔥🔥🔥 <br>|
 
 -------
