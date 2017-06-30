@@ -669,12 +669,32 @@ getName();  // halfrost
 这里的结果和方法作为对象的属性被调用的结果是一样的。
 
 
+
+
+### 总结
+
+如果要判断一个运行中函数的 this 绑定，就需要找到这个函数的直接调用位置。找到之后
+就可以顺序应用下面这四条规则来判断 this 的绑定对象。
+
+1. 函数是否在new中调用(new绑定)?如果是的话this绑定的是新创建的对象。  
+     var bar = new foo()
+2. 函数是否通过call、apply(显式绑定)或者硬绑定调用?如果是的话，this绑定的是 指定的对象。   
+     var bar = foo.call(obj2)
+3. 函数是否在某个上下文对象中调用(隐式绑定)?如果是的话，this绑定的是那个上 下文对象。   
+     var bar = obj1.foo()
+4. 如果都不是的话，使用默认绑定。如果在严格模式下，就绑定到undefined，否则绑定到 全局对象。   
+     var bar = foo()
+
+ES6 中的箭头函数并不会使用四条标准的绑定规则，而是根据当前的词法作用域来决定 this，具体来说，箭头函数会继承外层函数调用的 this 绑定(无论 this 绑定到什么)。这 其实和ES6之前代码中的self = this机制一样。
+
 ------------
 
 Reference：    
 《ECMAScript 6 Primer》   
 《javascript 高级程序设计》   
-[JavaScript This 之谜(译文)](https://gold.xitu.io/entry/576d640d2e958a005724e07f)
+[JavaScript This 之谜(译文)](https://gold.xitu.io/entry/576d640d2e958a005724e07f)  
+《你不知道的JavaScript（上卷）》  
+
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
