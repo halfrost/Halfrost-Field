@@ -1,5 +1,5 @@
 <p align='center'>
-<img src='../images/EGH_LearnES6_Final.png'>
+<img src='../images/EGH_LearnES6_Final_.png'>
 </p>
 
 

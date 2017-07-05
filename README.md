@@ -1,7 +1,7 @@
 # Halfrost-Field 冰霜之地
 
 <p align='center'>
-<img src='contents/images/background-cover.png'>
+<img src='contents/images/background-cover_.png'>
 </p>
 
 <p align='center'>
