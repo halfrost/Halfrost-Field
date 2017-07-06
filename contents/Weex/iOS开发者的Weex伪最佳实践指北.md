@@ -41,8 +41,8 @@
 
 关于小白想入门Weex，当然最基础的还是要通读文档，文档是官方最好的学习资料。官方的基础文档有两份：
 
-[教程文档](http://weex-project.io/cn/guide/)
-[手册文档](http://weex-project.io/cn/references/)
+[教程文档](http://weex-project.io/cn/guide/)  
+[手册文档](http://weex-project.io/cn/references/)  
 
 在文档手册里面包含了Weex所有目前有的组件，模块，每个组件和模块的用法和属性。遇到问题可以先过来翻翻。很有可能有些组件和模块没有那些属性。
 
@@ -123,8 +123,8 @@ code snippets这个是一个在线的playground。
 
 具体使用方法看这两篇文章即可，这里不再赘述：
 
-[《Weex 入坑指南：Debug 调试是一门手艺活》](https://zhuanlan.zhihu.com/p/25331465)
-[《Weex调试神器——Weex Devtools使用手册》](https://github.com/weexteam/article/issues/50)
+[《Weex 入坑指南：Debug 调试是一门手艺活》](https://zhuanlan.zhihu.com/p/25331465)   
+[《Weex调试神器——Weex Devtools使用手册》](https://github.com/weexteam/article/issues/50)   
 
 ### 2. Weex Market插件
 
