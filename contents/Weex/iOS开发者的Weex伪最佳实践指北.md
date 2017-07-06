@@ -209,7 +209,7 @@ Weex JS 引擎也不支持 HTML DOM APIs 和 HTML5 JS APIs，这包括 document,
 
 Weex关于Web标准的实现现在还没有达到100%，所以用Vue来写Weex的话，有些是不支持的。
 
-比如说一些CSS样式，最令人想不到的就是不支持<br>，还不支持<form>，<table>，<tr>，<td>，不支持CSS percentage 单位，不支持类似 em，rem，pt 这样的 CSS 标准中的其他长度单位。不支持 hsl(), hsla(), currentColor, 8个字符的十六进制颜色。
+比如说一些CSS样式，最令人想不到的就是不支持`<br>`，还不支持`<form>`，`<table>`，`<tr>`，`<td>`，不支持CSS percentage 单位，不支持类似 em，rem，pt 这样的 CSS 标准中的其他长度单位。不支持 hsl(), hsla(), currentColor, 8个字符的十六进制颜色。
 
 Weex对W3C上的FlexBox的规范也没有支持完全，暂不支持inline，也不支持Z轴上面的变化，不过移动端在Z轴上的需求真的没有。Weex的Layout是用的Yoga之前的某个版本，解决问题的方式也比较直接，后期升级到最新版的Yoga，便可以支持更多的Flex的标准了。
 
