@@ -168,7 +168,7 @@ layout 下一层的组件是 header、footer、content，这三部分就组成�
 
 #### 2. 功能模块
 
-一般项目里面详情页的内容最多，我们就以以 [objc中国](https://objccn.io/products/functional-swift/) 的详情页面为例
+一般项目里面详情页的内容最多，我们就以 [objc中国](https://objccn.io/products/functional-swift/) 的详情页面为例
 
 
 
