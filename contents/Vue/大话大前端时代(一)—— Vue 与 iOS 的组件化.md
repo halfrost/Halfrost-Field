@@ -665,7 +665,9 @@ iOS 的组件化手段非常单一，就是利用 Cocoapods 封装成 pod 库，
 具体如果用 Cocoapods 打包一个静态库 .a 或者 framework ，网上教程很多，这里给一个[链接](http://www.cnblogs.com/brycezhang/p/4117180.html)，详细的操作方法就不再赘述了。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-66ed05528c64bd23.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-66ed05528c64bd23.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
 
 
