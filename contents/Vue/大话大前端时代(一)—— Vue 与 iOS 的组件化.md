@@ -3,6 +3,8 @@
 
 
 
+
+
 ## 序
 
 今年大前端的概念一而再再而三的被提及，那么大前端时代究竟是什么呢？大前端这个词最早是因为在阿里内部有很多前端开发人员既写前端又写 Java 的 Velocity 模板而得来，不过现在大前端的范围已经越来越大了，包含前端 + 移动端，前端、CDN、Nginx、Node、Hybrid、Weex、React Native、Native App。笔者是一名普通的全职 iOS 开发者，在接触到了前端开发以后，发现了前端有些值得移动端学习的地方，于是便有了这个大前端时代系列的文章，希望两者能相互借鉴优秀的思想。谈及到大前端，常常被提及的话题有：组件化，路由与解耦，工程化（打包工具，脚手架，包管理工具），MVC 和 MVVM 架构，埋点和性能监控。笔者就先从组件化方面谈起。网上关于前端框架对比的文章也非常多（对比 React，Vue，Angular），不过跨端对比的文章好像不多？笔者就打算以前端和移动端（以 iOS 平台为主）对比为主，看看这两端的不同做法，并讨论讨论有无相互借鉴学习的地方。
@@ -14,8 +16,11 @@
 ## Vue 篇
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-684fa2f2f2cb0685.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-a468c463f8068f08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
@@ -41,7 +46,11 @@
 而且现在公司级的项目，大多数都会引入工程化的管理，用包管理工具去管理，npm 或者 yarn。所以 Vue 在复杂的项目中用 Vue.component 去定义一个组件的方式就不适合了。这里就需要用到单文件组件，还可以使用 Webpack 或 Browserify 等构建工具。比如下面这个Hello.vue组件，整个文件就是一个组件。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-f0b4fa204ce0e1df.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-df970b173f9ce00f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
 
 在单文件组件中，整个文件都是一个 [CommonJS 模块](https://webpack.js.org/concepts/modules/#what-is-a-webpack-module)，里面包含了组件对应的 HTML、组件内的处理逻辑 Javascript、组件的样式 CSS。
 
@@ -65,9 +74,12 @@
   生命周期的钩子函数。一个组件也是有生命周期的，有如下这些：[beforeCreate](https://cn.vuejs.org/v2/api/#beforeCreate)、[created](https://cn.vuejs.org/v2/api/#created)、[beforeMount](https://cn.vuejs.org/v2/api/#beforeMount)、[mounted](https://cn.vuejs.org/v2/api/#mounted)、[beforeUpdate](https://cn.vuejs.org/v2/api/#beforeUpdate)、[updated](https://cn.vuejs.org/v2/api/#updated)、[activated](https://cn.vuejs.org/v2/api/#activated)、[deactivated](https://cn.vuejs.org/v2/api/#deactivated)、[beforeDestroy](https://cn.vuejs.org/v2/api/#beforeDestroy)、[destroyed](https://cn.vuejs.org/v2/api/#destroyed)等生命周期。在这些钩子函数里面可以加上我们预设的处理逻辑。（这里可以类比 iOS 里面的 ViewController 的生命周期 ）
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-2bd002c5882c5f59.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-04ae37bf62514693.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
@@ -89,7 +101,14 @@
 还是以 [objc中国](https://objccn.io/) 的首页页面为例
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-36a0ff88b0b11af9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-bbd112eb3c69962b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 
 我们可以把上面的页面按照布局，先抽象图片中间的样子，然后接着按照页面的区域划分组件，最后可以得到最右边的组件树。
@@ -120,12 +139,26 @@ new Vue({
 根据抽象出来的组件树，可以进一步的向下细分各个小组件。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-bfb701ead20a3353.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-1dabac090cd4534c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 
 layout 下一层的组件是 header、footer、content，这三部分就组成了 layout.vue 单文件组件的全部部分。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-a4cb6114bb1db9b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-db1dd792c3a99995.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 
 上图就是我们的 layout.vue 的全部实现。在这个单文件组件中里面引用了三个子组件，navigationBar、footerView、content。由于 content 里面是又各个路由页面组成，所以这里声明成 router-view。
@@ -139,20 +172,36 @@ layout 下一层的组件是 header、footer、content，这三部分就组成�
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-19c790611d7bb0f0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-2da8a958d72370f1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 
 
 上图左边是详情页，右图是按照功能区分的图，我们把整个页面划分为6个子组件。
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-f458aa66804eda7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-a7320dfd2232e67b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
+
 
 从上往下依次展开，见上图。
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-776b12675182b3d8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-cf3fe15a06dc7fde.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 经过功能上的划分以后，整个详情页面的代码变的异常清爽，整个页面就是6个单文件的子组件，每个子组件的逻辑封装在各自的组件里面，详情页面就是把他们都组装在了一起，代码可读性高，后期维护也非常方便。
 
@@ -215,7 +264,15 @@ This is a child component !
 
 ```
 
-![](http://upload-images.jianshu.io/upload_images/1194012-0f55ac26919ec478.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-6952239b3ee1ef64.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 上述代码的执行顺序如下：
 
@@ -330,7 +387,14 @@ template: '<div><recursion-component></recursion-component></div>'
 
 #### 1. 父子组件之间的消息传递
 
-![](http://upload-images.jianshu.io/upload_images/1194012-0cf3d5e6721101eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-80767515e312dbfe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 父子组件的传递方式比较单一，在 Vue 2.0 以后，父子组件的关系可以总结为 ** props down, events up **。父组件通过 props 向下传递数据给子组件，子组件通过 events 给父组件发送消息。
 
@@ -487,8 +551,13 @@ Event Bus 这个概念对移动端的同学来说也比较熟悉，因为在安�
 Event Bus 的实现还是借助 Vue 的实例。新建一个新的 Vue，专门用来做消息总线。
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-a66753d084e38d03.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-a460c02d1d7d758e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 
 
 
@@ -514,14 +583,28 @@ eventBus.$on('id-selected', () => {
 由于本篇文章重点讨论组件化的问题，所以这里 Vuex 只是说明用法，至于原理的东西之后会单独开一篇文章来分析。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-2be80013c2b5f13a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-8e6a23db3eeae215.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 
 这一张图就描述了 Vuex 是什么。Vuex 专为 Vue.js 应用程序开发的状态管理模式。它采用集中式存储管理应用的所有组件的状态，并以相应的规则保证状态以一种可预测的方式发生变化。
 
 上图中箭头的指向就描述了数据的流向。数据的流向是单向的，从 Actions 流向 State，State 中的数据改变了从而影响到 View 展示数据的变化。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-f91bef527c00e46a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-3beeb181eee83538.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 从简单的 Actions、State、View 三个角色，到现在增加了一个 Mutations。Mutations 现在变成了更改 Vuex 的 store 中的状态的唯一方法是提交 mutation。Vuex 中的 mutations 非常类似于事件：每个 mutation 都有一个字符串的 事件类型 (type) 和 一个 回调函数 (handler)。
 
@@ -634,7 +717,13 @@ new Vue({
 ## iOS 篇
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-994c31661fdd0439.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-b2abeb076a3d4a0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 
 ### 一. 组件化的需求
@@ -666,8 +755,11 @@ iOS 的组件化手段非常单一，就是利用 Cocoapods 封装成 pod 库，
 
 
 <p align='center'>
-<img src='http://upload-images.jianshu.io/upload_images/1194012-66ed05528c64bd23.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-40000a4f3a3db8ab.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
 </p>
+
+
+
 
 
 
@@ -694,12 +786,23 @@ iOS 的组件化原理是基于 Cocoapods 的。关于 Cocoapods 的具体工作
 
 pod 会依据 Podfile 文件里面的依赖库，把这些库的源代码下载下来，并创建好 Pods workspace。当程序编译的时候，会预先执行2个 pod设置进来的脚本。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-46708d1a1d77e20f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-be89228b5c8e836c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
 
 在上面这个脚本中，会把 Pods 里面的打包好的静态库合并到 libPods-XXX.a 这个静态库里面，这个库是主工程依赖的库。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-6a0749acc48e7243.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-879307a922464b83.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
+
 
 上图就是给主项目加载 Pods 库的脚本。
 
@@ -707,12 +810,24 @@ pod 会依据 Podfile 文件里面的依赖库，把这些库的源代码下载�
 Pods 另外一个脚本是加载资源的。见下图。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-173f34f54b36a028.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-7d14f08e853739eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 
 这里加载的资源是 Pods 库里面的一些图片资源，或者是 Boudle 里面的 xib ，storyboard，音乐资源等等。这些资源也会一起打到 libPods-XXX.a 这个静态库里面。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-b36429f77199c10d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-4d685a3753c16303.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 
 上图就是加载资源的脚本。
 
@@ -766,9 +881,12 @@ iOS 组件注册的方式主要有3种：
 
 ## 总结
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-62a679d7884a0b72.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-e96fb943f4278166.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
@@ -785,7 +903,12 @@ iOS 组件注册的方式主要有3种：
 但是 iOS 开发更像类 MPA (Multi-Page Application)。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-72a05f88453dff5b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-d479b1a5eca9a13c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 
 往往一个原生的 App ，页面差不多应该是上图这样。当然，可能有人会说，依旧可以把这么多页面写成一个页面，在一个 VC 里面控制所有的 View，就像前端的 DOM 那样。这种思路虽然理论上是可行的，但是笔者没有见过有人这么做，页面一多起来，100多个页面，上千个 View，都在一个 VC 上控制，这样开发有点蛋疼。
 
