@@ -1,6 +1,8 @@
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-be7c923b3346f7f2.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+
+
 ## 序
 
 今年大前端的概念一而再再而三的被提及，那么大前端时代究竟是什么呢？大前端这个词最早是因为在阿里内部有很多前端开发人员既写前端又写 Java 的 Velocity 模板而得来，不过现在大前端的范围已经越来越大了，包含前端 + 移动端，前端、CDN、Nginx、Node、Hybrid、Weex、React Native、Native App。笔者是一名普通的全职 iOS 开发者，在接触到了前端开发以后，发现了前端有些值得移动端学习的地方，于是便有了这个大前端时代系列的文章，希望两者能相互借鉴优秀的思想。谈及到大前端，常常被提及的话题有：组件化，路由与解耦，工程化（打包工具，脚手架，包管理工具），MVC 和 MVVM 架构，埋点和性能监控。笔者就先从组件化方面谈起。网上关于前端框架对比的文章也非常多（对比 React，Vue，Angular），不过跨端对比的文章好像不多？笔者就打算以前端和移动端（以 iOS 平台为主）对比为主，看看这两端的不同做法，并讨论讨论有无相互借鉴学习的地方。
@@ -661,6 +663,16 @@ iOS 组件化的封装性只是其中的一小部分，更加关心的是如何�
 iOS 的组件化手段非常单一，就是利用 Cocoapods 封装成 pod 库，主工程分别引用这些 pod 即可。越来越多的第三方库也都在 Cocoapods 上发布自己的最新版本，大公司也在公司内部维护了公司私有的 Cocoapods 仓库。一个封装完美的 Pod 组件，主工程使用起来非常方便。
 
 具体如果用 Cocoapods 打包一个静态库 .a 或者 framework ，网上教程很多，这里给一个[链接](http://www.cnblogs.com/brycezhang/p/4117180.html)，详细的操作方法就不再赘述了。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-66ed05528c64bd23.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+最终想要达到的理想目标就是主工程就是一个壳工程，其他所有代码都在组件 Pods 里面，主工程的工作就是初始化，加载这些组件的，没有其他任何代码了。
+
+
+
 
 ### 三. 如何划分组件
 
