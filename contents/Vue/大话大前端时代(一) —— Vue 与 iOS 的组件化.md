@@ -780,11 +780,11 @@ App之间可以重用的 Util、Category、网络层和本地存储 storage 等�
 
 ### 四. 组件化原理
 
-iOS 的组件化原理是基于 Cocoapods 的。关于 Cocoapods 的具体工作原理，可以看这篇文章[《CocoaPods 都做了什么？》](http://draveness.me/cocoapods.html)。
+iOS 的组件化是借助 Cocoapods 完成的。关于 Cocoapods 的具体工作原理，可以看这篇文章[《CocoaPods 都做了什么？》](http://draveness.me/cocoapods.html)。
 
-这里简单的分析一下 pod进来的库是什么加载到主工程的。
+这里简单的分析一下 pod 进来的库是什么加载到主工程的。
 
-pod 会依据 Podfile 文件里面的依赖库，把这些库的源代码下载下来，并创建好 Pods workspace。当程序编译的时候，会预先执行2个 pod设置进来的脚本。
+pod 会依据 Podfile 文件里面的依赖库，把这些库的源代码下载下来，并创建好 Pods workspace。当程序编译的时候，会预先执行2个 pod 设置进来的脚本。
 
 <p align='center'>
 <img src='http://upload-images.jianshu.io/upload_images/1194012-be89228b5c8e836c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
