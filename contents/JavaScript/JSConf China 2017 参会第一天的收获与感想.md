@@ -1,4 +1,7 @@
-![](http://upload-images.jianshu.io/upload_images/1194012-95173eecbedc3a16.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-95173eecbedc3a16.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 今天有幸参加了 JSConf China 2017 ，作为大会第一天，我来谈谈个人对大会的一些感谢。至于大会讲的更加详细的内容可以直接翻到本文末尾，我和另外一个位前端小伙伴一起写的非常详细的笔记，版权在掘金，感兴趣的可以点链接去看看。
 
