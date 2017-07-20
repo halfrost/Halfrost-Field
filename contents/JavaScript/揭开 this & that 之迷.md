@@ -692,8 +692,8 @@ ES6 中的箭头函数并不会使用四条标准的绑定规则，而是根据�
 Reference：    
 《ECMAScript 6 Primer》   
 《javascript 高级程序设计》   
-[JavaScript This 之谜(译文)](https://gold.xitu.io/entry/576d640d2e958a005724e07f)  
-《你不知道的JavaScript（上卷）》  
+《[JavaScript This 之谜(译文)](https://gold.xitu.io/entry/576d640d2e958a005724e07f)》 [原文https://rainsoft.io/gentle-explanation-of-this-in-javascript/](https://rainsoft.io/gentle-explanation-of-this-in-javascript/)
+《你不知道的JavaScript（上卷）》 
 
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
