@@ -1,6 +1,12 @@
 <p align='center'>
+<img src='../images/JSChina 2017.png'>
+</p>
+
+
+<p align='center'>
 <img src='http://upload-images.jianshu.io/upload_images/1194012-95173eecbedc3a16.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
 </p>
+
 
 
 今天有幸参加了 JSConf China 2017 ，作为大会第一天，我来谈谈个人对大会的一些感谢。至于大会讲的更加详细的内容可以直接翻到本文末尾，我和另外一个位前端小伙伴一起写的非常详细的笔记，版权在掘金，感兴趣的可以点链接去看看。
@@ -31,8 +37,7 @@ next.js 支持 static projects、package.json(node 项目)、Dockerfile 项目�
 ![](http://upload-images.jianshu.io/upload_images/1194012-0b653a0018884074.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-
-这个演讲提到了太多的话题了。而且演讲过程中语速非常快，keynote 一页一页的。谈到的点多，每个点就没法讲的很精了。总之有点泛了，不过涉及的点实在是广。
+这个演讲提到了太多的话题了。而且演讲过程中语速非常快，keynote 一页一页的。涉及的点实在是广，据说前端没有五到十年经验是无法领悟到其中的精髓的。
 
 ### 1. 如何看待开发的变化
 
@@ -280,6 +285,9 @@ JavaScript 工程师可以用  jQuery 给孩子写玩具了！
 
 ## 感想
 
+第一天讲了这么多主题，其实感受的到，当今的 JavaScript 语言能做的事情越来越多了，所以文章的标题取名为 JavaScript Change The World。
+
 全场听下来，收获最多的可能就是尤大讲的吧。这次大会其他讲师有些分享可能平时开发中也不会用到，不过听听各家对前端技术发展的不同看法也是挺不错的。
+
 
 前端虽然近几年发展突飞猛进，“魔爪”向前伸向了客户端，向后伸向的后端，向下伸向了硬件，看似无所不能。但是前端依旧还有很多可以改进的地方，比如 JS 的 Class，多线程。这些都可以像面向对象的语言学习。前端工程化也可以慢慢考虑编译期优化了，这块对于客户端开发语言，天生就是编译语言来说，Clang + LLVM 里面的黑魔法般的优化也许值得前端学习的点也挺多的。
