@@ -21,24 +21,33 @@
 <img src="https://img.shields.io/badge/PR-welcome%20!-brightgreen.svg?colorA=a0cd34">
 </p>
 
-## ⭐️为什么要建这个仓库
+## ⭐️ 为什么要建这个仓库
 
 世人都说阅读开源框架的源代码对于功力有显著的提升，所以我也尝试阅读开源框架的源代码，并对其内容进行详细地分析和理解。在这里将自己阅读开源框架源代码的心得记录下来，希望能对各位开发者有所帮助。我会不断更新这个仓库中的文章，如果想要关注可以点 `star`。
 
 
 
-## 📖目录
+## 📖 目录
 
 
-Latest：[JSConf China 2017 Day One — JavaScript Change The World](https://github.com/halfrost/Halfrost-Field/blob/master/contents/JavaScript/JSConf%20China%202017%20Day%20One%20%E2%80%94%20JavaScript%20Change%20The%20World.md)
+Latest：[Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/go/new%20gopher%20tips.md)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
 
+---------------------------
 
---------
+# 🐳 Go
 
-# 🚀JavaScript
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+|Go|1.8.3 darwin/amd64| [Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/go/new%20gopher%20tips.md)|
+
+
+
+----------------------------
+
+# 🚀 JavaScript
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
@@ -47,7 +56,7 @@ Latest：[JSConf China 2017 Day One — JavaScript Change The World](https://git
 
 -------
 
-# 📱iOS
+# 📱 iOS
 
 
 | Project | Version | Article |
@@ -78,16 +87,16 @@ Latest：[JSConf China 2017 Day One — JavaScript Change The World](https://git
 
 
 
-## ❗️勘误
+## ❗️ 勘误
 
 + 如果在文章中发现了问题，欢迎提交 PR 或者 issue，欢迎大神们多多指点🙏🙏🙏
 
 
-## ♥️感谢
+## ♥️ 感谢
 
 感谢Star！
 
 
-## ©️转载
+## ©️ 转载
 
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />本<span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" rel="dct:type">作品</span>由 <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/halfrost/Halfrost-Field" property="cc:attributionName" rel="cc:attributionURL">halfrost</a> 创作，采用<a rel="license" href="http://creativecommons.org/licenses/by/4.0/">知识共享署名 4.0 国际许可协议</a>进行许可。
