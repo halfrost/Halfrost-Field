@@ -448,7 +448,7 @@ func classifier(items ...interface{}) {
 
 ### 6.函数
 
-如何使用内建函数`recover`终止`panic`过程（参考[章节13.3](13.3.md)）：
+如何使用内建函数`recover`终止`panic`过程：
     
 ```go
 func protect(g func()) {
@@ -667,7 +667,7 @@ panic(“ERROR occurred: “ + err.Error())
 
 （3）尽可能的使用切片代替数组；
 
-（4）尽可能的使用数组和切片代替映射（详见参考文献15）；
+（4）尽可能的使用数组和切片代替映射；
 
 （5）如果只想获取切片中某项值，不需要值的索引，尽可能的使用`for range`去遍历切片，这比必须查询切片中的每个元素要快一些；
 
