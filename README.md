@@ -30,7 +30,7 @@
 ## 📖 目录
 
 
-Latest：[Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/new_gopher_tips.md)
+Latest：[初探 Go 的编译命令执行过程](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_command.md)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
@@ -41,7 +41,7 @@ Latest：[Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Fiel
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|Go|1.8.3 darwin/amd64| [Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/new_gopher_tips.md)|
+|Go|1.8.3 darwin/amd64| [Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/new_gopher_tips.md)<br>[初探 Go 的编译命令执行过程](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_command.md)|
 
 
 
