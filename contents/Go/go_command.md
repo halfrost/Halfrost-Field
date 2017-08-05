@@ -4,7 +4,7 @@
 
 
 
-## 前言
+## 引言
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-49d72af68625a441.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
@@ -14,7 +14,7 @@ Go 语言这两年在语言排行榜上的上升势头非常猛，Go 语言虽�
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-551cb2b164e7737b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-2017年7月 TIOBE 语言排行榜 Go 首次进入前十
+2017年7月 TIOBE 语言排行榜 Go 首次进入前十。今天就让我们来探究探究 Go 的编译命令执行过程。
 
 
 ## 一. 理解 Go 的环境变量
