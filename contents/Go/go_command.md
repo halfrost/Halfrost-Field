@@ -1,4 +1,7 @@
-![](http://upload-images.jianshu.io/upload_images/1194012-0b9a654a1c10804e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-0b9a654a1c10804e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 ## 前言
@@ -42,7 +45,10 @@ Go 语言这两年在语言排行榜上的上升势头非常猛，Go 语言虽�
 在这个过程中会新建 bin、pkg、src 三个目录。不用 IDE 的同学，需要自己手动创建这三个目录。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-95343de87d0bb0c2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-95343de87d0bb0c2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 上图是 Atom 的 go-plus 插件在一个新的项目打开的时候，自动 go get 的一些基础包。
 
@@ -683,7 +689,7 @@ exe: 构建列出的 main 包及其导入到可执行文件中的一切。 将�
 ------------------------------------------------------
 
 Reference：  
-[《GO 命令教程》](https://github.com/hyper0x/go_command_tutorial)
+[《GO 命令教程》](https://github.com/hyper0x/go_command_tutorial)  
 《Go 并发编程实战》
 
 
