@@ -1,4 +1,4 @@
-#高效的多维空间点索引算法 — Geohash 和 Google S2
+# 高效的多维空间点索引算法 — Geohash 和 Google S2
 
 <p align='center'>
 <img src='../images/56_0.png'>
