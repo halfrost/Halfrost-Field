@@ -1185,6 +1185,8 @@ Reference：
 [Geohash wikipedia](https://en.wikipedia.org/wiki/Geohash)  
 [Geohash-36](https://en.wikipedia.org/wiki/Geohash-36)  
 [Geohash 在线演示](http://geohash.gofreerange.com/)  
+[Geohash 查询](http://www.movable-type.co.uk/scripts/geohash.html)  
+[Geohash Converter](http://geohash.co/)   
 [Space-filling curve](https://en.wikipedia.org/wiki/Space-filling_curve)  
 [List of fractals by Hausdorff dimension](https://en.wikipedia.org/wiki/List_of_fractals_by_Hausdorff_dimension)  
 [介绍希尔伯特曲线的Youtube视频](https://www.youtube.com/watch?v=3s7h2MHQtxc)  
