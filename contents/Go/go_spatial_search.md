@@ -13,7 +13,10 @@
 每天我们晚上加班回家，可能都会用到滴滴或者共享单车。打开 app 会看到如下的界面：  
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-ce98587ba1698f4a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='../images/56_1.png'>
+</p>
+
 
 
 
@@ -1138,7 +1141,7 @@ Reference：
 [Mapping the Hilbert curve](http://bit-player.org/2013/mapping-the-hilbert-curve)  
 [S2 谷歌官方PPT](https://docs.google.com/presentation/d/1Hl4KapfAENAOf4gv-pSngKwvS_jwNVHRPZTTDzXXn6Q/view#slide=id.i22)  
 [ Go 版 S2 源码 github.com/golang/geo](https://github.com/golang/geo)  
-[ Java 版 S2 源码 github.com/google/s2-geometry-library-java]  (https://github.com/google/s2-geometry-library-java)  
+[ Java 版 S2 源码 github.com/google/s2-geometry-library-java](https://github.com/google/s2-geometry-library-java)  
 [L’Huilier’s Theorem](http://numerical.recipes/whp/HuiliersTheorem.pdf)
 
 
