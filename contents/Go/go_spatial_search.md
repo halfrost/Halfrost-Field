@@ -671,7 +671,10 @@ Uber 在一个公开分享上提到了他们用的是六边形的网格，把城
 ### 3. 球面矩形投影修正
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-cd5bb31c825ecd9e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='../images/56_44_0.png'>
+</p>
+
 
 上一步我们把球面上的球面矩形投影到正方形的某个面上，形成的形状类似于矩形，但是由于球面上角度的不同，最终会导致即使是投影到同一个面上，每个矩形的面积也不大相同。
 
