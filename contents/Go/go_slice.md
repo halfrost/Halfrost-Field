@@ -711,7 +711,7 @@ value = 40 , value-addr = c4200aedf8 , slice-addr = c4200b0338
 ![](http://upload-images.jianshu.io/upload_images/1194012-9c18b98c5cb08e6a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-由于 Value 是拷贝的，所以直接改 Value 是达不到更改原切片值的目的的，需要通过 `&slice[index]` 获取真实的地址。
+由于 Value 是值拷贝的，并非引用传递，所以直接改 Value 是达不到更改原切片值的目的的，需要通过 `&slice[index]` 获取真实的地址。
 
 
 
