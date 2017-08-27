@@ -296,8 +296,9 @@ func makeslice64(et *_type, len64, cap64 int64) slice {
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-ca3efc461762e51a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-b59104d23c216eba.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
