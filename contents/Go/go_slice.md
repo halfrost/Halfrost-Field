@@ -525,7 +525,9 @@ After array = [10 30 50 40]
 把上述过程用图表示出来，如下图。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-49f3b0746a2b42bd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f6d4f66850cf88c1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 通过打印的结果，我们可以看到，在这种情况下，扩容以后并没有新建一个新的数组，扩容前后的数组都是同一个，这也就导致了新的切片修改了一个值，也影响到了老的切片了。并且 append() 操作也改变了原来数组里面的值。一个 append() 操作影响了这么多地方，如果原数组上有多个切片，那么这些切片都会被影响！无意间就产生了莫名的 bug！
 
@@ -607,9 +609,11 @@ func slicecopy(to, fm slice, width uintptr) int {
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-84521d30682c636b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-050f1ea8c98fd9ea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-比如：
+
+
+举个例子，比如：
 
 ```go
 
@@ -656,7 +660,9 @@ func slicestringcopy(to []byte, fm string) int {
 
 ```
 
-比如：
+
+再举个例子，比如：
+
 
 ```go
 
@@ -708,7 +714,10 @@ value = 40 , value-addr = c4200aedf8 , slice-addr = c4200b0338
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-9c18b98c5cb08e6a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-2c6325ccf25d5253.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 
 由于 Value 是值拷贝的，并非引用传递，所以直接改 Value 是达不到更改原切片值的目的的，需要通过 `&slice[index]` 获取真实的地址。
