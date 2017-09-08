@@ -64,9 +64,9 @@ SHA1 是由 NIST NSA 设计为同 DSA 一起使用的，它对长度小于264的
 ------------------------------------------------------
 
 Reference：  
-《算法与数据结构》
-[xxHash](http://cyan4973.github.io/xxHash/)
-[字符串hash函数](https://www.biaodianfu.com/hash.html)
+《算法与数据结构》  
+[xxHash](http://cyan4973.github.io/xxHash/)  
+[字符串hash函数](https://www.biaodianfu.com/hash.html)  
 
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
