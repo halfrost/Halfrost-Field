@@ -1026,6 +1026,8 @@ MaxAreaMetric = Metric{2, 2.635799256963161491}
 这就是最大最小面积和平均面积的倍数关系。
 
 
+(下图单位是km^2^，平方公里)
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-bd1f4b572c46842b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 level 0 就是正方体的六个面之一。地球表面积约等于510,100,000 km^2^。level 0 的面积就是地球表面积的六分之一。level 30 能表示的最小的面积0.48cm^2^，最大也就0.93cm^2^ 。
