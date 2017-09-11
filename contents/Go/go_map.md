@@ -1006,7 +1006,7 @@ next 属性指向另一个 dictEntry 结构， 多个 dictEntry 可以通过 
 
 dictAdd 在每次向字典添加新键值对之前， 都会对哈希表 ht[0] 进行检查， 对于 ht[0] 的 size 和 used 属性， 如果它们之间的比率 ratio = used / size 满足以下任何一个条件的话，rehash 过程就会被激活：
 
-自然 rehash ： ratio >= 1 ，且变量 dict\_can\_resize 为真。
+自然 rehash ： ratio >= 1 ，且变量 dict\_can\_resize 为真。  
 强制 rehash ： ratio 大于变量 dict\_force\_resize\_ratio （目前版本中， dict\_force\_resize\_ratio 的值为 5 ）。
 
 
