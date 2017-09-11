@@ -1043,7 +1043,7 @@ S2 有30级，从 0.7cm²  到 85,000,000km² 。中间每一级的变化都比�
 
 S2 库里面不仅仅有地理编码，还有其他很多几何计算相关的库。地理编码只是其中的一小部分。本文没有介绍到的 S2 的实现还有很多很多，各种向量计算，面积计算，多边形覆盖，距离问题，球面球体上的问题，它都有实现。
 
-S2 还能利用贪心算法求局部最优解。比如给定一个城市，求一个最优的解，多边形刚刚好覆盖住这个城市。
+S2 还能解决多边形覆盖的问题。比如给定一个城市，求一个多边形刚刚好覆盖住这个城市。
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-5ddbc81de40cb929.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -1058,6 +1058,11 @@ S2 还能利用贪心算法求局部最优解。比如给定一个城市，求�
 
 
 这些都是 Geohash 做不到的。
+
+
+多边形覆盖利用的是近似的算法，虽然不是严格意义上的最优解，但是实践中效果特别好。
+
+额外值得说明的一点是，Google 文档上强调了，这种多边形覆盖的算法虽然对搜索和预处理操作非常有用，但是“不可依赖”的。理由也是因为是近似算法，并不是唯一最优算法，所以得到的解会依据库的不同版本而产生变化。
 
 
 ### 8. S2 Cell 举例
@@ -1146,6 +1151,141 @@ smallCell ExactArea = 1.9611009480261058e-06
 
 
 代码就不贴了，与矩形类似。这种功能 Geohash 就做不到，需要自己手动实现了。
+
+
+
+最后举一个多边形匹配的例子。
+
+```go
+
+
+func testLoop() {
+
+	ll1 := s2.LatLngFromDegrees(31.803269, 113.421145)
+	ll2 := s2.LatLngFromDegrees(31.461846, 113.695803)
+	ll3 := s2.LatLngFromDegrees(31.250756, 113.756228)
+	ll4 := s2.LatLngFromDegrees(30.902604, 113.997927)
+	ll5 := s2.LatLngFromDegrees(30.817726, 114.464846)
+	ll6 := s2.LatLngFromDegrees(30.850743, 114.76697)
+	ll7 := s2.LatLngFromDegrees(30.713884, 114.997683)
+	ll8 := s2.LatLngFromDegrees(30.430111, 115.42615)
+	ll9 := s2.LatLngFromDegrees(30.088491, 115.640384)
+	ll10 := s2.LatLngFromDegrees(29.907713, 115.656863)
+	ll11 := s2.LatLngFromDegrees(29.783833, 115.135012)
+	ll12 := s2.LatLngFromDegrees(29.712295, 114.728518)
+	ll13 := s2.LatLngFromDegrees(29.55473, 114.24512)
+	ll14 := s2.LatLngFromDegrees(29.530835, 113.717776)
+	ll15 := s2.LatLngFromDegrees(29.55473, 113.3772)
+	ll16 := s2.LatLngFromDegrees(29.678892, 112.998172)
+	ll17 := s2.LatLngFromDegrees(29.941039, 112.349978)
+	ll18 := s2.LatLngFromDegrees(30.040949, 112.025882)
+	ll19 := s2.LatLngFromDegrees(31.803269, 113.421145)
+
+	point1 := s2.PointFromLatLng(ll1)
+	point2 := s2.PointFromLatLng(ll2)
+	point3 := s2.PointFromLatLng(ll3)
+	point4 := s2.PointFromLatLng(ll4)
+	point5 := s2.PointFromLatLng(ll5)
+	point6 := s2.PointFromLatLng(ll6)
+	point7 := s2.PointFromLatLng(ll7)
+	point8 := s2.PointFromLatLng(ll8)
+	point9 := s2.PointFromLatLng(ll9)
+	point10 := s2.PointFromLatLng(ll10)
+	point11 := s2.PointFromLatLng(ll11)
+	point12 := s2.PointFromLatLng(ll12)
+	point13 := s2.PointFromLatLng(ll13)
+	point14 := s2.PointFromLatLng(ll14)
+	point15 := s2.PointFromLatLng(ll15)
+	point16 := s2.PointFromLatLng(ll16)
+	point17 := s2.PointFromLatLng(ll17)
+	point18 := s2.PointFromLatLng(ll18)
+	point19 := s2.PointFromLatLng(ll19)
+
+	points := []s2.Point{}
+	points = append(points, point19)
+	points = append(points, point18)
+	points = append(points, point17)
+	points = append(points, point16)
+	points = append(points, point15)
+	points = append(points, point14)
+	points = append(points, point13)
+	points = append(points, point12)
+	points = append(points, point11)
+	points = append(points, point10)
+	points = append(points, point9)
+	points = append(points, point8)
+	points = append(points, point7)
+	points = append(points, point6)
+	points = append(points, point5)
+	points = append(points, point4)
+	points = append(points, point3)
+	points = append(points, point2)
+	points = append(points, point1)
+
+	loop := s2.LoopFromPoints(points)
+
+	fmt.Println("----  loop search (gets too much) -----")
+	// fmt.Printf("Some loop status items: empty:%t   full:%t \n", loop.IsEmpty(), loop.IsFull())
+
+	// ref: https://github.com/golang/geo/issues/14#issuecomment-257064823
+	defaultCoverer := &s2.RegionCoverer{MaxLevel: 20, MaxCells: 1000, MinLevel: 1}
+	// rg := s2.Region(loop.CapBound())
+	// cvr := defaultCoverer.Covering(rg)
+	cvr := defaultCoverer.Covering(loop)
+
+	// fmt.Println(poly.CapBound())
+	for _, c3 := range cvr {
+		fmt.Printf("%d,\n", c3)
+	}
+}
+
+
+
+```
+
+
+这里用到了 Loop 类，这个类的初始化的最小单元是 Point，Point 是由经纬度产生的。**最重要的一点需要注意的是，多边形是按照逆时针方向，左手边区域确定的。**
+
+如果一不小心点是按照顺时针排列的话，那么多边形确定的是外层更大的面，意味着球面除去画的这个多边形以外的都是你想要的多边形。
+
+
+举个具体的例子，假如我们想要画的多边形是下图这个样子的：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-ecba2f4c5b10cab8.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+如果我们用顺时针的方式依次存储 Point 的话，并用顺时针的这个数组去初始化 Loop，那么就会出现“奇怪”的现象。如下图：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-11b3149f1ade6bf1.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+这张图左上角的顶点和右下角的顶点在地球上是重合的。如果把这个地图重新还原成球面，那么就是整个球面中间挖空了一个多边形。
+
+把上图放大，如下图：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-4356642a598d0b5d.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+这样就可以很清晰的看到了，中间被挖空了一个多边形。造成这种现象的原因就是按照顺时针的方向存储了每个点，那么初始化一个 Loop 的时候就会选择多边形外圈的更大的多边形。
+
+使用 Loop 一定要切记，**顺时针表示的是外圈多边形，逆时针表示的是内圈多边形。**
+
+多边形覆盖的问题同之前举的例子一样：
+
+相同的 MaxLevel = 20，MinLevel = 1，MaxCells 不同，覆盖的精度就不同，下图是 MaxCells = 100 的情况：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-331963afdaba4226.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+下图是 MaxCells = 1000 的情况：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-6a489cdc4dc6813a.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+从这个例子也可以看出来  相同的 Level 范围，MaxCells 越精度，覆盖的精度越高。
+
+
+
+
+
 
 
 
