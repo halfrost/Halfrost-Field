@@ -1277,7 +1277,10 @@ func testLoop() {
 
 下图是 MaxCells = 1000 的情况：
 
-![](http://upload-images.jianshu.io/upload_images/1194012-6a489cdc4dc6813a.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-35db03f00e6fa4c7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 从这个例子也可以看出来  相同的 Level 范围，MaxCells 越精度，覆盖的精度越高。
