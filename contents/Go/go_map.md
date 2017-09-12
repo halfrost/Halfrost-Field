@@ -802,6 +802,9 @@ aesloop:
 查找键值 k，假设键值 k 不在哈希表中，h(k) 在 [0，M) 中均匀分布，即 P(h(k) = i) = 1/M 。令 Xi 为哈希表 ht[ i ] 中包含键值的个数。如果 h(k) = i ，则不成功查找 k 的键值比较次数是 Xi，于是：
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-500d91fd42181a21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-1fb2e5b597cd610e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
@@ -1260,7 +1263,7 @@ Go 为了节约内存对齐的内存消耗，于是把它设计成上图所示�
 ### 2. Go
 
 
-C_{1} =  \frac{1}{M}\sum_{i=0}^{M-1}X_{i} = \frac{N}{M} = \alpha 
+ 
 
 
 ------------------------------------------------------
