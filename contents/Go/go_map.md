@@ -1199,15 +1199,56 @@ type hmap struct {
 ![](http://upload-images.jianshu.io/upload_images/1194012-ace23e96311a9380.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
+hmap 的最后一个字段是一个指向 mapextra 结构的指针，它的定义如下：
+
+```go
+
+type mapextra struct {
+	overflow [2]*[]*bmap
+	nextOverflow *bmap
+}
+
+```
+
+如果一个键值对没有找到对应的指针，那么就会把它们先存到溢出桶
+ overflow 里面。在 mapextra 中还有一个指向下一个可用的溢出桶的指针。
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-882521bbb299d266.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+溢出桶 overflow 是一个数组，里面存了2个指向 \*bmap 数组的指针。overflow[0] 里面装的是 hmap.buckets 。overflow[1] 里面装的是 hmap.oldbuckets。
 
 
+再看看桶的数据结构的定义，bmap 就是 Go 中 map 里面桶对应的结构体类型。
 
+```go
+
+
+type bmap struct {
+	tophash [bucketCnt]uint8
+}
+
+```
+
+桶的定义比较简单，里面就只是包含了一个 uint8 类型的数组，里面包含8个元素。
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-da105f11f0f07beb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+但是在这个数组中，存储键值对的方式不是普通的 key/value、key/value、key/value……这样存储的，它是键 key 都存储在一起，然后紧接着是 值value 都存储在一起，为什么会这样呢？
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-d09bd6bf573aa926.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+在 Redis 中，当使用 REDIS_ENCODING_ZIPLIST 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构，如上图。新添加的 key-value 对会被添加到压缩列表的表尾。
+
+这种结构有一个弊端，如果存储的键和值的类型不同，在内存中布局中所占字节不同的话，就需要对齐。比如说存储一个 map[int64]int8 类型的字典。
+
+Go 为了节约内存对齐的内存消耗，于是把它设计成上图所示那样。
+
+如果 map 里面存储了上万亿的大数据，这里节约出来的内存空间还是比较可观的。
 
 
 
