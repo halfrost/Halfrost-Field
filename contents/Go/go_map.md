@@ -1089,11 +1089,125 @@ key2 两种 key 确定索引位置的示例，图（b）表示扩容后 key1 和
 
 ## 三. Go 中 Map 的具体实现举例
 
-读到这里，读者对如何设计一个 Map 应该有一些自己的想法了。选择一个优秀的哈希算法，用链表 + 数组 作为底层数据结构，如何扩容和优化，这些应该都有了解了。读到这里也许读者认为本篇文章内容已经过半了，不过前面这些都是偏理论，接下来也许才到了本文的重点部分 —— 从0开始分析一下完整的 Map 实现。
+读到这里，读者对如何设计一个 Map 应该有一些自己的想法了。选择一个优秀的哈希算法，用链表 + 数组 作为底层数据结构，如何扩容和优化，这些应该都有了解了。读到这里也许读者认为本篇文章内容已经过半了，不过前面这些都是偏理论，接下来也许才到了本文的重点部分 —— 从零开始分析一下完整的 Map 实现。
 
 接下来笔者对 Go 中的 Map 的底层实现进行分析，也算是对一个 Map 的具体实现和重要的几个操作，添加键值，删除键值，扩容策略进行举例。
 
+Go 的 map 实现在 /src/runtime/hashmap.go 这个文件中。
 
+map 底层实质还是一个 hash table。
+
+先来看看 Go 定义了一些常量。
+
+
+```go
+
+
+const (
+	// 一个桶里面最多可以装的键值对的个数，8对。
+	bucketCntBits = 3
+	bucketCnt     = 1 << bucketCntBits
+
+	// 触发扩容操作的最大装载因子的临界值
+	loadFactor = 6.5
+
+	// 为了保持内联，键 和 值 的最大长度都是128字节，如果超过了128个字节，就存储它的指针
+	maxKeySize   = 128
+	maxValueSize = 128
+
+	// 数据偏移应该是 bmap 的整数倍，但是需要正确的对齐。
+	dataOffset = unsafe.Offsetof(struct {
+		b bmap
+		v int64
+	}{}.v)
+
+	// tophash 的一些值
+	empty          = 0 // 没有键值对
+	evacuatedEmpty = 1 // 没有键值对，并且桶内的键值被迁移走了。
+	evacuatedX     = 2 // 键值对有效，并且已经迁移了一个表的前半段
+	evacuatedY     = 3 // 键值对有效，并且已经迁移了一个表的后半段
+	minTopHash     = 4 // 最小的 tophash
+
+	// 标记
+	iterator     = 1 // 当前桶的迭代子
+	oldIterator  = 2 // 旧桶的迭代子
+	hashWriting  = 4 // 一个goroutine正在写入map
+	sameSizeGrow = 8 // 当前字典增长到新字典并且保持相同的大小
+
+	// 迭代子检查桶ID的哨兵
+	noCheck = 1<<(8*sys.PtrSize) - 1
+)
+
+```
+
+
+这里值得说明的一点是触发扩容操作的临界值6.5是怎么得来的。这个值太大会导致overflow buckets过多，查找效率降低，过小会浪费存储空间。
+
+据 Google 开发人员称，这个值是一个测试的程序，测量出来选择的一个经验值。
+
+|  loadFactor  |  %overflow | bytes/entry  |   hitprobe  |  missprobe|
+|:-------:|:-------:|:------:|:------:| :------:| 
+|       4.00    |     2.13     |   20.77    |     3.00     |    4.00 |
+|        4.50    |     4.05    |    17.30    |     3.25     |    4.50|
+|        5.00    |     6.85     |   14.77     |    3.50     |    5.00|
+|        5.50    |    10.55    |    12.94    |     3.75     |    5.50|
+|        6.00    |    15.27    |    11.67     |    4.00     |    6.00|
+|        6.50    |    20.90    |    10.79    |     4.25    |     6.50|
+|        7.00   |     27.14    |    10.15    |     4.50    |     7.00|
+|        7.50   |     34.03    |     9.73    |     4.75     |    7.50|
+|        8.00   |     41.10     |    9.40     |    5.00    |     8.00|
+
+
+%overflow ：
+溢出率，平均一个 bucket 有多少个 键值kv 的时候会溢出。
+
+bytes/entry ：
+平均存一个 键值kv 需要额外存储多少字节的数据。
+
+hitprobe ：
+查找一个存在的 key 平均查找次数。
+
+missprobe ：
+查找一个不存在的 key 平均查找次数。
+
+经过这几组测试数据，最终选定 6.5 作为临界的装载因子。
+
+接着看看 Go 中 map header 的定义：
+
+```go
+
+
+type hmap struct {
+	count     int // map 的长度
+	flags     uint8
+	B         uint8  // log以2为底，桶个数的对数 (总共能存 6.5 * 2^B 个元素)
+	noverflow uint16 // 近似溢出桶的个数
+	hash0     uint32 // 哈希种子
+
+	buckets    unsafe.Pointer // 有 2^B 个桶的数组. count==0 的时候，这个数组为 nil.
+	oldbuckets unsafe.Pointer // 旧的桶数组一半的元素
+	nevacuate  uintptr        // 扩容增长过程中的计数器
+
+	extra *mapextra // 可选字段
+}
+
+
+```
+
+在 Go 的 map header 结构中，也包含了2个指向桶数组的指针，buckets 指向新的桶数组，oldbuckets 指向旧的桶数组。这点和 Redis 字典中也有两个 dictht 数组类似。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-ace23e96311a9380.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-882521bbb299d266.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-da105f11f0f07beb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
