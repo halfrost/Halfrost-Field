@@ -802,7 +802,7 @@ aesloop:
 查找键值 k，假设键值 k 不在哈希表中，h(k) 在 [0，M) 中均匀分布，即 P(h(k) = i) = 1/M 。令 Xi 为哈希表 ht[ i ] 中包含键值的个数。如果 h(k) = i ，则不成功查找 k 的键值比较次数是 Xi，于是：
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-500d91fd42181a21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-a52bf4a4c5337536.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-1fb2e5b597cd610e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -1245,7 +1245,7 @@ type bmap struct {
 ![](http://upload-images.jianshu.io/upload_images/1194012-d09bd6bf573aa926.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-在 Redis 中，当使用 REDIS_ENCODING_ZIPLIST 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构，如上图。新添加的 key-value 对会被添加到压缩列表的表尾。
+在 Redis 中，当使用 REDIS\_ENCODING\_ZIPLIST 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构，如上图。新添加的 key\-value 对会被添加到压缩列表的表尾。
 
 这种结构有一个弊端，如果存储的键和值的类型不同，在内存中布局中所占字节不同的话，就需要对齐。比如说存储一个 map[int64]int8 类型的字典。
 
