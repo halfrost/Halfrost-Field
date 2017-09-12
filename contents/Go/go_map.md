@@ -802,17 +802,27 @@ aesloop:
 查找键值 k，假设键值 k 不在哈希表中，h(k) 在 [0，M) 中均匀分布，即 P(h(k) = i) = 1/M 。令 Xi 为哈希表 ht[ i ] 中包含键值的个数。如果 h(k) = i ，则不成功查找 k 的键值比较次数是 Xi，于是：
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-a52bf4a4c5337536.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-1fb2e5b597cd610e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-4898c1e0daf1eaeb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
 
 
 成功查找的分析稍微复杂一点。要考虑添加哈希表的次序，不考虑有相同键值的情况，假设 K = {k1,k2,……kn}，并且假设从空哈希表开始按照这个次序添加到哈希表中。引入随机变量，如果 h(ki) = h(kj)，那么 Xij = 1；如果 h(ki) ！= h(kj)，那么 Xij = 0 。
 
 由于之前的假设哈希表是均匀分布的，所以 P(Xij = i) = E(Xij) = 1/M ，这里的 E(X) 表示随机变量 X 的数学期望。再假设每次添加键值的时候都是把添加在链表末端。令 Ci 为查找 Ki 所需的键值比较次数，由于不能事先确定查找 Ki 的概率，所以假定查找不同键值的概率都是相同的，都是 1/n ，则有： 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-96558e9cc2187996.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-dd324acdf9229d16.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 
 由此我们可以看出，哈希表的性能和表中元素的多少关系不大，而和填充因子 α 有关。**如果哈希表长和哈希表中元素个数成正比，则哈希表查找的复杂度为 O(1) 。**
@@ -820,7 +830,10 @@ aesloop:
 
 综上所述，链表数组的成功与不成功的平均键值比较次数如下：
 
-![](http://upload-images.jianshu.io/upload_images/1194012-2a2b1c415aa05ab0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-7d66287ec311dbd1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
@@ -842,7 +855,10 @@ aesloop:
 
 线性探测哈希表的性能分析比较复杂，这里就仅给出结果。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-36fd324d6073ce52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-abbf6eaba483f176.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 
@@ -888,17 +904,26 @@ aesloop:
 在概率论中，上述的分布叫几何分布。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-3dbbee39fa81b96a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-858876e348e64752.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 
 假定哈希表元素的添加顺序为 {k1，k2，…… ，kn}，令 Xi 为当哈希表只包含 {k1，k2，…… ，ki} 时候一次不成功查找的键值比较次数，注意，这个时候哈希表的填充因子为 i/M ，则查找 k(i+1) 的键值次数为 Yi = 1 + Xi。假定查找任意一个键值的概率为 1/n，则一次成功查找的平均键值比较次数为：
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-a7025905c52e5a98.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-3bebdc58321519b8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 综上所述，平方探测和双哈希探测的成功与不成功的平均键值比较次数如下：
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-cb1ca942eefad65d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-587fda4b6727fe64.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -1009,7 +1034,7 @@ next 属性指向另一个 dictEntry 结构， 多个 dictEntry 可以通过 
 
 dictAdd 在每次向字典添加新键值对之前， 都会对哈希表 ht[0] 进行检查， 对于 ht[0] 的 size 和 used 属性， 如果它们之间的比率 ratio = used / size 满足以下任何一个条件的话，rehash 过程就会被激活：
 
-自然 rehash ： ratio >= 1 ，且变量 dict\_can\_resize 为真。  
+自然 rehash ： ratio >= 1 ，且变量 dict\_can\_resize 为真。
 强制 rehash ： ratio 大于变量 dict\_force\_resize\_ratio （目前版本中， dict\_force\_resize\_ratio 的值为 5 ）。
 
 
@@ -1043,6 +1068,11 @@ rehash 在结束之前会进行清理工作，释放 ht[0] 的空间；用 ht[1]
 
 
 最终 rehash 结束以后情况如上图。如果还下次还需要 rehash ，重复上述过程即可。这种分多次，渐进式 rehash 的方式也成就了 Redis 的高性能。
+
+
+值得一提的是，Redis 是支持字典的 reshrink 操作的。操作步骤就是 
+rehash 的逆过程。
+
 
 ## 二. 红黑树优化
 
@@ -1148,17 +1178,10 @@ const (
 
 据 Google 开发人员称，这个值是一个测试的程序，测量出来选择的一个经验值。
 
-|  loadFactor  |  %overflow | bytes/entry  |   hitprobe  |  missprobe|
-|:-------:|:-------:|:------:|:------:| :------:| 
-|       4.00    |     2.13     |   20.77    |     3.00     |    4.00 |
-|        4.50    |     4.05    |    17.30    |     3.25     |    4.50|
-|        5.00    |     6.85     |   14.77     |    3.50     |    5.00|
-|        5.50    |    10.55    |    12.94    |     3.75     |    5.50|
-|        6.00    |    15.27    |    11.67     |    4.00     |    6.00|
-|        6.50    |    20.90    |    10.79    |     4.25    |     6.50|
-|        7.00   |     27.14    |    10.15    |     4.50    |     7.00|
-|        7.50   |     34.03    |     9.73    |     4.75     |    7.50|
-|        8.00   |     41.10     |    9.40     |    5.00    |     8.00|
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-9e7d2fb81496e474.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 %overflow ：
@@ -1252,6 +1275,8 @@ type bmap struct {
 Go 为了节约内存对齐的内存消耗，于是把它设计成上图所示那样。
 
 如果 map 里面存储了上万亿的大数据，这里节约出来的内存空间还是比较可观的。
+
+
 
 
 
