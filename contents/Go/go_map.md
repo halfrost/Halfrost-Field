@@ -142,9 +142,9 @@ uint32_t murmur3_32(const char *key, uint32_t len, uint32_t seed) {
 
 [CityHash](https://github.com/google/cityhash) 是2011年 Google 发布的字符串散列算法，和 murmurhash 一样，属于非加密型 hash 算法。CityHash 算法的开发是受到了 MurmurHash 的启发。其主要优点是大部分步骤包含了至少两步独立的数学运算。现代 CPU 通常能从这种代码获得最佳性能。CityHash 也有其缺点：代码较同类流行算法复杂。Google 希望为速度而不是为了简单而优化，因此没有照顾较短输入的特例。Google发布的有两种算法：cityhash64 与 cityhash128。它们分别根据字串计算 64 和 128 位的散列值。这些算法不适用于加密，但适合用在散列表等处。CityHash 的速度取决于CRC32 指令，目前为SSE 4.2（Intel Nehalem及以后版本）。
 
-相比 Murmurhash 支持32、64、128bit， Cityhash支持64、128、256bit 。
+相比 Murmurhash 支持32、64、128bit， Cityhash 支持64、128、256bit 。
 
-2014年 Google 又发布了 [FarmHash](https://github.com/google/farmhash)，一个新的用于字符串的哈希函数系列。FarmHash 从 CityHash 继承了许多技巧和技术，是它的后继。FarmHash 有多个目标，声称从多个方面改进了 CityHash。与 CityHash 相比，FarmHash 的另一项改进是在多个特定于平台的实现之上提供了一个接口。这样，当开发人员只是想要一个用于哈希表的、快速健壮的哈希函数，而不需要在每个平台上都一样时，FarmHash 也能满足要求。目前，FarmHash只包含在32、64和128位平台上用于字节数组的哈希函数。未来开发计划包含了对整数、元组和其它数据的支持。
+2014年 Google 又发布了 [FarmHash](https://github.com/google/farmhash)，一个新的用于字符串的哈希函数系列。FarmHash 从 CityHash 继承了许多技巧和技术，是它的后继。FarmHash 有多个目标，声称从多个方面改进了 CityHash。与 CityHash 相比，FarmHash 的另一项改进是在多个特定于平台的实现之上提供了一个接口。这样，当开发人员只是想要一个用于哈希表的、快速健壮的哈希函数，而不需要在每个平台上都一样时，FarmHash 也能满足要求。目前，FarmHash 只包含在32、64和128位平台上用于字节数组的哈希函数。未来开发计划包含了对整数、元组和其它数据的支持。
 
 
 
@@ -482,7 +482,7 @@ aes0to15:
 	TESTW	$0xff0, AX
 	JE	endofpage
 
-    //当前加载的16位字节的地址不会越过一个页面边界，所以我们可以直接加载它。
+	//当前加载的16位字节的地址不会越过一个页面边界，所以我们可以直接加载它。
 	MOVOU	-16(AX), X1
 	ADDQ	CX, CX
 	MOVQ	$masks<>(SB), AX
@@ -1286,6 +1286,8 @@ Go 为了节约内存对齐的内存消耗，于是把它设计成上图所示�
 ### 1. Objective-C
 
 ### 2. Go
+
+
 
 
  
