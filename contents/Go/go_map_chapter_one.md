@@ -877,7 +877,7 @@ aesloop:
 
 举例，假设 M = 10，待插入的键值集合是{0，1，4，5，6，9，10}，当前面6个键值插入哈希表中以后，10就再也无法插入了。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-537d30bfc551a362.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-1302823b3aa6d59c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 所以在平方探测中，存在下面这则规律：
