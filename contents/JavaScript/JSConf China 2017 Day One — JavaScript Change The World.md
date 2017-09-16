@@ -5,10 +5,22 @@
 </p>
 
 
-今天有幸参加了 JSConf China 2017 ，作为大会第一天，我来谈谈个人对大会的一些感谢。至于大会讲的更加详细的内容可以直接翻到本文末尾，我和另外一个位前端小伙伴一起写的非常详细的笔记，版权在掘金，感兴趣的可以点链接去看看。
+今天有幸参加了 JSConf China 2017 ，作为大会第一天，我来谈谈个人对大会的一些感想。至于大会讲的更加详细的内容可以直接翻到本文末尾，我和另外一个位前端小伙伴一起写的非常详细的笔记，版权在掘金，感兴趣的可以点链接去看看。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-cdb59b045ad66da8.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 
 ## 第一场 Programming the Universal Future with next.js
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-0168f7d29121b285.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-a8a8b0a1802cc6a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -30,10 +42,24 @@ next.js 支持 static projects、package.json(node 项目)、Dockerfile 项目�
 ## 第二场 理解现代 Web 开发
 
 
+
+![](http://upload-images.jianshu.io/upload_images/1194012-1723c635f861885a.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-0b653a0018884074.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
+
 这个演讲提到了太多的话题了。而且演讲过程中语速非常快，keynote 一页一页的。涉及的点实在是广，据说前端没有五到十年经验是无法领悟到其中的精髓的。
+
+
+
+这一讲讲师放出了PPT，很值得大家去学习，链接在这里[《理解现代 Web 开发》](https://speakerdeck.com/dexteryy/understanding-modern-web-development-at-jsconf-china-2017-zhong-wen)
+
+关于讲师的 GitHub 上还有一个[《现代 Web 开发者的魔法书 Spellbook of Modern Web Dev》](https://github.com/dexteryy/spellbook-of-modern-webdev) 同样非常推荐阅读。
+
 
 ### 1. 如何看待开发的变化
 
@@ -68,6 +94,12 @@ CSS最大的趋势，从面向文档转变成面向组件。
 
 ## 第三场 后 ES6 时代的 JavaScript 语言
 
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-8a16f95517d86c8f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 这一场是由百姓网的 贺老 Hax 带来的分享。前半段主要谈 ES6 的新特性是如何被各大浏览器厂商完美支持的。中间遇到了不少困难。还有各个提案是如何一步步的从 S0 到 S4 落地的。
 
 中间主要谈 ES7 的新特性，这里谈到了 JS 的单线程的问题，这个问题我听的比较认真，毕竟客户端开发的同学平时都是接触到多线程的概念。
@@ -91,6 +123,11 @@ node.js 没有 worker，不过node.js开发组已经考虑会加入相关的 API
 
 
 ## 第四场 前端工程中的编译时优化
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-5bc42f94a8c1cfd9.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-27a89ac2eabf3c8e.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -175,6 +212,12 @@ Rakt 在应用层面进行编译时优化。
 ## 第五场 学习 React Native 你需要知道的一切
 
 
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-ef3ef23ec052c1d5.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 React Native 对很多客户端开发的同学算比较熟悉了。
 
 开始分析了一下 RN 为什么会这么流行：
@@ -193,12 +236,20 @@ RN 对应的缺点：
 这里重点谈了 Navigation 的问题，给了以下这些可选的方案：
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-776a7d55586f0e8e.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-b06f79884c746021.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 最后谈到了 State 状态管理，分享者也谈到了 Redux 比较重，推荐了另外3个库：Mobx、Mobx State Tree、Dva。
 
 所以 RN 的 状态管理可以用以下这些方式了：
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-3eec96a6fd5b3209.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 1. Built-in state
 2. Redux
@@ -208,26 +259,67 @@ RN 对应的缺点：
 
 
 
-## 第六场 TypeScript, Angular 和移动端的跨品台开发
+## 第六场 TypeScript, Angular 和移动端的跨平台开发
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-caa18c05112ce356.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 
 这一场是一个来自 Google 的工程讲 Angular。
 
-开场就安利了一波 TypeScript。然后接着讲 Angular。
+开场就安利了一波 TypeScript。
 
-Angular 笔者实在没有用过，这里不过介绍它了。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-21f65fc2d43ff43a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+然后接着讲 Angular。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-a00d6cc3d09b1285.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-13a02596e43c36c1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-b2a7cf0e4a97dce1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
+Angular 笔者实在没有用过，这里不多介绍它了。
 
 讲完 Angular 又讲了 Ionic Framework。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f6bfe0c9ba0af607.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-71674837b0c272ec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 最后又讲了 Native Script。这个是 Angular 的跨平台原生框架，对手就是 Vue 的 Weex，React 的 React Native。
 
 下面三种图分别是 Native Script 的介绍和跨平台原理。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-e13f863491eab0ac.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-2d45de5e5b110ef9.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-76045bcef281b321.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-0ada56ab65594d97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-96c2474aca1dc617.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-e8f7a35f0fbb72e8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 目前用到最多的就是 React Native，Weex 用的人都不是很多(还在用 Weex 的可以在文章下面留言)，笔者周围在用 Native Script 开发的，十个手指头都数的过来(用 Native Script 开发的可以在文章下面留言)。
@@ -235,11 +327,24 @@ Angular 笔者实在没有用过，这里不过介绍它了。
 鉴于 Native Script 使用度不是很高，这里也不多说了。 
 
 
-## 第七场 Ruff 应用开发
+## 第七场 Ruff loT 应用开发
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-ca694969bcba3441.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-21887867f8cd48d6.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-8d2473197ea7f6da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-0a6332289d5442fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-c9e3dd6f61c3fa66.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -286,4 +391,12 @@ JavaScript 工程师可以用  jQuery 给孩子写玩具了！
 全场听下来，收获最多的可能就是尤大讲的吧。这次大会其他讲师有些分享可能平时开发中也不会用到，不过听听各家对前端技术发展的不同看法也是挺不错的。
 
 
+
 前端虽然近几年发展突飞猛进，“魔爪”向前伸向了客户端，向后伸向的后端，向下伸向了硬件，看似无所不能。但是前端依旧还有很多可以改进的地方，比如 JS 的 Class，多线程。这些都可以像面向对象的语言学习。前端工程化也可以慢慢考虑编译期优化了，这块对于客户端开发语言，天生就是编译语言来说，Clang + LLVM 里面的黑魔法般的优化也许值得前端学习的点也挺多的。
+
+
+> GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
+> 
+> Follow: [halfrost · GitHub](https://github.com/halfrost)
+>
+> Source: [https://halfrost.com/jsconf\_china\_2017/](https://halfrost.com/jsconf_china_2017/)
