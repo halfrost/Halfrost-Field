@@ -161,7 +161,7 @@ layout 下一层的组件是 header、footer、content，这三部分就组成�
 
 
 
-上图就是我们的 layout.vue 的全部实现。在这个单文件组件中里面引用了三个子组件，navigationBar、footerView、content。由于 content 里面是又各个路由页面组成，所以这里声明成 router-view。
+上图就是我们的 layout.vue 的全部实现。在这个单文件组件中里面引用了三个子组件，navigationBar、footerView、content。由于 content 里面是由各个路由页面组成，所以这里声明成 router-view。
 
 至于各个子组件的具体实现这里就不在赘述了，具体代码可以看这里[navigationBar.vue](https://github.com/halfrost/vue-objccn/blob/master/src/components/navigationBar.vue)、[footerView](https://github.com/halfrost/vue-objccn/blob/master/src/components/footerView.vue)、[layout.vue](https://github.com/halfrost/vue-objccn/blob/master/src/components/layout.vue)
 
