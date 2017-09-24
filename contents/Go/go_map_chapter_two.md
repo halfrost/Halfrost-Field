@@ -301,7 +301,7 @@ P - V 操作设计美妙之处在于，P 操作的次数与 V 操作的次数是
 
 semaphore  mutex = 1; // 临界区互斥信号量
 semaphore  empty = n; // 空闲缓冲区个数
-semaphore  full = 0; // 缓冲区初始化为空
+semaphore  full = 0;  // 缓冲区初始化为空
 
 ```
 
