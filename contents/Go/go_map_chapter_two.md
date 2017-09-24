@@ -118,14 +118,118 @@
 
 #### (二) 多个互斥量和一个临界区
 
+在这种情况下，极容易产生线程死锁的情况。所以尽量不要让不同的互斥量所保护的临界区重叠。
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-4052c41d1fd1ea70.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
+上图这个例子中，一个临界区中存在2个互斥量：互斥量 A 和互斥量
+ B。
+
+线程1先锁定了互斥量 A ，接着线程2锁定了互斥量 B。当线程1在成功锁定互斥量 B 之前永远不会释放 互斥量 A。同样，线程2在成功锁定互斥量 A 之前永远不会释放 互斥量 B。那么这个时候线程1和线程2都因无法锁定自己需要锁定的互斥量，都由 ready 就绪状态转换为 sleep 睡眠状态。这是就产生了线程死锁了。
+
+
+线程死锁的产生原因有以下几种：
+
+- 1. 系统资源竞争
+- 2. 进程推荐顺序非法
+- 3. 死锁必要条件（必要条件中任意一个不满足，死锁都不会发生）
+(1). 互斥条件
+(2). 不剥夺条件
+(3). 请求和保持条件
+(4). 循环等待条件
+
+想避免线程死锁的情况发生有以下几种方法可以解决：
+
+- 1. 预防死锁
+(1). 资源有序分配法（破坏环路等待条件）
+(2). 资源原子分配法（破坏请求和保持条件）
+
+- 2. 避免死锁
+银行家算法
+
+- 3. 检测死锁
+死锁定理（资源分配图化简法），这种方法虽然可以检测，但是无法预防，检测出来了死锁还需要配合解除死锁的方法才行。
+
+- 4. 解决死锁
+(1). 剥夺资源
+(2). 撤销进程
+(3). 试锁定 — 回退
+如果在执行一个代码块的时候，需要先后（顺序不定）锁定两个变量，那么在成功锁定其中一个互斥量之后应该使用试锁定的方法来锁定另外一个变量。如果试锁定第二个互斥量失败，就把已经锁定的第一个互斥量解锁，并重新对这两个互斥量进行锁定和试锁定。
+![](http://upload-images.jianshu.io/upload_images/1194012-9ae74238e184a46f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+如上图，线程2在锁定互斥量 B 的时候，再试锁定互斥量 A，此时锁定失败，于是就把互斥量 B 也一起解锁。接着线程1会来锁定互斥量 A。此时也不会出现死锁的情况。  
+(4). 固定顺序锁定
+![](http://upload-images.jianshu.io/upload_images/1194012-c23b2f846af7f04b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+这种方式就是让线程1和线程2都按照相同的顺序锁定互斥量，都按成功锁定互斥量1以后才能去锁定互斥量2 。
 
 #### (三) 多个互斥量和多个临界区
 
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-bfc252ce867af304.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+多个临界区和多个互斥量的情况就要看是否会有冲突的区域，如果出现相互交集的冲突区域，后进临界区的线程就会进入睡眠状态，直到该临界区的线程完成任务以后，再被唤醒。
+
+一般情况下，应该尽量少的使用互斥量。每个互斥量保护的临界区应该在合理范围内并尽量大。但是如果发现多个线程会频繁出入某个较大的临界区，并且它们之间经常存在访问冲突，那么就应该把这个较大的临界区划分的更小一点，并使用不同的互斥量保护起来。这样做的目的就是为了让等待进入同一个临界区的线程数变少，从而降低线程被阻塞的概率，并减少它们被迫进入睡眠状态的时间，这从一定程度上提高了程序的整体性能。
+
+在说另外一个线程同步的方法之前，回答一下文章开头留下的一个疑问：可重入只是线程安全的充分不必要条件，并不是充要条件。这个反例在下面会讲到。
+
+
+这个问题最关键的一点在于：**mutex 是不可重入的**。
+
+
+举个例子：
+
+在下面这段代码中，函数increment\_counter是线程安全的，但不是可重入的。
+
+```c
+
+#include <pthread.h>
+
+int increment_counter ()
+{
+	static int counter = 0;
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	pthread_mutex_lock(&mutex);
+	
+	// only allow one thread to increment at a time
+	++counter;
+	// store value before any other threads increment it further
+	int result = counter;	
+
+	pthread_mutex_unlock(&mutex);
+	
+	return result;
+}
+
+
+```
+
+上面的代码中，函数increment\_counter 可以在多个线程中被调用，因为有一个互斥锁mutex来同步对共享变量 counter 的访问。但是如果这个函数用在可重入的中断处理程序中，如果在
+pthread\_mutex\_lock(&mutex) 和 pthread\_mutex\_unlock(&mutex)
+之间产生另一个调用函数 increment\_counter 的中断，则会第二次执行此函数，此时由于 mutex 已被 lock，函数会在 pthread\_mutex\_lock(&mutex) 处阻塞，并且由于 mutex 没有机会被
+unlock，阻塞会永远持续下去。简言之，问题在于 [pthread](https://zh.wikipedia.org/wiki/Pthread) 的 mutex 是不可重入的。
+
+解决办法是设定 PTHREAD\_MUTEX\_RECURSIVE 属性。然而对于给出的问题而言，专门使用一个 mutex 来保护一次简单的增量操作显然过于昂贵，因此 [c++11](https://zh.wikipedia.org/wiki/C%2B%2B11) 中的 [原子变量](https://zh.wikipedia.org/w/index.php?title=Atomic_(C%2B%2B%E6%A0%87%E5%87%86%E5%BA%93)&action=edit&redlink=1) 提供了一个可使此函数既线程安全又可重入（而且还更简洁）的替代方案：
+
+```c
+
+#include <atomic>
+
+int increment_counter ()
+{
+	static std::atomic<int> counter(0);
+	
+	// increment is guaranteed to be done atomically
+	int result = ++counter;
+
+	return result;
+}
+
+```
 
 
 ### 2. 条件变量
@@ -187,8 +291,9 @@ type Map struct {
 
 Reference：  
 《Go 并发实战编程》     
-[Split-Ordered Lists: Lock-Free Extensible Hash Tables](http://people.csail.mit.edu/shanir/publications/Split-Ordered_Lists.pdf)   
-[Semaphores are Surprisingly Versatile](http://preshing.com/20150316/semaphores-are-surprisingly-versatile/)
+[Split-Ordered Lists: Lock-Free Extensible Hash Tables](http://people.csail.mit.edu/shanir/publications/Split-Ordered_Lists.pdf)     
+[Semaphores are Surprisingly Versatile](http://preshing.com/20150316/semaphores-are-surprisingly-versatile/)  
+[线程安全](https://zh.wikipedia.org/wiki/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8)
 
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
