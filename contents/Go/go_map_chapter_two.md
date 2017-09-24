@@ -232,6 +232,8 @@ int increment_counter ()
 ```
 
 
+在 Go 中，互斥量在标准库代码包 sync 中的 Mutex 结构体表示的。sync.Mutex 类型只有两个公开的指针方法，Lock 和 Unlock。前者用于锁定当前的互斥量，后者则用于对当前的互斥量进行解锁。
+
 ### 2. 条件变量
 
 
