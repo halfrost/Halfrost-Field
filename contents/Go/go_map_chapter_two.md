@@ -8,6 +8,7 @@
 
 
 
+
 在上篇中，我们已经讨论过如何去实现一个 Map 了，并且也讨论了诸多优化点。在下篇中，我们将继续讨论如何实现一个线程安全的 Map。说到线程安全，需要从概念开始说起。
 
 
@@ -32,7 +33,7 @@
 
 为了实现线程安全的函数，把所有代码都置放于临界区中是可行的。但是互斥量的使用总会耗费一定的系统资源和时间，使用互斥量的过程总会存在各种博弈和权衡。所以请合理使用互斥量保护好那些涉及共享数据操作的代码。
 
-**注意：**可重入只是线程安全的充分不必要条件，**并不是充要条件**。这个反例在下面会讲到。
+**注意**：可重入只是线程安全的充分不必要条件，**并不是充要条件**。这个反例在下面会讲到。
 
 2. 线程本地存储
 
@@ -61,7 +62,8 @@
 为了保证共享数据一致性，最简单并且最彻底的方法就是使该数据成为一个不变量。当然这种绝对的方式在大多数情况下都是不可行的。比如函数中会用到一个计数器，记录函数被调用了几次，这个计数器肯定就不能被设为常量。那这种必须是变量的情况下，还要保证共享数据的一致性，这就引出了临界区的概念。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-1ff4bbe28ab637ad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-ca316bda95dfa59a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 临界区的出现就是为了使该区域只能被串行的访问或者执行。临界区可以是某个资源，也可以是某段代码。保证临界区最有效的方式就是利用线程同步机制。
 
@@ -147,8 +149,8 @@ type Map struct {
 ------------------------------------------------------
 
 Reference：  
-《Go 并发实战编程》  
-[Split-Ordered Lists: Lock-Free Extensible Hash Tables](http://people.csail.mit.edu/shanir/publications/Split-Ordered_Lists.pdf)
+《Go 并发实战编程》     
+[Split-Ordered Lists: Lock-Free Extensible Hash Tables](http://people.csail.mit.edu/shanir/publications/Split-Ordered_Lists.pdf)   
 [Semaphores are Surprisingly Versatile](http://preshing.com/20150316/semaphores-are-surprisingly-versatile/)
 
 
