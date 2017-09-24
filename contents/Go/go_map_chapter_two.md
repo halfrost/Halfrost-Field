@@ -236,15 +236,457 @@ int increment_counter ()
 
 ### 2. 条件变量
 
+在线程同步的方法中，还有一个可以与互斥量相提并论的同步方法，条件变量。
 
+条件变量与互斥量不同，条件变量的作用并不是保证在同一时刻仅有一个线程访问某一个共享数据，而是在对应的共享数据的状态发生变化时，通知其他因此而被阻塞的线程。条件变量总是与互斥变量组合使用的。
+
+
+这类问题其实很常见。先用生产者消费者的例子来举例。
+
+
+如果不用条件变量，只用互斥量，来看看会发生什么后果。
+
+生产者线程在完成添加操作之前，其他的生产者线程和消费者线程都无法进行操作。同一个商品也只能被一个消费者消费。
+
+如果只用互斥量，可能会出现2个问题。
+
+- 1. 生产者线程获得了互斥量以后，却发现商品已满，无法再添加新的商品了。于是该线程就会一直等待。新的生产者也进入不了临界区，消费者也无法进入。这时候就死锁了。
+
+- 2. 消费者线程获得了互斥量以后，却发现商品是空的，无法消费了。这个时候该线程也是会一直等待。新的生产者和消费者也都无法进入。这时候同样也死锁了。
+
+这就是只用互斥量无法解决的问题。在多个线程之间，急需一套同步的机制，能让这些线程都协作起来。
+
+条件变量就是大家熟悉的 P - V操作了。这块大家应该比较熟悉，所以简单的过一下。
+
+
+P 操作就是 wait 操作，它的意思就是阻塞当前线程，直到收到该条件变量发来的通知。
+
+V 操作就是 signal 操作，它的意思就是让该条件变量向至少一个正在等待它通知的线程发送通知，以表示某个共享数据的状态已经变化。
+
+
+Broadcast广播通知，它的意思就是让条件变量给正在等待它通知的所有线程发送通知，以表示某个共享数据的状态已经发生改变。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-ce03974690a19433.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+signal 可以操作多次，如果操作3次，就代表发了3次信号通知。如上图。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-810ad286a9ec378b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+P - V 操作设计美妙之处在于，P 操作的次数与 V 操作的次数是相同的。wait 多少次，signal 对应的有多少次。看上图，这个循环就是这么的奇妙。
+
+#### 生产者消费者问题
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-d4ac5739b6c09fb6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+这个问题可以形象的描述成像上图这样，门卫守护着临界区的安全。售票厅记录着当前 semaphone 的值，它也控制着门卫是否打开临界区。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-7b6f8ce24d0d11f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+临界区只允许一个线程进入，当已经有一个线程了，再来一个线程，就会被 lock 住。售票厅也会记录当前阻塞的线程数。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-59bbd810186f2db7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+当之前的线程离开以后，售票厅就会告诉门卫，允许一个线程进入临界区。
+
+
+用 P-V伪代码来描述生产者消费者：
+
+初始变量：
+
+```c
+
+semaphore  mutex = 1; // 临界区互斥信号量
+semaphore  empty = n; // 空闲缓冲区个数
+semaphore  full = 0; // 缓冲区初始化为空
+
+```
+
+
+生产者线程：
+
+```c
+
+producer()
+{
+  while(1) {
+    produce an item in nextp;
+    P(empty);
+    P(mutex);
+    add nextp to buffer;
+    V(mutex);
+    V(full);
+  }
+}
+
+```
+
+消费者线程：
+
+
+```c
+
+
+consumer()
+{
+  while(1) {
+    P(full);
+    P(mutex);
+    remove an item from buffer;
+    V(mutex);
+    V(empty);
+    consume the item;
+  }
+}
+
+```
+
+虽然在生产者和消费者单个程序里面 P，V并不是成对的，但是整个程序里面 P，V还是成对的。
+
+#### 读者写者问题——读者优先，写者延迟
+
+读者优先，写进程被延迟。只要有读者在读，后来的读者都可以随意进来读。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f1bad003e57c69f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+读者要先进入 rmutex ，查看 readcount，然后修改 readcout 的值，最后再去读数据。对于每个读进程都是写者，都要进去修改 readcount 的值，所以还要单独设置一个 rmutex 互斥访问。
+
+初始变量：
+
+```c
+
+int readcount = 0;     // 读者数量
+semaphore  rmutex = 1; // 保证更新 readcount 互斥
+semaphore  wmutex = 1; // 保证读者和写着互斥的访问文件
+
+```
+
+读者线程：
+
+```c
+
+reader()
+{
+  while(1) {
+    P(rmutex);              // 准备进入，修改 readcount，“开门”
+    if(readcount == 0) {    // 说明是第一个读者
+      P(wmutex);            // 拿到”钥匙”，阻止写线程来写
+    }
+    readcount ++;
+    V(rmutex);
+    reading;
+    P(rmutex);              // 准备离开
+    readcount --;
+    if(readcount == 0) {    // 说明是最后一个读者
+      V(wmutex);            // 交出”钥匙”，让写线程来写
+    }
+    V(rmutex);              // 离开，“关门”
+  }
+}
+
+```
+
+写者线程：
+
+```c
+
+writer()
+{
+  while(1) {
+    P(wmutex);
+    writing;
+    V(wmutex);
+  }
+}
+
+```
+
+
+#### 读者写者问题——写者优先，读者延迟
+
+有写者写，禁止后面的读者来读。在写者前的读者，读完就走。只要有写者在等待，禁止后来的读者进去读。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-a3f5a3cda4ca2e7e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+初始变量：
+
+```c
+
+int readcount = 0;     // 读者数量
+semaphore  rmutex = 1; // 保证更新 readcount 互斥
+semaphore  wmutex = 1; // 保证读者和写着互斥的访问文件
+semaphore  w = 1;      // 用于实现“写者优先”
+
+```
+
+读者线程：
+
+```c
+
+reader()
+{
+  while(1) {
+    P(w);                   // 在没有写者的时候才能请求进入
+    P(rmutex);              // 准备进入，修改 readcount，“开门”
+    if(readcount == 0) {    // 说明是第一个读者
+      P(wmutex);            // 拿到”钥匙”，阻止写线程来写
+    }
+    readcount ++;
+    V(rmutex);
+    V(w);
+    reading;
+    P(rmutex);              // 准备离开
+    readcount --;
+    if(readcount == 0) {    // 说明是最后一个读者
+      V(wmutex);            // 交出”钥匙”，让写线程来写
+    }
+    V(rmutex);              // 离开，“关门”
+  }
+}
+
+```
+
+写者线程：
+
+```c
+
+writer()
+{
+  while(1) {
+    P(w);
+    P(wmutex);
+    writing;
+    V(wmutex);
+    V(w);
+  }
+}
+
+```
+
+#### 哲学家进餐问题
+
+
+假设有五位哲学家围坐在一张圆形餐桌旁，做以下两件事情之一：吃饭，或者思考。吃东西的时候，他们就停止思考，思考的时候也停止吃东西。餐桌中间有一大碗意大利面，每两个哲学家之间有一只餐叉。因为用一只餐叉很难吃到意大利面，所以假设哲学家必须用两只餐叉吃东西。他们只能使用自己左右手边的那两只餐叉。哲学家就餐问题有时也用米饭和筷子而不是意大利面和餐叉来描述，因为很明显，吃米饭必须用两根筷子。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-d295fb92ead8bcf7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+初始变量：
+
+```c
+
+semaphore  chopstick[5] = {1,1,1,1,1}; // 初始化信号量
+semaphore  mutex = 1;                  // 设置取筷子的信号量
+
+```
+
+哲学家线程：
+
+```c
+
+Pi()
+{
+  do {
+    P(mutex);                     // 获得取筷子的互斥量
+    P(chopstick[i]);              // 取左边的筷子
+    P(chopstick[ (i + 1) % 5 ]);  // 取右边的筷子
+    V(mutex);                     // 释放取筷子的信号量
+    eat;
+    V(chopstick[i]);              // 放回左边的筷子
+    V(chopstick[ (i + 1) % 5 ]);  // 放回右边的筷子
+    think;
+  }while(1);
+}
+
+```
+
+
+综上所述，互斥量可以实现对临界区的保护，并会阻止竞态条件的发生。条件变量作为补充手段，可以让多方协作更加有效率。
+
+在 Go 的标准库中，sync 包里面 sync.Cond 类型代表了条件变量。但是和互斥锁和读写锁不同的是，简单的声明无法创建出一个可用的条件变量，还需要用到 sync.NewCond 函数。
+
+```go
+
+func NewCond( l locker) *Cond
+
+```
+
+\*sync.Cond 类型的方法集合中有3个方法，即 Wait、Signal 和 Broadcast 。
 
 ## 二. 简单的线程锁方案
 
-大量的利用了 volatile，final，CAS 等lock-free技术来减少锁竞争对于性能的影响。
+实现线程安全的方案最简单的方法就是加锁了。
 
+先看看 OC 中如何实现一个线程安全的字典吧。
+
+在 Weex 的源码中，就实现了一套线程安全的字典。类名叫 WXThreadSafeMutableDictionary。
+
+```objectivec
+
+/**
+ *  @abstract Thread safe NSMutableDictionary
+ */
+@interface WXThreadSafeMutableDictionary<KeyType, ObjectType> : NSMutableDictionary
+@property (nonatomic, strong) dispatch_queue_t queue;
+@property (nonatomic, strong) NSMutableDictionary* dict;
+@end
+
+```
+
+具体实现如下：
+
+```objectivec
+
+- (instancetype)initCommon
+{
+    self = [super init];
+    if (self) {
+        NSString* uuid = [NSString stringWithFormat:@"com.taobao.weex.dictionary_%p", self];
+        _queue = dispatch_queue_create([uuid UTF8String], DISPATCH_QUEUE_CONCURRENT);
+    }
+    return self;
+}
+
+```
+
+该线程安全的字典初始化的时候会新建一个并发的 queue。
+
+```objectivec
+
+- (NSUInteger)count
+{
+    __block NSUInteger count;
+    dispatch_sync(_queue, ^{
+        count = _dict.count;
+    });
+    return count;
+}
+
+- (id)objectForKey:(id)aKey
+{
+    __block id obj;
+    dispatch_sync(_queue, ^{
+        obj = _dict[aKey];
+    });
+    return obj;
+}
+
+- (NSEnumerator *)keyEnumerator
+{
+    __block NSEnumerator *enu;
+    dispatch_sync(_queue, ^{
+        enu = [_dict keyEnumerator];
+    });
+    return enu;
+}
+
+- (id)copy{
+    __block id copyInstance;
+    dispatch_sync(_queue, ^{
+        copyInstance = [_dict copy];
+    });
+    return copyInstance;
+}
+
+```
+
+读取的这些方法都用 dispatch\_sync 。
+
+```objectivec
+
+- (void)setObject:(id)anObject forKey:(id<NSCopying>)aKey
+{
+    aKey = [aKey copyWithZone:NULL];
+    dispatch_barrier_async(_queue, ^{
+        _dict[aKey] = anObject;
+    });
+}
+
+- (void)removeObjectForKey:(id)aKey
+{
+    dispatch_barrier_async(_queue, ^{
+        [_dict removeObjectForKey:aKey];
+    });
+}
+
+- (void)removeAllObjects{
+    dispatch_barrier_async(_queue, ^{
+        [_dict removeAllObjects];
+    });
+}
+
+
+```
+
+和写入相关的方法都用 dispatch\_barrier\_async。
+
+再看看 Go 用互斥量如何实现一个简单的线程安全的 Map 吧。
+
+既然要用到互斥量，那么我们封装一个包含互斥量的 Map 。
+
+```go
+
+type MyMap struct {
+    sync.Mutex
+    m map[int]int
+}
+
+var myMap *MyMap
+
+func init() {
+    myMap = &MyMap{
+        m: make(map[int]int, 100),
+    }
+}
+
+```
+
+再简单的实现 Map 的基础方法。
+
+```go
+
+func builtinMapStore(k, v int) {
+    myMap.Lock()
+    defer myMap.Unlock()
+    myMap.m[k] = v
+}
+
+func builtinMapLookup(k int) int {
+    myMap.Lock()
+    defer myMap.Unlock()
+    if v, ok := myMap.m[k]; !ok {
+        return -1
+    } else {
+        return v
+    }
+}
+
+func builtinMapDelete(k int) {
+    myMap.Lock()
+    defer myMap.Unlock()
+    if _, ok := myMap.m[k]; !ok {
+        return
+    } else {
+        delete(myMap.m, k)
+    }
+}
+
+
+```
+
+实现思想比较简单，在每个操作前都加上 lock，在每个函数结束 defer 的时候都加上 unlock。
+
+这种加锁的方式实现的线程安全的字典，优点是比较简单，缺点是性能不高。文章最后会进行几种实现方法的性能对比，用数字说话，就知道这种基于互斥量加锁方式实现的性能有多差了。
+
+在语言原生就自带线程安全 Map 的语言中，它们的原生底层实现都不是通过单纯的加锁来实现线程安全的，比如 Java 的 ConcurrentHashMap，Go 1.9 新加的 sync.map。
 
 ## 三. 现代线程安全的 Lock - Free 方案 CAS
 
+
+大量的利用了 volatile，final，CAS 等lock-free技术来减少锁竞争对于性能的影响。
 
 ## 四. ABA 问题
 
