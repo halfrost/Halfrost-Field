@@ -81,8 +81,8 @@
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-d19c354c940e5856.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-08ca14f2697f2413.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -99,8 +99,10 @@
 线程在离开临界区的时候，一定要记得把对应的互斥量解锁。这样其他因临界区被上锁而导致睡眠的线程还有机会被唤醒。所以对同一个互斥变量的锁定和解锁必须成对的出现。既不可以对一个互斥变量进行重复的锁定，也不能对一个互斥变量进行多次的解锁。
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-35e8e19d62cd44c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-2fa9eb813fc632bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 
 
 
@@ -122,7 +124,8 @@
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-4052c41d1fd1ea70.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-6ade638ccde342fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 上图这个例子中，一个临界区中存在2个互斥量：互斥量 A 和互斥量
@@ -136,45 +139,43 @@
 - 1. 系统资源竞争
 - 2. 进程推荐顺序非法
 - 3. 死锁必要条件（必要条件中任意一个不满足，死锁都不会发生）
-(1). 互斥条件  
-(2). 不剥夺条件  
-(3). 请求和保持条件  
-(4). 循环等待条件  
+(1). 互斥条件
+(2). 不剥夺条件
+(3). 请求和保持条件
+(4). 循环等待条件
 
 想避免线程死锁的情况发生有以下几种方法可以解决：
 
-- 1. 预防死锁  
-(1). 资源有序分配法（破坏环路等待条件）  
-(2). 资源原子分配法（破坏请求和保持条件）  
+- 1. 预防死锁
+(1). 资源有序分配法（破坏环路等待条件）
+(2). 资源原子分配法（破坏请求和保持条件）
 
-- 2. 避免死锁  
-银行家算法  
+- 2. 避免死锁
+银行家算法
 
-- 3. 检测死锁  
+- 3. 检测死锁
 死锁定理（资源分配图化简法），这种方法虽然可以检测，但是无法预防，检测出来了死锁还需要配合解除死锁的方法才行。
 
-- 4. 解决死锁  
-(1). 剥夺资源  
-(2). 撤销进程  
-(3). 试锁定 — 回退  
+- 4. 解决死锁
+(1). 剥夺资源
+(2). 撤销进程
+(3). 试锁定 — 回退
 如果在执行一个代码块的时候，需要先后（顺序不定）锁定两个变量，那么在成功锁定其中一个互斥量之后应该使用试锁定的方法来锁定另外一个变量。如果试锁定第二个互斥量失败，就把已经锁定的第一个互斥量解锁，并重新对这两个互斥量进行锁定和试锁定。
-![](http://upload-images.jianshu.io/upload_images/1194012-9ae74238e184a46f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-如上图，线程2在锁定互斥量 B 的时候，再试锁定互斥量 A，此时锁定失败，于是就把互斥量 B 也一起解锁。接着线程1会来锁定互斥量 A。此时也不会出现死锁的情况。    
+
+![](http://upload-images.jianshu.io/upload_images/1194012-164a08dfebbba443.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+如上图，线程2在锁定互斥量 B 的时候，再试锁定互斥量 A，此时锁定失败，于是就把互斥量 B 也一起解锁。接着线程1会来锁定互斥量 A。此时也不会出现死锁的情况。  
 (4). 固定顺序锁定
-![](http://upload-images.jianshu.io/upload_images/1194012-c23b2f846af7f04b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-213c9ae0be4b713a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 这种方式就是让线程1和线程2都按照相同的顺序锁定互斥量，都按成功锁定互斥量1以后才能去锁定互斥量2 。
 
 #### (三) 多个互斥量和多个临界区
 
+![](http://upload-images.jianshu.io/upload_images/1194012-1095b2785e003469.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-b6c238008b40a991.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-
-![](http://upload-images.jianshu.io/upload_images/1194012-3537c47416bd49a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-
-![](http://upload-images.jianshu.io/upload_images/1194012-bfc252ce867af304.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 多个临界区和多个互斥量的情况就要看是否会有冲突的区域，如果出现相互交集的冲突区域，后进临界区的线程就会进入睡眠状态，直到该临界区的线程完成任务以后，再被唤醒。
 
@@ -236,7 +237,6 @@ int increment_counter ()
 }
 
 ```
-
 
 在 Go 中，互斥量在标准库代码包 sync 中的 Mutex 结构体表示的。sync.Mutex 类型只有两个公开的指针方法，Lock 和 Unlock。前者用于锁定当前的互斥量，后者则用于对当前的互斥量进行解锁。
 
@@ -761,6 +761,12 @@ ZF 标志，并且把目的操作数的值写回 eax。
 
 在 Intel 平台下，会用 LOCK CMPXCHG 来实现，这里的 LOCK 是内存总线锁，所谓总线锁就是使用 CPU 提供的一个LOCK＃信号，当一个处理器在总线上输出此信号时，其他处理器的请求将被阻塞住，那么该 CPU 可以独占使用共享内存。
 
+Intel 的手册对 LOCK 前缀的说明如下：
+- 1. 确保对内存的读-改-写操作原子执行。在 Pentium 及 Pentium 之前的处理器中，带有 LOCK 前缀的指令在执行期间会锁住总线，使得其他处理器暂时无法通过总线访问内存。很显然，这会带来昂贵的开销。从 Pentium 4，Intel Xeon 及 P6 处理器开始，Intel 在原有总线锁的基础上做了一个很有意义的优化：如果要访问的内存区域（area of memory）在 LOCK 前缀指令执行期间已经在处理器内部的缓存中被锁定（即包含该内存区域的缓存行当前处于独占或以修改状态），并且该内存区域被完全包含在单个缓存行（cache line）中，那么处理器将直接执行该指令。由于在指令执行期间该缓存行会一直被锁定，其它处理器无法读/写该指令要访问的内存区域，因此能保证指令执行的原子性。这个操作过程叫做缓存锁定（cache locking），缓存锁定将大大降低 LOCK 前缀指令的执行开销，但是当多处理器之间的竞争程度很高或者指令访问的内存地址未对齐时，仍然会锁住总线。
+- 2. 禁止该指令与之前和之后的读和写指令重排序。
+- 3. 把写缓冲区中的所有数据刷新到内存中。
+
+
 
 ## 四. ABA 问题
 
@@ -811,8 +817,8 @@ Reference：
 《Go 并发实战编程》     
 [Split-Ordered Lists: Lock-Free Extensible Hash Tables](http://people.csail.mit.edu/shanir/publications/Split-Ordered_Lists.pdf)     
 [Semaphores are Surprisingly Versatile](http://preshing.com/20150316/semaphores-are-surprisingly-versatile/)  
-[线程安全](https://zh.wikipedia.org/wiki/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8)
-
+[线程安全](https://zh.wikipedia.org/wiki/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8)  
+[JAVA CAS原理深度分析](http://zl198751.iteye.com/blog/1848575)    
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
