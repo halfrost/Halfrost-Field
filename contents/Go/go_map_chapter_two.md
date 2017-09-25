@@ -685,8 +685,76 @@ func builtinMapDelete(k int) {
 
 ## 三. 现代线程安全的 Lock - Free 方案 CAS
 
+在 Java 的 ConcurrentHashMap 底层实现中大量的利用了 volatile，final，CAS 等 Lock-Free 技术来减少锁竞争对于性能的影响。
 
-大量的利用了 volatile，final，CAS 等lock-free技术来减少锁竞争对于性能的影响。
+
+在 Go 中也大量的使用了原子操作，CAS 是其中之一。比较并交换即“Compare And Swap”，简称 CAS。
+
+```go
+
+func CompareAndSwapInt32(addr *int32, old, new int32) (swapped bool)
+
+func CompareAndSwapInt64(addr *int64, old, new int64) (swapped bool)
+
+func CompareAndSwapUint32(addr *uint32, old, new uint32) (swapped bool)
+
+func CompareAndSwapUint64(addr *uint64, old, new uint64) (swapped bool)
+
+func CompareAndSwapUintptr(addr *uintptr, old, new uintptr) (swapped bool)
+
+func CompareAndSwapPointer(addr *unsafe.Pointer, old, new unsafe.Pointer) (swapped bool)
+
+```
+
+CAS 会先判断参数 addr 指向的被操作值与参数 old 的值是否相等。如果相当，相应的函数才会用参数 new 代表的新值替换旧值。否则，替换操作就会被忽略。
+
+这一点与互斥锁明显不同，CAS 总是假设被操作的值未曾改变，并一旦确认这个假设成立，就立即进行值的替换。而互斥锁的做法就更加谨慎，总是先假设会有并发的操作修改被操作的值，并需要使用锁将相关操作放入临界区中加以保护。可以说互斥锁的做法趋于悲观，CAS 的做法趋于乐观，类似乐观锁。
+
+CAS 做法最大的优势在于可以不创建互斥量和临界区的情况下，完成并发安全的值替换操作。这样大大的减少了线程同步操作对程序性能的影响。当然 CAS 也有一些缺点，缺点下一章会提到。
+
+接下来看看源码是如何实现的。以下以64位为例，32位类似。
+
+```c
+
+TEXT ·CompareAndSwapUintptr(SB),NOSPLIT,$0-25
+	JMP	·CompareAndSwapUint64(SB)
+
+TEXT ·CompareAndSwapInt64(SB),NOSPLIT,$0-25
+	JMP	·CompareAndSwapUint64(SB)
+
+TEXT ·CompareAndSwapUint64(SB),NOSPLIT,$0-25
+	MOVQ	addr+0(FP), BP
+	MOVQ	old+8(FP), AX
+	MOVQ	new+16(FP), CX
+	LOCK
+	CMPXCHGQ	CX, 0(BP)
+	SETEQ	swapped+24(FP)
+	RET
+
+```
+
+
+上述实现最关键的一步就是 CMPXCHG。
+
+
+查询 Intel 的[文档](http://x86.renejeschke.de/html/file_module_x86_id_41.html)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-db7a028dd6f9b8ed.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+文档上说：
+
+比较 eax 和目的操作数(第一个操作数)的值，如果相同，ZF 标志被设置，同时源操作数(第二个操作)的值被写到目的操作数，否则，清
+ZF 标志，并且把目的操作数的值写回 eax。
+
+于是也就得出了 CMPXCHG 的工作原理：
+
+比较 \_old 和 (\*\_\_ptr) 的值，如果相同，ZF 标志被设置，同时
+ \_new 的值被写到 (\*\_\_ptr)，否则，清 ZF 标志，并且把 (\*\_\_ptr) 的值写回 \_old。
+
+
+
+在 Intel 平台下，会用 LOCK CMPXCHG 来实现，这里的 LOCK 是内存总线锁，所谓总线锁就是使用 CPU 提供的一个LOCK＃信号，当一个处理器在总线上输出此信号时，其他处理器的请求将被阻塞住，那么该 CPU 可以独占使用共享内存。
+
 
 ## 四. ABA 问题
 
