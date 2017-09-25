@@ -38,7 +38,7 @@
 
 3. 不可变量
 
-对象一旦初始化以后就不能改变。这意味着只有只读数据被共享，这也实现了固有的线程安全性。可变（不是常量）操作可以通过为它们创建新对象，而不是修改现有对象的方式去实现。 Java，C＃和Python 中的字符串的实现就使用了这种方法。
+对象一旦初始化以后就不能改变。这意味着只有只读数据被共享，这也实现了固有的线程安全性。可变（不是常量）操作可以通过为它们创建新对象，而不是修改现有对象的方式去实现。 Java，C＃和 Python 中的字符串的实现就使用了这种方法。
 
 
 #### 第二类 —— 线程同步
@@ -185,7 +185,7 @@
 
 举个例子：
 
-在下面这段代码中，函数increment\_counter是线程安全的，但不是可重入的。
+在下面这段代码中，函数 increment\_counter是线程安全的，但不是可重入的。
 
 ```c
 
@@ -211,7 +211,7 @@ int increment_counter ()
 
 ```
 
-上面的代码中，函数increment\_counter 可以在多个线程中被调用，因为有一个互斥锁mutex来同步对共享变量 counter 的访问。但是如果这个函数用在可重入的中断处理程序中，如果在
+上面的代码中，函数 increment\_counter 可以在多个线程中被调用，因为有一个互斥锁mutex来同步对共享变量 counter 的访问。但是如果这个函数用在可重入的中断处理程序中，如果在
 pthread\_mutex\_lock(&mutex) 和 pthread\_mutex\_unlock(&mutex)
 之间产生另一个调用函数 increment\_counter 的中断，则会第二次执行此函数，此时由于 mutex 已被 lock，函数会在 pthread\_mutex\_lock(&mutex) 处阻塞，并且由于 mutex 没有机会被
 unlock，阻塞会永远持续下去。简言之，问题在于 [pthread](https://zh.wikipedia.org/wiki/Pthread) 的 mutex 是不可重入的。
