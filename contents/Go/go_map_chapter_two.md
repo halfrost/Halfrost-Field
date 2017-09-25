@@ -168,6 +168,9 @@
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-3537c47416bd49a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-bfc252ce867af304.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 多个临界区和多个互斥量的情况就要看是否会有冲突的区域，如果出现相互交集的冲突区域，后进临界区的线程就会进入睡眠状态，直到该临界区的线程完成任务以后，再被唤醒。
