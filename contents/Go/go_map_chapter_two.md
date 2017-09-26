@@ -80,9 +80,7 @@
 #### (一) 一个互斥量和一个临界区
 
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-d19c354c940e5856.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
+![](http://upload-images.jianshu.io/upload_images/1194012-566294bb7943ad2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -99,12 +97,8 @@
 线程在离开临界区的时候，一定要记得把对应的互斥量解锁。这样其他因临界区被上锁而导致睡眠的线程还有机会被唤醒。所以对同一个互斥变量的锁定和解锁必须成对的出现。既不可以对一个互斥变量进行重复的锁定，也不能对一个互斥变量进行多次的解锁。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-35e8e19d62cd44c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-
-
-
-
+![](http://upload-images.jianshu.io/upload_images/1194012-954e90ad96649b88.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -123,9 +117,7 @@
 在这种情况下，极容易产生线程死锁的情况。所以尽量不要让不同的互斥量所保护的临界区重叠。
 
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-6ade638ccde342fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
+![](http://upload-images.jianshu.io/upload_images/1194012-1755b35e29c8d8ab.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 上图这个例子中，一个临界区中存在2个互斥量：互斥量 A 和互斥量
@@ -136,22 +128,22 @@
 
 线程死锁的产生原因有以下几种：
 
-- 1. 系统资源竞争
-- 2. 进程推荐顺序非法
+- 1. 系统资源竞争    
+- 2. 进程推荐顺序非法    
 - 3. 死锁必要条件（必要条件中任意一个不满足，死锁都不会发生）  
-(1). 互斥条件  
+(1). 互斥条件    
 (2). 不剥夺条件  
 (3). 请求和保持条件  
 (4). 循环等待条件  
 
 想避免线程死锁的情况发生有以下几种方法可以解决：
 
-- 1. 预防死锁  
+- 1. 预防死锁    
 (1). 资源有序分配法（破坏环路等待条件）    
 (2). 资源原子分配法（破坏请求和保持条件）    
 
 - 2. 避免死锁  
-银行家算法
+银行家算法  
 
 - 3. 检测死锁  
 死锁定理（资源分配图化简法），这种方法虽然可以检测，但是无法预防，检测出来了死锁还需要配合解除死锁的方法才行。
@@ -163,20 +155,26 @@
 - 3. 试锁定 — 回退  
 如果在执行一个代码块的时候，需要先后（顺序不定）锁定两个变量，那么在成功锁定其中一个互斥量之后应该使用试锁定的方法来锁定另外一个变量。如果试锁定第二个互斥量失败，就把已经锁定的第一个互斥量解锁，并重新对这两个互斥量进行锁定和试锁定。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-164a08dfebbba443.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-e5592ec6aba7f454.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 如上图，线程2在锁定互斥量 B 的时候，再试锁定互斥量 A，此时锁定失败，于是就把互斥量 B 也一起解锁。接着线程1会来锁定互斥量 A。此时也不会出现死锁的情况。    
+- 4. 固定顺序锁定  
 
-- 4. 固定顺序锁定
 
-![](http://upload-images.jianshu.io/upload_images/1194012-213c9ae0be4b713a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-40be5bc5d521fb37.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 这种方式就是让线程1和线程2都按照相同的顺序锁定互斥量，都按成功锁定互斥量1以后才能去锁定互斥量2 。这样就能保证在一个线程完全离开这些重叠的临界区之前，不会有其他同样需要锁定那些互斥量的线程进入到那里。
 
 #### (三) 多个互斥量和多个临界区
 
-![](http://upload-images.jianshu.io/upload_images/1194012-1095b2785e003469.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-4585db03a0799d1a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 多个临界区和多个互斥量的情况就要看是否会有冲突的区域，如果出现相互交集的冲突区域，后进临界区的线程就会进入睡眠状态，直到该临界区的线程完成任务以后，再被唤醒。
