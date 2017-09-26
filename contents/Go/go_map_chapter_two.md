@@ -191,7 +191,7 @@
 
 举个例子：
 
-在下面这段代码中，函数 increment\_counter是线程安全的，但不是可重入的。
+在下面这段代码中，函数 increment\_counter 是线程安全的，但不是可重入的。
 
 ```c
 
@@ -217,7 +217,7 @@ int increment_counter ()
 
 ```
 
-上面的代码中，函数 increment\_counter 可以在多个线程中被调用，因为有一个互斥锁mutex来同步对共享变量 counter 的访问。但是如果这个函数用在可重入的中断处理程序中，如果在
+上面的代码中，函数 increment\_counter 可以在多个线程中被调用，因为有一个互斥锁 mutex 来同步对共享变量 counter 的访问。但是如果这个函数用在可重入的中断处理程序中，如果在
 pthread\_mutex\_lock(&mutex) 和 pthread\_mutex\_unlock(&mutex)
 之间产生另一个调用函数 increment\_counter 的中断，则会第二次执行此函数，此时由于 mutex 已被 lock，函数会在 pthread\_mutex\_lock(&mutex) 处阻塞，并且由于 mutex 没有机会被
 unlock，阻塞会永远持续下去。简言之，问题在于 [pthread](https://zh.wikipedia.org/wiki/Pthread) 的 mutex 是不可重入的。
@@ -272,7 +272,7 @@ P 操作就是 wait 操作，它的意思就是阻塞当前线程，直到收到
 V 操作就是 signal 操作，它的意思就是让该条件变量向至少一个正在等待它通知的线程发送通知，以表示某个共享数据的状态已经变化。
 
 
-Broadcast广播通知，它的意思就是让条件变量给正在等待它通知的所有线程发送通知，以表示某个共享数据的状态已经发生改变。
+Broadcast 广播通知，它的意思就是让条件变量给正在等待它通知的所有线程发送通知，以表示某个共享数据的状态已经发生改变。
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-ce03974690a19433.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
@@ -301,7 +301,7 @@ P - V 操作设计美妙之处在于，P 操作的次数与 V 操作的次数是
 当之前的线程离开以后，售票厅就会告诉门卫，允许一个线程进入临界区。
 
 
-用 P-V伪代码来描述生产者消费者：
+用 P-V 伪代码来描述生产者消费者：
 
 初始变量：
 
@@ -352,7 +352,7 @@ consumer()
 
 ```
 
-虽然在生产者和消费者单个程序里面 P，V并不是成对的，但是整个程序里面 P，V还是成对的。
+虽然在生产者和消费者单个程序里面 P，V 并不是成对的，但是整个程序里面 P，V 还是成对的。
 
 #### 读者写者问题——读者优先，写者延迟
 
