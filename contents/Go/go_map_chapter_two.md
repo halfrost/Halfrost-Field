@@ -787,7 +787,8 @@ Intel 的手册对 LOCK 前缀的说明如下：
 ### 1. ABA 问题
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-b5719f23396b5bd7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-7649918f92e26fb0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
