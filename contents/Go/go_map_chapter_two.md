@@ -714,6 +714,13 @@ func CompareAndSwapPointer(addr *unsafe.Pointer, old, new unsafe.Pointer) (swapp
 
 CAS 会先判断参数 addr 指向的被操作值与参数 old 的值是否相等。如果相当，相应的函数才会用参数 new 代表的新值替换旧值。否则，替换操作就会被忽略。
 
+
+![](http://upload-images.jianshu.io/upload_images/1194012-7c1aa0c3d7ce2c51.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
 这一点与互斥锁明显不同，CAS 总是假设被操作的值未曾改变，并一旦确认这个假设成立，就立即进行值的替换。而互斥锁的做法就更加谨慎，总是先假设会有并发的操作修改被操作的值，并需要使用锁将相关操作放入临界区中加以保护。可以说互斥锁的做法趋于悲观，CAS 的做法趋于乐观，类似乐观锁。
 
 CAS 做法最大的优势在于可以不创建互斥量和临界区的情况下，完成并发安全的值替换操作。这样大大的减少了线程同步操作对程序性能的影响。当然 CAS 也有一些缺点，缺点下一章会提到。
@@ -759,6 +766,11 @@ ZF 标志，并且把目的操作数的值写回 eax。
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-153c43829be0a454.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
 在 Intel 平台下，会用 LOCK CMPXCHG 来实现，这里的 LOCK 是内存总线锁，所谓总线锁就是使用 CPU 提供的一个LOCK＃信号，当一个处理器在总线上输出此信号时，其他处理器的请求将被阻塞住，那么该 CPU 可以独占使用共享内存。
 
 Intel 的手册对 LOCK 前缀的说明如下：
@@ -766,9 +778,17 @@ Intel 的手册对 LOCK 前缀的说明如下：
 - 2. 禁止该指令与之前和之后的读和写指令重排序。
 - 3. 把写缓冲区中的所有数据刷新到内存中。
 
-
+用 CAS 方式来保证线程安全的方式就比用互斥锁的方式效率要高很多。
 
 ## 四. ABA 问题
+
+虽然 CAS 的效率高，但是依旧存在3大问题。
+
+### 1. ABA 问题
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-b5719f23396b5bd7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 
 ## 五. Lock - Free方案举例
