@@ -17,9 +17,10 @@
 首先空间和时空是常常会被混淆的两个概念。其实他们两者不同。
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-675163b7b1955259.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-675163b7b1955259.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -31,8 +32,10 @@
 ## 如何描述高维空间的划分
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-2de3dd99366b20d8.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-2de3dd99366b20d8.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -54,7 +57,10 @@
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-3eb351520239e67c.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-3eb351520239e67c.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 
@@ -72,47 +78,70 @@
 
 四维的超四面体是5个顶点，10条棱边，10个三角面，5个四面体构成的超体。用三维空间无法描述它。
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-6ce61cfd05e13311.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-
-
-![](http://upload-images.jianshu.io/upload_images/1194012-6ce61cfd05e13311.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 正方体是我们常见的三维物体。那四维空间里面的立方体变成什么样子了呢？
 
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-e2f93e999b664bf5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-e2f93e999b664bf5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 上图就是四维空间里面的立方体，叫超立方体。
 
 
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-b71e1fbb2966d876.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-b71e1fbb2966d876.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
 上图反映出四维方体每条边等长，也可以看出立方体如何互相连接的。构造一个超立方体的最简单的步骤就是把2个立方体的8个顶点都分别和另外一个超立方体的顶点连接起来。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-4d23bc0e50ce2097.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-4d23bc0e50ce2097.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
 
 上图揭示的是超立方体本质上是从结合2个立方体，连结对应顶点得来的。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-98a888cd92384a41.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-98a888cd92384a41.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 上图按著每一顶点由最底一顶点出发沿着棱走的长度排列。如果我们是要将超正方体用作在[并行计算](https://zh.wikipedia.org/wiki/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97)中连接不同处理器[网络拓扑](https://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91)基础，则这些图像会非常有用。在超正方体中任意两个顶点之间之间至多有4中不同的路程，并且这里有许多路径是等同的。超正方体还是一个[二分图](https://zh.wikipedia.org/wiki/%E4%BA%8C%E5%88%86%E5%9B%BE)，就像正方形和立方体一样。
 
 下面的两个图是透视投影图
 
-![](http://upload-images.jianshu.io/upload_images/1194012-d25f24d1099f52c6.gif?imageMogr2/auto-orient/strip)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-d25f24d1099f52c6.gif?imageMogr2/auto-orient/strip'>
+</p>
+
 
 
 上图是正八胞体绕着一个从左前到右后，从上到下切过图形的平面进行[单旋转](https://zh.wikipedia.org/w/index.php?title=%E5%8D%95%E6%97%8B%E8%BD%AC&action=edit&redlink=1)时的[透视投影](https://zh.wikipedia.org/wiki/%E9%80%8F%E8%A7%86%E6%8A%95%E5%BD%B1)。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-c7d7a93436e337e1.gif?imageMogr2/auto-orient/strip)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-c7d7a93436e337e1.gif?imageMogr2/auto-orient/strip'>
+</p>
+
 
 
 上图是正八胞体绕着两个在四维空间中互相[正交](https://zh.wikipedia.org/wiki/%E6%AD%A3%E4%BA%A4)的平面进行[双旋转](https://zh.wikipedia.org/w/index.php?title=%E5%8F%8C%E6%97%8B%E8%BD%AC&action=edit&redlink=1)时的透视投影。
