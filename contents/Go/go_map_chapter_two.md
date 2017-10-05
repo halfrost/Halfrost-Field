@@ -865,9 +865,81 @@ CAS 操作只能保证一个共享变量的原子操作，但是保证多个共�
 
 
 
-## 五. Lock - Free方案举例
+## 五. Lock - Free 方案举例
 
 
+在 Lock - Free方案举例之前，先来回顾一下互斥量的方案。上面我们用互斥量实现了 Go 的线程安全的 Map。至于这个 Map 的性能如何，接下来对比的时候可以看看数据。
+
+### 1. NO Lock - Free 方案
+
+如果不用 Lock - Free 方案也不用简单的互斥量的方案，如何实现一个线程安全的字典呢？答案是利用分段锁的设计，只有在同一个分段内才存在竞态关系，不同的分段锁之间没有锁竞争。相比于对整个
+Map 加锁的设计，分段锁大大的提高了高并发环境下的处理能力。
+
+```go
+
+
+type ConcurrentMap []*ConcurrentMapShared
+
+
+type ConcurrentMapShared struct {
+	items        map[string]interface{}
+	sync.RWMutex // 读写锁，保证进入内部 map 的线程安全
+}
+
+```
+
+
+分段锁 Segment 存在一个并发度。并发度可以理解为程序运行时能够同时更新 ConccurentMap 且不产生锁竞争的最大线程数，实际上就是 ConcurrentMap 中的分段锁个数。即数组的长度。
+
+```go
+
+var SHARD_COUNT = 32
+
+```
+
+如果并发度设置的过小，会带来严重的锁竞争问题；如果并发度设置的过大，原本位于同一个 Segment 内的访问会扩散到不同的 Segment 中，CPU cache 命中率会下降，从而引起程序性能下降。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-578493519f8bf005.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+ConcurrentMap 的初始化就是对数组的初始化，并且初始化数组里面每个字典。
+
+```go
+
+func New() ConcurrentMap {
+	m := make(ConcurrentMap, SHARD_COUNT)
+	for i := 0; i < SHARD_COUNT; i++ {
+		m[i] = &ConcurrentMapShared{items: make(map[string]interface{})}
+	}
+	return m
+}
+
+```
+
+ConcurrentMap 主要使用 Segment 来实现减小锁粒度，把 Map 分割成若干个 Segment，在 put 的时候需要加读写锁，get 时候只加读锁，使用volatile来保证可见性，当要统计全局时（比如size），首先会尝试多次计算modcount来确定，这几次尝试中，是否有其他线程进行了修改操作，如果没有，则直接返回size。如果有，则需要依次锁住所有的Segment来计算。
+
+
+```go
+
+
+
+
+```
+
+
+
+这种方法虽然比单纯的加互斥量好很多，因为 Segment 把锁住的范围进一步的减少了，但是这个范围依旧比较大，还能再进一步的减少锁么？
+
+还有一点就是并发量的设置，要合理，不能太大也不能太小。
+
+### 2. Lock - Free 方案
+
+在 Go 1.9 的版本中默认就实现了一种线程安全的 Map，摒弃了Segment（分段锁）的概念，而是启用了一种全新的方式实现，利用了 CAS 算法，即 Lock - Free 方案。
+
+
+采用 Lock - Free 方案以后，能比上一个分案，分段锁更进一步缩小锁的范围。
 
 ## 五. 性能对比
 
@@ -898,6 +970,8 @@ type Map struct {
 }
 
 ```
+
+
 
 
 
