@@ -33,6 +33,7 @@ func BenchmarkStrconv(b *testing.B) {
 	}
 }
 
+// 插入不存在的 key
 func BenchmarkSingleInsertAbsent(b *testing.B) {
 	m := New()
 	b.ResetTimer()
@@ -41,6 +42,7 @@ func BenchmarkSingleInsertAbsent(b *testing.B) {
 	}
 }
 
+// 插入存在 key
 func BenchmarkSingleInsertPresent(b *testing.B) {
 	m := New()
 	m.Set("key", "value")
@@ -50,6 +52,7 @@ func BenchmarkSingleInsertPresent(b *testing.B) {
 	}
 }
 
+// 并发的插入不存在的 key-value
 func benchmarkMultiInsertDifferent(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, b.N)
@@ -73,9 +76,10 @@ func BenchmarkMultiInsertDifferent_32_Shard(b *testing.B) {
 	runWithShards(benchmarkMultiInsertDifferent, b, 32)
 }
 func BenchmarkMultiInsertDifferent_256_Shard(b *testing.B) {
-	runWithShards(benchmarkMultiGetSetDifferent, b, 256)
+	runWithShards(benchmarkMultiInsertDifferent, b, 256)
 }
 
+// 并发的插入相同的 key-value
 func BenchmarkMultiInsertSame(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, b.N)
@@ -90,6 +94,7 @@ func BenchmarkMultiInsertSame(b *testing.B) {
 	}
 }
 
+// 并发的 get
 func BenchmarkMultiGetSame(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, b.N)
@@ -104,6 +109,7 @@ func BenchmarkMultiGetSame(b *testing.B) {
 	}
 }
 
+// 并发的 get 和 set
 func benchmarkMultiGetSetDifferent(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, 2*b.N)
@@ -132,6 +138,7 @@ func BenchmarkMultiGetSetDifferent_256_Shard(b *testing.B) {
 	runWithShards(benchmarkMultiGetSetDifferent, b, 256)
 }
 
+// get set 已经存在的一些 key
 func benchmarkMultiGetSetBlock(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, 2*b.N)
@@ -183,6 +190,7 @@ func runWithShards(bench func(b *testing.B), b *testing.B, shardsCount int) {
 	SHARD_COUNT = oldShardsCount
 }
 
+// 取出 key
 func BenchmarkKeys(b *testing.B) {
 	m := New()
 
