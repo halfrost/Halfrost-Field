@@ -918,19 +918,154 @@ func New() ConcurrentMap {
 
 ```
 
-ConcurrentMap 主要使用 Segment 来实现减小锁粒度，把 Map 分割成若干个 Segment，在 put 的时候需要加读写锁，get 时候只加读锁，使用volatile来保证可见性，当要统计全局时（比如size），首先会尝试多次计算modcount来确定，这几次尝试中，是否有其他线程进行了修改操作，如果没有，则直接返回size。如果有，则需要依次锁住所有的Segment来计算。
+ConcurrentMap 主要使用 Segment 来实现减小锁粒度，把 Map 分割成若干个 Segment，在 put 的时候需要加读写锁，get 时候只加读锁。
+
+
+既然分段了，那么针对每个 key 对应哪一个段的逻辑就由一个哈希函数来定。
+
+
+```go
+
+func fnv32(key string) uint32 {
+	hash := uint32(2166136261)
+	const prime32 = uint32(16777619)
+	for i := 0; i < len(key); i++ {
+		hash *= prime32
+		hash ^= uint32(key[i])
+	}
+	return hash
+}
+
+
+```
+
+上面这段哈希函数会根据每次传入的 string ，计算出不同的哈希值。
+
+```go
+
+func (m ConcurrentMap) GetShard(key string) *ConcurrentMapShared {
+	return m[uint(fnv32(key))%uint(SHARD_COUNT)]
+}
+
+```
+
+根据哈希值对数组长度取余，取出 ConcurrentMap 中的 ConcurrentMapShared。在 ConcurrentMapShared 中存储对应这个段的 key \- value。
 
 
 ```go
 
 
+func (m ConcurrentMap) Set(key string, value interface{}) {
+	// Get map shard.
+	shard := m.GetShard(key)
+	shard.Lock()
+	shard.items[key] = value
+	shard.Unlock()
+}
+
+```
+
+上面这段就是 ConcurrentMap 的 set 操作。思路很清晰：先取出对应段内的 ConcurrentMapShared，然后再加读写锁锁定，写入 key \- value，写入成功以后再释放读写锁。
+
+
+```go
+
+func (m ConcurrentMap) Get(key string) (interface{}, bool) {
+	// Get shard
+	shard := m.GetShard(key)
+	shard.RLock()
+	// Get item from shard.
+	val, ok := shard.items[key]
+	shard.RUnlock()
+	return val, ok
+}
+
+```
+
+上面这段就是 ConcurrentMap 的 get 操作。思路也很清晰：先取出对应段内的 ConcurrentMapShared，然后再加读锁锁定，读取 key - value，读取成功以后再释放读锁。
+
+这里和 set 操作的区别就在于只需要加读锁即可，不用加读写锁。
+
+```go
+
+func (m ConcurrentMap) Count() int {
+	count := 0
+	for i := 0; i < SHARD_COUNT; i++ {
+		shard := m[i]
+		shard.RLock()
+		count += len(shard.items)
+		shard.RUnlock()
+	}
+	return count
+}
 
 
 ```
 
+ConcurrentMap 的 Count 操作就是把 ConcurrentMap 数组的每一个分段元素里面的每一个元素都遍历一遍，计算出总数。
 
 
-这种方法虽然比单纯的加互斥量好很多，因为 Segment 把锁住的范围进一步的减少了，但是这个范围依旧比较大，还能再进一步的减少锁么？
+```go
+
+func (m ConcurrentMap) Keys() []string {
+	count := m.Count()
+	ch := make(chan string, count)
+	go func() {
+		// 遍历所有的 shard.
+		wg := sync.WaitGroup{}
+		wg.Add(SHARD_COUNT)
+		for _, shard := range m {
+			go func(shard *ConcurrentMapShared) {
+				// 遍历所有的 key, value 键值对.
+				shard.RLock()
+				for key := range shard.items {
+					ch <- key
+				}
+				shard.RUnlock()
+				wg.Done()
+			}(shard)
+		}
+		wg.Wait()
+		close(ch)
+	}()
+
+	// 生成 keys 数组，存储所有的 key
+	keys := make([]string, 0, count)
+	for k := range ch {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+```
+
+上述是返回 ConcurrentMap 中所有 key ，结果装在字符串数组中。
+
+
+```go
+
+
+type UpsertCb func(exist bool, valueInMap interface{}, newValue interface{}) interface{}
+
+func (m ConcurrentMap) Upsert(key string, value interface{}, cb UpsertCb) (res interface{}) {
+	shard := m.GetShard(key)
+	shard.Lock()
+	v, ok := shard.items[key]
+	res = cb(ok, v, value)
+	shard.items[key] = res
+	shard.Unlock()
+	return res
+}
+
+```
+
+上述代码是 Upsert 操作。如果已经存在了，就更新。如果是一个新元素，就用 UpsertCb 函数插入一个新的。思路也是先根据 string 找到对应的段，然后加读写锁。这里只能加读写锁，因为不管是 update 还是 insert 操作，都需要写入。读取 key 对应的 value 值，然后调用 UpsertCb 函数，把结果更新到 key 对应的 value 中。最后释放读写锁即可。
+
+UpsertCb 函数在这里值得说明的是，这个函数是回调返回待插入到 map 中的新元素。这个函数当且仅当在读写锁被锁定的时候才会被调用，因此一定不允许再去尝试读取同一个 map 中的其他 key 值。因为这样会导致线程死锁。死锁的原因是 Go 中 sync.RWLock 是不可重入的。
+
+完整的代码见[concurrent_map.go](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_bench_test/concurrent-map/concurrent_map.go)
+
+这种分段的方法虽然比单纯的加互斥量好很多，因为 Segment 把锁住的范围进一步的减少了，但是这个范围依旧比较大，还能再进一步的减少锁么？
 
 还有一点就是并发量的设置，要合理，不能太大也不能太小。
 
@@ -938,8 +1073,7 @@ ConcurrentMap 主要使用 Segment 来实现减小锁粒度，把 Map 分割成�
 
 在 Go 1.9 的版本中默认就实现了一种线程安全的 Map，摒弃了Segment（分段锁）的概念，而是启用了一种全新的方式实现，利用了 CAS 算法，即 Lock - Free 方案。
 
-
-采用 Lock - Free 方案以后，能比上一个分案，分段锁更进一步缩小锁的范围。
+采用 Lock - Free 方案以后，能比上一个分案，分段锁更进一步缩小锁的范围。性能大大提升。
 
 ## 五. 性能对比
 
@@ -970,8 +1104,6 @@ type Map struct {
 }
 
 ```
-
-
 
 
 
