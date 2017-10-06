@@ -1352,6 +1352,12 @@ func (e *entry) delete() (hadValue bool) {
 删除 entry 具体的实现如上。这个操作里面都是原子性操作。循环判断 entry 是否为 nil 或者已经被标记成了 expunged，如果是这种情况就返回 false，代表删除失败。否则就 CAS 操作，将 entry 的 p 指针置为 nil，并返回 true，代表删除成功。
 
 
+
+至此，关于 Go 1.9 中自带的线程安全的 sync.map 的实现就分析完了。官方的实现里面基本没有用到锁，互斥量的 lock 也是基于 CAS的。read map 也是原子性的。所以比之前加锁的实现版本性能有所提升。
+
+究竟 Lock \- Free 的性能有多强呢？接下来做一下性能测试。
+
+
 ## 五. 性能对比
 
 
