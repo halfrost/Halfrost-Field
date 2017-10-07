@@ -11,7 +11,7 @@ import (
 // 插入不存在的 key (粗糙的锁)
 func BenchmarkSingleInsertAbsentBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -40,7 +40,7 @@ func BenchmarkSingleInsertAbsentSyncMap(b *testing.B) {
 // 插入存在 key (粗糙锁)
 func BenchmarkSingleInsertPresentBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	myMap.BuiltinMapStore("key", "value")
 	b.ResetTimer()
@@ -72,7 +72,7 @@ func BenchmarkSingleInsertPresentSyncMap(b *testing.B) {
 // 读取存在 key (粗糙锁)
 func BenchmarkSingleGetPresentBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	myMap.BuiltinMapStore("key", "value")
 	b.ResetTimer()
@@ -104,7 +104,7 @@ func BenchmarkSingleGetPresentSyncMap(b *testing.B) {
 // 删除存在 key (粗糙锁)
 func BenchmarkDeleteBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	b.RunParallel(func(pb *testing.PB) {
 		r := rand.New(rand.NewSource(time.Now().Unix()))
@@ -145,7 +145,7 @@ func BenchmarkDeleteSyncMap(b *testing.B) {
 // 并发的插入不存在的 key-value (粗糙锁)
 func BenchmarkMultiInsertDifferentBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	finished := make(chan struct{}, b.N)
 
@@ -214,7 +214,7 @@ func BenchmarkMultiInsertDifferentSyncMap(b *testing.B) {
 // 并发的插入相同的 key-value (粗糙锁)
 func BenchmarkMultiInsertSameBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	finished := make(chan struct{}, b.N)
 
@@ -273,7 +273,7 @@ func BenchmarkMultiInsertSameSyncMap(b *testing.B) {
 // 并发的 get (粗糙锁)
 func BenchmarkMultiGetSameBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	finished := make(chan struct{}, b.N)
 	get := func(key, value string) {
@@ -330,7 +330,7 @@ func BenchmarkMultiGetSameSyncMap(b *testing.B) {
 // 并发的 get 和 set (粗糙锁)
 func BenchmarkMultiGetSetDifferentBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	finished := make(chan struct{}, 2*b.N)
 	get := func(key, value string) {
@@ -415,7 +415,7 @@ func BenchmarkMultiGetSetDifferentSyncMap(b *testing.B) {
 // get set 已经存在的一些 key (粗糙锁)
 func BenchmarkMultiGetSetBlockBuiltInMap(b *testing.B) {
 	myMap = &MyMap{
-		m: make(map[string]interface{}, 100),
+		m: make(map[string]interface{}, 32),
 	}
 	finished := make(chan struct{}, 2*b.N)
 	get := func(key, value string) {
