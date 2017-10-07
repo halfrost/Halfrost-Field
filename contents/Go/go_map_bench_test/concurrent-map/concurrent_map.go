@@ -53,6 +53,8 @@ func (m ConcurrentMap) Set(key string, value interface{}) {
 // It is called while lock is held, therefore it MUST NOT
 // try to access other keys in same map, as it can lead to deadlock since
 // Go sync.RWLock is not reentrant
+// 回调返回待插入到 map 中的新元素
+// 这个函数当且仅当在读写锁被锁定的时候才会被调用，因此一定不允许再去尝试读取同一个 map 中的其他 key 值。因为这样会导致线程死锁。死锁的原因是 Go 中 sync.RWLock 是不可重入的。
 type UpsertCb func(exist bool, valueInMap interface{}, newValue interface{}) interface{}
 
 // Insert or Update - updates existing element or inserts a new one using UpsertCb
@@ -244,12 +246,12 @@ func (m ConcurrentMap) Keys() []string {
 	count := m.Count()
 	ch := make(chan string, count)
 	go func() {
-		// Foreach shard.
+		// 遍历所有的 shard.
 		wg := sync.WaitGroup{}
 		wg.Add(SHARD_COUNT)
 		for _, shard := range m {
 			go func(shard *ConcurrentMapShared) {
-				// Foreach key, value pair.
+				// 遍历所有的 key, value 键值对.
 				shard.RLock()
 				for key := range shard.items {
 					ch <- key
@@ -262,7 +264,7 @@ func (m ConcurrentMap) Keys() []string {
 		close(ch)
 	}()
 
-	// Generate keys
+	// 生成 keys 数组，存储所有的 key
 	keys := make([]string, 0, count)
 	for k := range ch {
 		keys = append(keys, k)
@@ -313,3 +315,42 @@ func fnv32(key string) uint32 {
 // 	}
 // 	return nil
 // }
+
+type MyMap struct {
+	sync.Mutex
+	m map[string]interface{}
+}
+
+var myMap *MyMap
+
+func init() {
+	myMap = &MyMap{
+		m: make(map[string]interface{}, 100),
+	}
+}
+
+func (myMap *MyMap) BuiltinMapStore(k string, v interface{}) {
+	myMap.Lock()
+	defer myMap.Unlock()
+	myMap.m[k] = v
+}
+
+func (myMap *MyMap) BuiltinMapLookup(k string) interface{} {
+	myMap.Lock()
+	defer myMap.Unlock()
+	if v, ok := myMap.m[k]; !ok {
+		return -1
+	} else {
+		return v
+	}
+}
+
+func (myMap *MyMap) BuiltinMapDelete(k string) {
+	myMap.Lock()
+	defer myMap.Unlock()
+	if _, ok := myMap.m[k]; !ok {
+		return
+	} else {
+		delete(myMap.m, k)
+	}
+}
