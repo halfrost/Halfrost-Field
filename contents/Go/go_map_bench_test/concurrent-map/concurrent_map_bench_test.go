@@ -1,9 +1,11 @@
 package cmap
 
 import (
+	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 // 插入不存在的 key
@@ -42,6 +44,52 @@ func BenchmarkSingleInsertPresentSyncMap(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		syncMap.Store("key", "value")
 	}
+}
+
+// 读取存在 key
+func BenchmarkSingleGetPresent(b *testing.B) {
+	m := New()
+	m.Set("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Get("key")
+	}
+}
+
+// 读取存在 key (syncMap)
+func BenchmarkSingleGetPresentSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	syncMap.Store("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		syncMap.Load("key")
+	}
+}
+
+// 删除存在 key
+func BenchmarkDelete(b *testing.B) {
+	m := New()
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		for pb.Next() {
+			// The loop body is executed b.N times total across all goroutines.
+			k := r.Intn(100000000)
+			m.Remove(strconv.Itoa(k))
+		}
+	})
+}
+
+// 删除存在 key (syncMap)
+func BenchmarkDeleteSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		for pb.Next() {
+			// The loop body is executed b.N times total across all goroutines.
+			k := r.Intn(100000000)
+			syncMap.Delete(strconv.Itoa(k))
+		}
+	})
 }
 
 // 并发的插入不存在的 key-value
