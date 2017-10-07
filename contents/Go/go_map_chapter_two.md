@@ -1360,13 +1360,415 @@ func (e *entry) delete() (hadValue bool) {
 
 ## 五. 性能对比
 
+性能测试主要针对3个方面，Insert，Get，Delete。测试对象主要针对简单加互斥锁的原生 Map ，分段加锁的 Map，Lock \- Free 的 Map 这三种进行性能测试。
+
+性能测试的所有代码已经放在 github 了，地址在[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_bench_test/concurrent-map/concurrent_map_bench_test.go)，性能测试用的指令是：
+
+```go
+
+go test -v -run=^$ -bench . -benchmem
+
+```
+
+### 1. 插入 Insert 性能测试
+
+```go
+
+// 插入不存在的 key (粗糙的锁)
+func BenchmarkSingleInsertAbsentBuiltInMap(b *testing.B) {
+	myMap = &MyMap{
+		m: make(map[string]interface{}, 32),
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		myMap.BuiltinMapStore(strconv.Itoa(i), "value")
+	}
+}
+
+// 插入不存在的 key (分段锁)
+func BenchmarkSingleInsertAbsent(b *testing.B) {
+	m := New()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Set(strconv.Itoa(i), "value")
+	}
+}
+
+// 插入不存在的 key (syncMap)
+func BenchmarkSingleInsertAbsentSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		syncMap.Store(strconv.Itoa(i), "value")
+	}
+}
+
+```
+
+测试结果：
+
+```go
+
+BenchmarkSingleInsertAbsentBuiltInMap-4     	 2000000	       857 ns/op	     170 B/op	       1 allocs/op
+BenchmarkSingleInsertAbsent-4               	 2000000	       651 ns/op	     170 B/op	       1 allocs/op
+BenchmarkSingleInsertAbsentSyncMap-4        	 1000000	      1094 ns/op	     187 B/op	       5 allocs/op
+
+```
+
+实验结果是分段锁的性能最高。这里说明一下测试结果，\-4代表测试用了4核 CPU ，2000000 代表循环次数，857 ns/op 代表的是平均每次执行花费的时间，170 B/op 代表的是每次执行堆上分配内存总数，allocs/op 代表的是每次执行堆上分配内存次数。
+
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f4205fa15627a3f0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
+
+
+
+这样看来，循环次数越多，花费时间越少，分配内存总数越小，分配内存次数越少，性能就越好。下面的性能图表中去除掉了第一列循环次数，只花了剩下的3项，所以条形图越短的性能越好。以下的每张条形图的规则和测试结果代表的意义都和这里一样，下面就不再赘述了。
+
+```go
+
+// 插入存在 key (粗糙锁)
+func BenchmarkSingleInsertPresentBuiltInMap(b *testing.B) {
+	myMap = &MyMap{
+		m: make(map[string]interface{}, 32),
+	}
+	myMap.BuiltinMapStore("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		myMap.BuiltinMapStore("key", "value")
+	}
+}
+
+// 插入存在 key (分段锁)
+func BenchmarkSingleInsertPresent(b *testing.B) {
+	m := New()
+	m.Set("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Set("key", "value")
+	}
+}
+
+// 插入存在 key (syncMap)
+func BenchmarkSingleInsertPresentSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	syncMap.Store("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		syncMap.Store("key", "value")
+	}
+}
+
+
+```
+
+测试结果：
+
+```go
+
+BenchmarkSingleInsertPresentBuiltInMap-4    	20000000	        74.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleInsertPresent-4              	20000000	        61.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleInsertPresentSyncMap-4       	20000000	       108 ns/op	      16 B/op	       1 allocs/op
+
+```
+
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-b4e71de599377a4a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+从图中可以看出，sync.map 在涉及到 Store 这一项的均比其他两者的性能差。不管插入不存在的 Key 还是存在的 Key，分段锁的性能均是目前最好的。
+
+
+### 2. 读取 Get 性能测试
+
+
+```go
+
+// 读取存在 key (粗糙锁)
+func BenchmarkSingleGetPresentBuiltInMap(b *testing.B) {
+	myMap = &MyMap{
+		m: make(map[string]interface{}, 32),
+	}
+	myMap.BuiltinMapStore("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		myMap.BuiltinMapLookup("key")
+	}
+}
+
+// 读取存在 key (分段锁)
+func BenchmarkSingleGetPresent(b *testing.B) {
+	m := New()
+	m.Set("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Get("key")
+	}
+}
+
+// 读取存在 key (syncMap)
+func BenchmarkSingleGetPresentSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	syncMap.Store("key", "value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		syncMap.Load("key")
+	}
+}
+
+```
+
+测试结果：
+
+```go
+
+BenchmarkSingleGetPresentBuiltInMap-4       	20000000	        71.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleGetPresent-4                 	30000000	        42.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleGetPresentSyncMap-4          	30000000	        40.3 ns/op	       0 B/op	       0 allocs/op
+
+
+```
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-13cc2b6ebdcdddda.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+从图中可以看出，sync.map 在 Load 这一项的性能非常优秀，远高于其他两者。
+
+
+### 3. 并发插入读取混合性能测试
+
+接下来的实现就涉及到了并发插入和读取了。由于分段锁实现的特殊性，分段个数会多多少少影响到性能，那么接下来的实验就会对分段锁分1，16，32，256 这4段进行测试，分别看看性能变化如何，其他两种线程安全的 Map 不变。
+
+由于并发的代码太多了，这里就不贴出来了，感兴趣的同学可以看[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_bench_test/concurrent-map/concurrent_map_bench_test.go)
+
+
+下面就直接放出测试结果：
+
+并发插入不存在的 Key 值
+
+```go
+
+BenchmarkMultiInsertDifferentBuiltInMap-4   	 1000000	      2359 ns/op	     330 B/op	      11 allocs/op
+BenchmarkMultiInsertDifferent_1_Shard-4     	 1000000	      2039 ns/op	     330 B/op	      11 allocs/op
+BenchmarkMultiInsertDifferent_16_Shard-4    	 1000000	      1937 ns/op	     330 B/op	      11 allocs/op
+BenchmarkMultiInsertDifferent_32_Shard-4    	 1000000	      1944 ns/op	     330 B/op	      11 allocs/op
+BenchmarkMultiInsertDifferent_256_Shard-4   	 1000000	      1991 ns/op	     331 B/op	      11 allocs/op
+BenchmarkMultiInsertDifferentSyncMap-4      	 1000000	      3760 ns/op	     635 B/op	      33 allocs/op
+
+```
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-bd9d292670764319.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+从图中可以看出，sync.map 在涉及到 Store 这一项的均比其他两者的性能差。并发插入不存在的 Key，分段锁划分的 Segment 多少与性能没有关系。
+
+
+并发插入存在的 Key 值
+
+```go
+
+BenchmarkMultiInsertSameBuiltInMap-4        	 1000000	      1182 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiInsertSame-4                  	 1000000	      1091 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiInsertSameSyncMap-4           	 1000000	      1809 ns/op	     480 B/op	      30 allocs/op
+
+```
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-1d4d34d894512c56.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+从图中可以看出，sync.map 在涉及到 Store 这一项的均比其他两者的性能差。
+
+
+并发的读取存在的 Key 值
+
+
+```go
+
+BenchmarkMultiGetSameBuiltInMap-4           	 2000000	       767 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiGetSame-4                     	 3000000	       481 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiGetSameSyncMap-4              	 3000000	       464 ns/op	       0 B/op	       0 allocs/op
+
+```
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-8f3f2aa8cd1e8fee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+从图中可以看出，sync.map 在 Load 这一项的性能远超多其他两者。
+
+
+并发插入读取不存在的 Key 值
+
+
+```go
+
+BenchmarkMultiGetSetDifferentBuiltInMap-4   	 1000000	      3281 ns/op	     337 B/op	      12 allocs/op
+BenchmarkMultiGetSetDifferent_1_Shard-4     	 1000000	      3007 ns/op	     338 B/op	      12 allocs/op
+BenchmarkMultiGetSetDifferent_16_Shard-4    	  500000	      2662 ns/op	     337 B/op	      12 allocs/op
+BenchmarkMultiGetSetDifferent_32_Shard-4    	 1000000	      2732 ns/op	     337 B/op	      12 allocs/op
+BenchmarkMultiGetSetDifferent_256_Shard-4   	 1000000	      2788 ns/op	     339 B/op	      12 allocs/op
+BenchmarkMultiGetSetDifferentSyncMap-4      	  300000	      8990 ns/op	    1104 B/op	      34 allocs/op
+
+```
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-5e55e55f5b84db31.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+
+从图中可以看出，sync.map 在涉及到 Store 这一项的均比其他两者的性能差。并发插入读取不存在的 Key，分段锁划分的 Segment 多少与性能没有关系。
+
+
+并发插入读取存在的 Key 值
+
+
+```go
+
+BenchmarkMultiGetSetBlockBuiltInMap-4       	 1000000	      2095 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiGetSetBlock_1_Shard-4         	 1000000	      1712 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiGetSetBlock_16_Shard-4        	 1000000	      1730 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiGetSetBlock_32_Shard-4        	 1000000	      1645 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiGetSetBlock_256_Shard-4       	 1000000	      1619 ns/op	     160 B/op	      10 allocs/op
+BenchmarkMultiGetSetBlockSyncMap-4          	  500000	      2660 ns/op	     480 B/op	      30 allocs/op
+
+```
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-8ff366f481583cc3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+从图中可以看出，sync.map 在涉及到 Store 这一项的均比其他两者的性能差。并发插入读取存在的 Key，分段锁划分的 Segment 越小，性能越好！
+
+
+### 4. 删除 Delete 性能测试
+
+
+```go
+
+// 删除存在 key (粗糙锁)
+func BenchmarkDeleteBuiltInMap(b *testing.B) {
+	myMap = &MyMap{
+		m: make(map[string]interface{}, 32),
+	}
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		for pb.Next() {
+			// The loop body is executed b.N times total across all goroutines.
+			k := r.Intn(100000000)
+			myMap.BuiltinMapDelete(strconv.Itoa(k))
+		}
+	})
+}
+
+// 删除存在 key (分段锁)
+func BenchmarkDelete(b *testing.B) {
+	m := New()
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		for pb.Next() {
+			// The loop body is executed b.N times total across all goroutines.
+			k := r.Intn(100000000)
+			m.Remove(strconv.Itoa(k))
+		}
+	})
+}
+
+// 删除存在 key (syncMap)
+func BenchmarkDeleteSyncMap(b *testing.B) {
+	syncMap := &sync.Map{}
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		for pb.Next() {
+			// The loop body is executed b.N times total across all goroutines.
+			k := r.Intn(100000000)
+			syncMap.Delete(strconv.Itoa(k))
+		}
+	})
+}
+
+
+```
+
+
+测试结果：
+
+
+```go
+
+BenchmarkDeleteBuiltInMap-4                 	10000000	       130 ns/op	       8 B/op	       1 allocs/op
+BenchmarkDelete-4                           	20000000	        76.7 ns/op	       8 B/op	       1 allocs/op
+BenchmarkDeleteSyncMap-4                    	30000000	        45.4 ns/op	       8 B/op	       0 allocs/op
+
+
+```
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-dab70a82a4826cbb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+从图中可以看出，sync.map 在 Delete 这一项是完美的超过其他两者的。
 
 ## 六. 总结
 
+本文从线程安全理论基础开始讲了线程安全中一些处理方法。其中涉及到互斥量和条件变量相关知识。从 Lock 的方案谈到了 Lock \- Free 的 CAS 相关方案。最后针对 Go 1.9 新加的 sync.map 进行了源码分析和性能测试。
+
+采用了 Lock \- Free 方案的 sync.map 测试结果并没有想象中的那么出色。除了 Load 和 Delete 这两项远远甩开其他两者，凡是涉及到 Store 相关操作的性能均低于其他两者 Map 的实现。不过这也是有原因的。
+
+纵观 Java ConcurrentHashmap 一路的变化：
+
+JDK 6,7 中的 ConcurrentHashmap 主要使用 Segment 来实现减小锁粒度，把 HashMap 分割成若干个 Segment，在 put 的时候需要锁住 Segment，get 时候不加锁，使用 volatile 来保证可见性，当要统计全局时（比如size），首先会尝试多次计算 modcount 来确定，这几次尝试中，是否有其他线程进行了修改操作，如果没有，则直接返回 size。如果有，则需要依次锁住所有的 Segment 来计算。
+
+JDK 7 中 ConcurrentHashmap 中，当长度过长碰撞会很频繁，链表的增改删查操作都会消耗很长的时间，影响性能,所以 JDK8 中完全重写了concurrentHashmap，代码量从原来的1000多行变成了 6000多行，实现上也和原来的分段式存储有很大的区别。
+
+JDK 8 的 ConcurrentHashmap 主要设计上的变化有以下几点: 
+
+- 不采用 Segment 而采用 node，锁住 node 来实现减小锁粒度。
+- 设计了 MOVED 状态 当 Resize 的中过程中线程2还在 put 数据，线程2会帮助 resize。
+- 使用3个 CAS 操作来确保 node 的一些操作的原子性，这种方式代替了锁。
+- sizeCtl 的不同值来代表不同含义，起到了控制的作用。
 
 
 
+可见 Go 1.9 一上来第一个版本就直接摒弃了 Segment 的做法，采取了 CAS 这种 Lock \- Free 的方案提高性能。但是它并没有对整个字典进行类似 Java 的 Node 的设计。但是整个 sync.map 在 ns/op ，B/op，allocs/op 这三个性能指标上是普通原生非线程安全 Map 的三倍！
 
+不过相信 Google 应该还会继续优化这部分吧，毕竟源码里面还有几处 TODO 呢，让我们一起其他 Go 未来版本的发展吧，笔者也会一直持续关注的。
+
+
+(在本篇文章截稿的时候，笔者又突然发现了一种分段锁的 Map 实现，性能更高，它具有负载均衡等特点，应该是目前笔者见到的性能最好的 Go 语言实现的线程安全的 Map ，关于它的实现源码分析就只能放在下篇博文单独写一篇或者以后有空再分析啦)
 
 
 
@@ -1379,6 +1781,7 @@ Reference：
 [Semaphores are Surprisingly Versatile](http://preshing.com/20150316/semaphores-are-surprisingly-versatile/)  
 [线程安全](https://zh.wikipedia.org/wiki/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8)  
 [JAVA CAS原理深度分析](http://zl198751.iteye.com/blog/1848575)    
+[Java ConcurrentHashMap 总结](https://my.oschina.net/hosee/blog/675884)  
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
