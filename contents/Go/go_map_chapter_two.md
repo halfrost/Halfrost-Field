@@ -1744,6 +1744,8 @@ BenchmarkDeleteSyncMap-4                    	30000000	        45.4 ns/op	       
 
 ## 六. 总结
 
+![](http://upload-images.jianshu.io/upload_images/1194012-c574e8d948c5c276.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 本文从线程安全理论基础开始讲了线程安全中一些处理方法。其中涉及到互斥量和条件变量相关知识。从 Lock 的方案谈到了 Lock \- Free 的 CAS 相关方案。最后针对 Go 1.9 新加的 sync.map 进行了源码分析和性能测试。
 
 采用了 Lock \- Free 方案的 sync.map 测试结果并没有想象中的那么出色。除了 Load 和 Delete 这两项远远甩开其他两者，凡是涉及到 Store 相关操作的性能均低于其他两者 Map 的实现。不过这也是有原因的。
