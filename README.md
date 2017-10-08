@@ -30,7 +30,7 @@
 ## 📖 目录
 
 
-Latest：[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)
+Latest：[如何设计并实现一个线程安全的 Map ？(下篇)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_chapter_two.md)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
@@ -41,7 +41,7 @@ Latest：[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/H
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|Go|1.8.3 darwin/amd64| [Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/new_gopher_tips.md)<br>[初探 Go 的编译命令执行过程](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_command.md)<br>[深入解析 Go 中 Slice 底层实现](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_slice.md)<br>[如何设计并实现一个线程安全的 Map ？(上篇)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_chapter_one.md)|
+|Go|1.8.3 darwin/amd64| [Go 初学者的成长之路](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/new_gopher_tips.md)<br>[初探 Go 的编译命令执行过程](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_command.md)<br>[深入解析 Go 中 Slice 底层实现](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_slice.md)<br>[如何设计并实现一个线程安全的 Map ？(上篇)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_chapter_one.md)<br>[如何设计并实现一个线程安全的 Map ？(下篇)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_map_chapter_two.md)|
 |空间搜索||[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)<br>[高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)<br>|
 
 
