@@ -9,11 +9,19 @@ Hybrid App（混合模式移动应用）是指介于web-app、native-app这两�
 
 Hybrid App按网页语言与程序语言的混合，通常分为三种类型：多View混合型，单View混合型，Web主体型，3种类型比较如下：
 
-![](http://upload-images.jianshu.io/upload_images/1194012-101b71b37fb36dad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-101b71b37fb36dad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
+
 
 今天我来谈谈Web主体型中Hybrid框架里面比较有名的PhoneGap
 
-![](http://upload-images.jianshu.io/upload_images/1194012-8578bb25ee8b09b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-8578bb25ee8b09b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
+
 
 #### 一.Cordova
 说到PhoneGap，就不得不说到Cordova
@@ -27,7 +35,12 @@ Cordova的设计概念，是在APP上透过Web控件来呈现Web页面，让Web�
 
 Cordova在系统中的层级应该是这样子的:
 
-![](http://upload-images.jianshu.io/upload_images/1194012-22b52111118a47b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-22b52111118a47b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
+
+
   
 
 #### 二.Js 与 Objective-C 通信
@@ -304,6 +317,10 @@ callbackFromNative: function(callbackId, success, status, args, keepCallback) {
     }
 }
 ```
+
+
+
+
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
