@@ -52,7 +52,10 @@ Js 使用了两种方式来与 Objective-C 通信，一种是使用 XMLHttpReque
 说的还是很抽象的，来实际看一段代码
 
 在cordova.js 里面，是这样子实现的
-```
+
+
+```javascript
+
 function iOSExec() {
     ...
     if (!isInContextOfEvalJs && commandQueue.length == 1)  {
@@ -92,7 +95,7 @@ function iOSExec() {
 
 iOS这边对应的要在WebView里面写响应的方法
 
-```
+```objectivec
 
 // UIWebView 加载 URL 前回调的方法，返回 YES，则开始加载此 URL，返回 NO，则忽略此 URL
 - (BOOL)webView:(UIWebView*)theWebView
@@ -121,7 +124,9 @@ iOS这边对应的要在WebView里面写响应的方法
 #### 三.Objective-C 与 Js 通信
 
 首先OC获取Js的请求数据
-```
+
+```objectivec
+
 - (void)fetchCommandsFromJs
 {
     // Grab all the queued commands from the JS side.
@@ -140,7 +145,9 @@ iOS这边对应的要在WebView里面写响应的方法
 然后OC处理Js传过来的请求
 
 OC再把处理结果返回Js
-```
+
+```objectivec
+
 NSString *ret = [((HFNativeFunction*)strongSelf.actionDict[funcName]) doCall:argArr];
         NSString *js = [NSString stringWithFormat:@"if(typeof %@ == 'string') { paf.nativeInvocationObject=%@;} else {   paf.nativeInvocationObject=JSON.stringify(%@);} ", ret, ret, ret];
         DLog(@"\n\njs call fun=%@ ret=%@\n\n", funcName, ret);
@@ -169,7 +176,8 @@ cordova.exec(successCallback, failCallback, service, action, actionArgs);
 
 Js处理请求
 
-```
+```javascript
+
 function iOSExec() {
     ...
     // 生成一个 callbackId 的唯一标识，并把此标志与成功、失败回调方法一起保存在 JS 端
@@ -214,7 +222,9 @@ Native OC拿到 callbackId、service、action 及 actionArgs 后，会做以下�
 3.处理完成后，把处理结果及 callbackId 返回给 JS 端，JS 端收到后会根据 callbackId 找到回调方法，并把处理结果传给回调方法
 
  Objective-C 返回结果给 JS 端
-```
+ 
+```objectivec
+
 - (void)sendPluginResult:(CDVPluginResult*)result callbackId:(NSString*)callbackId
 {
     CDV_EXEC_LOG(@"Exec(%@): Sending result. Status=%@", callbackId, result.status);
@@ -238,7 +248,9 @@ Native OC拿到 callbackId、service、action 及 actionArgs 后，会做以下�
 举个具体的例子：
 
 1.将收到的json转换成Command
-```
+
+```objectivec
+
 // Execute the commands one-at-a-time.
      NSArray* jsonEntry = [commandBatch dequeue];
      if ([commandBatch count] == 0) {
@@ -251,7 +263,8 @@ Native OC拿到 callbackId、service、action 及 actionArgs 后，会做以下�
 
 2.OC 执行
 
-```
+```objectivec
+
 - (BOOL)execute:(HFCDVInvokedUrlCommand*)command
 {
     if ((command.className == nil) || (command.methodName == nil)) {
@@ -299,7 +312,8 @@ Native OC拿到 callbackId、service、action 及 actionArgs 后，会做以下�
 
 Js端拿到数据根据 callbackId 回调
 
-```
+```javascript
+
 // 根据 callbackId 及是否成功标识，找到回调方法，并把处理结果传给回调方法
 callbackFromNative: function(callbackId, success, status, args, keepCallback) {
     var callback = cordova.callbacks[callbackId];
