@@ -157,11 +157,12 @@ NSString *ret = [((HFNativeFunction*)strongSelf.actionDict[funcName]) doCall:arg
 #### 四.Cordova - Js工作原理
 
 Cordova JS 端请求方法的格式：  
-// successCallback : 成功回调方法  
-// failCallback    : 失败回调方法  
-// server          : 所要请求的服务名字  
-// action          : 所要请求的服务具体操作  
-// actionArgs      : 请求操作所带的参数  
+
+> // successCallback : 成功回调方法  
+> // failCallback    : 失败回调方法  
+> // server          : 所要请求的服务名字  
+> // action          : 所要请求的服务具体操作  
+> // actionArgs      : 请求操作所带的参数  
 
 cordova.exec(successCallback, failCallback, service, action, actionArgs);
 
@@ -222,6 +223,7 @@ Native OC拿到 callbackId、service、action 及 actionArgs 后，会做以下�
 3.处理完成后，把处理结果及 callbackId 返回给 JS 端，JS 端收到后会根据 callbackId 找到回调方法，并把处理结果传给回调方法
 
  Objective-C 返回结果给 JS 端
+   
  
 ```objectivec
 
