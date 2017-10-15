@@ -1,7 +1,7 @@
 # 负载均衡 Segment Lock 线程安全的 Map 实现源码分析
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-d7a2cb6ce2beb469.gif)
+![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/Types-of-Load-Balancing.gif)
 
 
 
