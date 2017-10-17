@@ -1004,6 +1004,9 @@ lookupIJ 数组里面记录了反向的信息。lookupIJ 数组 和 lookupPos �
 ![](http://upload-images.jianshu.io/upload_images/1194012-bff22adc5057553f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
+上图左图中对应的是 Level 30 的情况，右图对应的是 Level 24 的情况。(2的多少次方，角标对应的也就是 Level 的值)
+
+
 在 S2 中，每个 CellID 是由64位的组成的。可以用一个 uint64 存储。开头的3位表示正方体6个面中的一个，取值范围[0,5]。3位可以表示0-7，但是6，7是无效值。
 
 64位的最后一位是1，这一位是特意留出来的。用来快速查找中间有多少位。从末尾最后一位向前查找，找到第一个不为0的位置，即找到第一个1。这一位的前一位到开头的第4位（因为前3位被占用）都是可用数字。
