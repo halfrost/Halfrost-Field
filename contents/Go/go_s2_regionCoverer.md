@@ -1,7 +1,7 @@
 # Google S2 中的 priorityQueue 优先队列和 LCA 最近公共祖先
 
 
-##寻找父亲节点和叶子节点
+## 寻找父亲节点和叶子节点
 
 首先需要回顾一下希尔伯特曲线的生成方式，具体代码见笔者[上篇文章的分析](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#5-坐标轴点与希尔伯特曲线-cell-id-相互转换)，在这个分析中，有4个方向比较重要，接下来的分析需要，所以把这4个方向的图搬过来。
 
