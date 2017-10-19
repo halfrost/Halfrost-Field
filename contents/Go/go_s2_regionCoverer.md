@@ -29,7 +29,41 @@
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-8cba180aedc07d89.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-假设有上图这4个连在一起的 cell。
+假设有上图这4个连在一起的 cell。先根据经纬度把 cellID 计算出来。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-d3b9e286a13e56d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+对应的4个 cellID 分别是：
+
+```go
+
+// 3932700003016900608 右上
+11011010010011110000011101000100000000000000000000000000000000      
+
+// 3932700011606835200 左上
+11011010010011110000011101001100000000000000000000000000000000 
+
+// 3932700020196769792 左下
+11011010010011110000011101010100000000000000000000000000000000
+
+// 3932700028786704384 右下
+11011010010011110000011101011100000000000000000000000000000000
+
+
+```
+
+在前篇文章里面我们也分析了 Cell 64位的结构，这里是4个 Level 14的 Cell，所以末尾有 64 - 3 - 1 - 14 * 2 = 32 个 0 。从末尾往前的第33位是一个1，第34位，第35位是我们重点需要关注的。可以看到分别是00，01，10，11 。正好是连续的4个二进制。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f67519dd4959f298.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+根据这个顺序，我们可以匹配到当前这4个 Level 14 的 Cell 对应的顺序是上图图中的图1 。只不过当前方向旋转了45°左右。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-ee49299619d6c5cb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 
 
 ## LCA 查找最近公共祖先
