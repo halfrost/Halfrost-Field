@@ -8,9 +8,8 @@
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-6855d1cebab16c91.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-d7b41ae8d2a8cffd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 在举例之前还需要说明一点，有些网站提供的二进制转换，并没有标明有符号还是无符号的转换，这样就会导致使用者的一些误解。笔者开始并没有发现这个问题，导致掉入了这个坑，好一会才转过弯来。笔者在网上查询了很多在线转换计算器的工具，都发现了这个问题。比如常见的[在线进制转换http://tool.oschina.net/hexconvert](http://tool.oschina.net/hexconvert)，随便找两个64位的二进制数，有符号的和无符号的分别转换成十进制，或者反过来转换，你会惊喜的发现，两次结果居然相同！例如你输入 3932700003016900608 和 3932700003016900600，你会发现转换成二进制以后结果都是 11011010010011110000011101000100000000000000000000000000000000。但是很明显这两个数不同。
@@ -64,8 +63,7 @@
 在前篇文章里面我们也分析了 Cell 64位的结构，这里是4个 Level 14的 Cell，所以末尾有 64 - 3 - 1 - 14 * 2 = 32 个 0 。从末尾往前的第33位是一个1，第34位，第35位是我们重点需要关注的。可以看到分别是00，01，10，11 。正好是连续的4个二进制。
 
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-f685e23aca0e0c1f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-546afde3c28252af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 根据这个顺序，我们可以匹配到当前这4个 Level 14 的 Cell 对应的顺序是上图图中的图0 。只不过当前方向旋转了45°左右。
