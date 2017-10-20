@@ -7,6 +7,9 @@
 
 
 
+
+
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-d7b41ae8d2a8cffd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
@@ -136,6 +139,61 @@ smallCell id = 3932700015901802496 / cellID = 3932700032807325499 /smallCell(14)
 ### 1. 查找孩子节点
 
 还是继续按照上面程序举的例子，看看如何查找孩子节点的。
+
+我们把 Level 13 - Level 17 的节点都打印出来。
+
+```go
+
+smallCell id = 3932700015901802496 (level = 13)/
+smallCell(14).Parent = 3932700020196769792 (level = 14)/ 
+smallCell(15).Parent = 3932700016975544320 (level = 15)/
+smallCell(16).Parent = 3932700016170237952 (level = 16)/
+smallCell(17).Parent = 3932700015968911360 (level = 17)/
+
+```
+
+画在图上，
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-a4d9d26447450c90.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+从 Level 13 是如何变换到 Level 14 的呢？我们知道当前选择的是图0的方向。那么当前 Level 14是图0 中的2号的位置。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-dd7e93f0a025cc2e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+所以从右往左数 64 - 3 - 1 - 13 * 2 = 34位和35位，应该分别填上01，从前往后就是10，对应的就是上图中的2的位置，并且末尾的那个标志位1往后再挪2位。
+
+
+
+```go
+
+11011010010011110000011101010000000000000000000000000000000000   13
+11011010010011110000011101010100000000000000000000000000000000   14  
+
+```
+
+
+即可从 Level 13 变换到 Level 14 。这就是从父亲节点到孩子节点的变换方法。
+
+
+
+同理在看看 Level 15，Level 16，Level 17 的变换方法。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-1742eac58a199a3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+```go
+
+
+11011010010011110000011101010001000000000000000000000000000000   15
+11011010010011110000011101010000010000000000000000000000000000   16
+11011010010011110000011101010000000100000000000000000000000000   17
+
+```
+
+
 
 
 ### 2. 查找父亲节点
