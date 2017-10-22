@@ -1,7 +1,7 @@
 # Google S2 中的四叉树求 LCA 最近公共祖先
 
 
-## 寻找父亲节点和孩子节点
+## 一. 寻找父亲节点和孩子节点
 
 首先需要回顾一下希尔伯特曲线的生成方式，具体代码见笔者[上篇文章的分析](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#5-坐标轴点与希尔伯特曲线-cell-id-相互转换)，在这个分析中，有4个方向比较重要，接下来的分析需要，所以把这4个方向的图搬过来。
 
@@ -184,18 +184,409 @@ smallCell(17).Parent = 3932700015968911360 (level = 17)/
 ![](http://upload-images.jianshu.io/upload_images/1194012-1742eac58a199a3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
+前面说过，查看孩子节点的时候需要知道当前节点的其他3个兄弟节点的方向。
+
+根据下图，Level 14 对应的是图0，并且当前选择了2号位置，从下图中可以看到图0中的2号位置的下一级的图是“U”形的，说明还是图0的样子。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-546afde3c28252af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+所以可以知道当前 Level 14 所处的方向依旧是图0 。按照方向标识在图上，如下图。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-c9dd16b2ccc81188.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+所以如果还是选择上图中0号的位置，那么 Level 15 的从右往左数 64 - 3 - 1 - 14 * 2 = 32位和第33位上填入00 。
+
 ```go
 
-
+11011010010011110000011101010100000000000000000000000000000000   14 
 11011010010011110000011101010001000000000000000000000000000000   15
-11011010010011110000011101010000010000000000000000000000000000   16
-11011010010011110000011101010000000100000000000000000000000000   17
 
 ```
 
 
 
 
-### 2. 查找父亲节点
+由于选择了图0的0号位置，所以下一级的方向对应的是图1 。(注意整个图的方向是向左旋转了90°) 。
 
-## LCA 查找最近公共祖先
+
+![](http://upload-images.jianshu.io/upload_images/1194012-88afd710e9b98ba3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+图1中继续选择0号的位置，所以 Level 16 的从右往左数 64 - 3 - 1 - 15 * 2 = 30位和31位填上00 。那么就可以得到 Level 16 。
+
+```go
+
+
+11011010010011110000011101010001000000000000000000000000000000   15
+11011010010011110000011101010000010000000000000000000000000000   16
+
+```
+
+由于选择了图1的0号位置，所以下一级的方向对应的是还是图0。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f822c6806ce461be.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+图0中继续选择0号的位置，所以 Level 17 的从右往左数 64 - 3 - 1 - 16 * 2 = 28位和第29位填上00 。那么就可以得到 Level 17 。
+
+
+
+```go
+
+11011010010011110000011101010000010000000000000000000000000000   16
+11011010010011110000011101010000000100000000000000000000000000   17
+
+```
+
+同理，其他的孩子节点都可以按照这个方法推算得到。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-427bbdef9e664438.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+从 Level 13 开始，由于 Level 13 对应的方向是图0，当前选择3号位置，就可以得到 Level 14，所以 Level 14 的末尾标志位1前面的两位是 11 。于是就可以从 Level 13 变换到 Level 14 。
+
+```go
+
+11011010010011110000011101010000000000000000000000000000000000   13 3932700015901802496
+11011010010011110000011101011100000000000000000000000000000000   14 3932700028786704384
+
+```
+
+由于图0选择了3号位置，那么 Level 14 的方向就是图3 。
+
+Level 14 对应的方向是图3，当前选择3号位置，就可以得到 Level 15，所以 Level 15 的末尾标志位1前面的两位是 11 。于是就可以从 Level 14 变换到 Level 15 。
+
+
+
+```go
+
+11011010010011110000011101011100000000000000000000000000000000   14 3932700028786704384
+11011010010011110000011101011111000000000000000000000000000000   15 3932700032007929856
+
+
+```
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-c5f3c9ed57334d55.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+由于图3选择了3号位置，那么 Level 15 的方向就是图0。
+
+Level 15 对应的方向是图0，当前选择0号位置，就可以得到 Level 16，所以 Level 16 的末尾标志位1前面的两位是 00 。于是就可以从 Level 15 变换到 Level 16 。
+
+```go
+
+11011010010011110000011101011111000000000000000000000000000000   15 3932700032007929856
+11011010010011110000011101011110010000000000000000000000000000   16 3932700031202623488
+
+```
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-6d4e7e04891227fc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+由于图0选择了0号位置，那么 Level 16 的方向就是图1。
+
+Level 16 对应的方向是图1，当前选择1号位置，就可以得到 Level 17，所以 Level 17 的末尾标志位1前面的两位是 01 。于是就可以从 Level 16 变换到 Level 17 。
+
+
+```go
+
+11011010010011110000011101011110010000000000000000000000000000   16 3932700031202623488
+11011010010011110000011101011110001100000000000000000000000000   17 3932700031135514624
+
+```
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-2db753c88581d3fe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+由于图1选择了1号位置，那么 Level 18 的方向还是图1。
+
+
+到此读者应该对查找 CellID 孩子节点的流程了然于心了。在 Google S2 中，查找孩子节点的具体实现代码如下。
+
+```go
+
+func (ci CellID) Children() [4]CellID {
+	var ch [4]CellID
+	lsb := CellID(ci.lsb())
+	ch[0] = ci - lsb + lsb>>2
+	lsb >>= 1
+	ch[1] = ch[0] + lsb
+	ch[2] = ch[1] + lsb
+	ch[3] = ch[2] + lsb
+	return ch
+}
+
+```
+
+现在在来看这段代码应该毫无压力了吧。
+
+这里比较重要的位运算的操作就是 lsb 了。从名字上其实也可以知道它是做什么的。
+
+```go
+
+// lsb 返回最低有效位
+func (ci CellID) lsb() uint64 { return uint64(ci) & -uint64(ci) }
+
+```
+
+这里需要注意的一点就是负数的存储方式是以原码的补码，即符号位不变，每位取反再加1 。
+
+举个例子，Level 16 的某个 CellID 如下：
+
+```go
+
+11011010010011110000011101011110010000000000000000000000000000   16 3932700031202623488
+
+```
+
+对它进行 lsb 计算：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-5a6443f5f221db1c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+得到的结果就是最低有效位为1，其他每位都为0 。
+
+
+```go
+
+ch[0] = ci - lsb + lsb>>2
+
+```
+
+这一行实际是把 Level 对应的下一级 Level 的末尾标志位1移动到位。即往后挪2位。并且标志位前面2位都为0，所以这步操作完成以后就是0号的孩子。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-8594e129ccfab375.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+0号孩子找到以后接下来就很好办了。lsb 往右移动一位以后，不断的加上这个值，就可以得到剩下的4个孩子了。如下图：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-69131b0636dfed0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+这样就可以得到4个孩子，上面这一小段程序挺简单的，比前面从地图上解释的更简单，原因是因为没有可视化的4个孩子的相互位置关系，这个关系需要从当前所在的方向来决定。前面地图上也一再强调每一级的方向位置关系也是为了可视化展现在地图上是符合希尔伯特曲线的相对位置。
+
+### 2. 判断是否是叶子节点
+
+如果对 CellID 的数据结构很了解，这个判断就很简单了。
+
+```go
+
+func (ci CellID) IsLeaf() bool { return uint64(ci)&1 != 0 }
+
+```
+
+由于 CellID 是64位的，末尾有一个1的标志位，如果这个标志位到了最后一位，那么就肯定是叶子节点了，也就是 Level 30 的 Cell。
+
+
+### 3. 查找当前孩子位置关系
+
+在前面讲解查找孩子节点的时候，由于是四叉树，每个父亲下面对应4个孩子，00，01，10，11，所以判断4个孩子之间相对的位置关系只需要判断这两个二进制位就可以了。
+
+```go
+
+func (ci CellID) ChildPosition(level int) int {
+	return int(uint64(ci)>>uint64(2*(maxLevel-level)+1)) & 3
+}
+
+```
+
+上面这个函数入参是一个父亲节点的 Level 等级，返回的是这个父亲节点下面孩子节点的位置信息。即是 00，01，10，11 中的一个。
+
+### 4. 查找父亲节点
+
+在 Google S2 中，由于默认生成出来的 Cell 就是 Level 30 的，也就是 Level 最低的，位于树的最下层的叶子节点。所以生成 Level 比较低的 Cell 必须只能查找父亲节点。
+
+由于前面讲解了如何查找孩子节点，查找父亲节点就是逆向的过程。
+
+```go
+
+func lsbForLevel(level int) uint64 { return 1 << uint64(2*(maxLevel-level)) }
+
+```
+
+第一步就是先找到最右边的标志位，它决定了 Level 的值。
+
+```go
+
+(uint64(ci) & -lsb)
+
+```
+
+第二步是保留住标志位前面所有的二进制位上的值。这里对第一步的 lsb 的相反数进行按位与操作就可以实现。lsb 的相反数其实就是 lsb 低位往左的高位都为1 ，相当于一个掩码。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-69cc45f144f84cb0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+最后一步将标志位1放好就可以了。
+
+```go
+
+func (ci CellID) Parent(level int) CellID {
+	lsb := lsbForLevel(level)
+	return CellID((uint64(ci) & -lsb) | lsb)
+}
+
+
+```
+
+以上就是查找父亲节点的具体实现。
+
+## 二. LCA 查找最近公共祖先
+
+关于 CellID 的计算，还有很关键的一部分就是查找最近公共祖先的问题。问题背景：给定一棵四叉树中任意两个 Level 的 CellID ，如何查询两者的最近公共祖先。
+
+
+由 CellID 的数据结构我们知道，想查找两个 Level 的最近公共祖先的问题可以转化为从左往右查找两个二进制串最长公共序列，最长的即是从根节点开始最远的公共祖先，也就是最近公共祖先。
+
+
+那么现在问题就转换成从左往右找到第一个不相同的二进制位，或者从右往左找到最后一个不相同的二进制位。
+
+查找过程中存在一个特殊情况，那就是要查找公共祖先的两个节点本身就在一个分支上，即其中一个 CellID 本来就是另外一个 CellID 的祖先，那么他们俩的公共祖先就直接是 CellID 大的那个。
+
+那么到此就可以确定出接下来查找的流程。
+
+第一步，先对两个 CellID 进行异或，找到不同的二进制位分别在那些位置上。
+
+```go
+
+	bits := uint64(ci ^ other)
+
+```
+
+
+第二步，判断是否存在特殊情况：两个存在祖先关系。
+
+```go
+
+	if bits < ci.lsb() {
+		bits = ci.lsb()
+	}
+	if bits < other.lsb() {
+		bits = other.lsb()
+	}
+
+
+```
+
+
+第三步，查找左边最高位不同的位置。
+
+
+```go
+
+
+func findMSBSetNonZero64(bits uint64) int {
+	val := []uint64{0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000, 0xFFFFFFFF00000000}
+	shift := []uint64{1, 2, 4, 8, 16, 32}
+	var msbPos uint64
+	for i := 5; i >= 0; i-- {
+		if bits&val[i] != 0 {
+			bits >>= shift[i]
+			msbPos |= shift[i]
+		}
+	}
+	return int(msbPos)
+}
+
+```
+
+由于 CellID 是 64 位的，所以两者不同的位数可能的范围是 [0，63]。分别准备6种掩码，对应的分别是0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000, 0xFFFFFFFF00000000。如下图。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-defc30b929b9fe94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+查找的过程就是利用的二分的思想。64位先查找高位32位，如果对高32位的掩码进行按位与运算以后结果不为0，那么就说明高32位是存在不相同的位数的，那么最终结果 msbPos 加上32位，并把数字右移32位。因为高32位存在不同的数，由于我们需要求最左边的，所以低32位就可以直接舍去了，直接右移去掉。
+
+同理，继续二分，16位，8位，4位，2位，1位，这样循环完，就一定能把最左边的不同的位数找到，并且结果位即为 msbPos。
+
+第四步，判断 msbPos 的合法性，并输出最终结果。
+
+如果 msbPos 比60还要大，那么就是非法值，直接返回 false 即可。
+
+```go
+
+	msbPos := findMSBSetNonZero64(bits)
+	if msbPos > 60 {
+		return 0, false
+	}
+	return (60 - msbPos) >> 1, true
+
+```
+
+
+最终输出的为最近公共祖先的 Level 值，所以 60 - msbPos 以后还需要再除以2 。
+
+完整的算法实现如下：
+
+```go
+
+func (ci CellID) CommonAncestorLevel(other CellID) (level int, ok bool) {
+	bits := uint64(ci ^ other)
+	if bits < ci.lsb() {
+		bits = ci.lsb()
+	}
+	if bits < other.lsb() {
+		bits = other.lsb()
+	}
+
+	msbPos := findMSBSetNonZero64(bits)
+	if msbPos > 60 {
+		return 0, false
+	}
+	return (60 - msbPos) >> 1, true
+}
+
+```
+
+
+举个例子：
+
+在上面的例子中，我们挑选不存在祖先关系的两个 Level 的 CellID。
+
+```go
+
+11011010010011110000011101010000000100000000000000000000000000   17
+11011010010011110000011101011111000000000000000000000000000000   15
+
+```
+
+如果从这串二进制里面直接找最近公共祖先，一定可以发现，从左往右最长的公共二进制串是：
+
+```go
+
+1101101001001111000001110101
+
+```
+
+那么他们俩的最近公共祖先就是：
+
+```go
+
+11011010010011110000011101010000000000000000000000000000000000
+
+```
+
+对应的 Level 是13，CellID 是 3932700015901802496。
+
+
+------------------------------------------------------
+
+空间搜索系列文章：
+
+[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)  
+[高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)  
+[Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
+
+
+
+
