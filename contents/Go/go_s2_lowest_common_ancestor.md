@@ -594,4 +594,8 @@ func (ci CellID) CommonAncestorLevel(other CellID) (level int, ok bool) {
 
 
 
-
+> GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
+> 
+> Follow: [halfrost · GitHub](https://github.com/halfrost)
+>
+> Source: [https://halfrost.com/go\_s2\_lowest\_common\_ancestor/](https://halfrost.com/go_s2_lowest_common_ancestor/)
