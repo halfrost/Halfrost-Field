@@ -333,6 +333,15 @@
 欧几里得的高维空间能被“压缩”么？n 维空间能降成一维空间么?  
 爱因斯坦的广义相对论里面的高维时空的时间维能被“压缩”么？n 维时空能降成四维时空或者更低的时空么？
 
+
+------------------------------------------------------
+
+空间搜索系列文章：
+
+[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)  
+[高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)  
+[Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
+
 ------------------------------------------------------
 
 Reference：  
