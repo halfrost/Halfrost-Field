@@ -1,5 +1,10 @@
 # Google S2 中的四叉树求 LCA 最近公共祖先
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-11d251652f23c659.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
 
 ## 一. 寻找父亲节点和孩子节点
 
