@@ -666,6 +666,11 @@ mv $WORK/github.com/go-errors/errors.a /Users/YDZ/Ele_Project/clairstormeye/pkg/
  Lib 工作区。
 
 
+> 如果使用 vendor 管理依赖的话，常用命令是：  
+1. go get -u -x -a github.com/golang/geo/s2  
+2. rm -rf Godeps vendor && make dep
+
+
 
 ## 三. 静态链接 or 动态链接 ？
 
