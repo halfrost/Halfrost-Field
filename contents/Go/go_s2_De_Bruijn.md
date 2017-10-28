@@ -1,6 +1,10 @@
 # 神奇的德布鲁因序列
 
 
+
+![](http://upload-images.jianshu.io/upload_images/1194012-d857e84412a8925b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 数学中存在这样一个序列，它充满魔力，在实际工程中也有一部分的应用。今天就打算分享一下这个序列，它在 Google S2 中是如何使用的以及它在图论中，其他领域中的应用。这个序列就是德布鲁因序列 De Bruijn。
 
 ## 从一个魔术开始说起
