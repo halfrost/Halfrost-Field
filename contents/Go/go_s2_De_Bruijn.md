@@ -40,8 +40,6 @@
 [神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)
 
 
-最后，多多练习，多多实践 Go，只要功夫深，铁杵磨成针！
-
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
