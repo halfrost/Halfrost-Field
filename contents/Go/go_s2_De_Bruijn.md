@@ -120,13 +120,13 @@ De Bruijn 序列的奇妙不仅体现在魔术上。我们还可以使用它为�
 
 Reference：
 
-[Wiki  De Bruijn sequence](http://en.wikipedia.org/wiki/De_Bruijn_sequence)
-[Wolfram Mathworld de Bruijn Sequence](http://mathworld.wolfram.com/deBruijnSequence.html)  
-[http://chessprogramming.wikispaces.com/De+Bruijn+sequence](http://chessprogramming.wikispaces.com/De+Bruijn+sequence)  
-[The On-Line Encyclopedia of Integer Sequences](http://oeis.org/A166315)
-[De Bruijn cycle generator](https://cfn.upenn.edu/aguirre/wiki/public:de_bruijn_software)
-[On line Sequence Generator](http://jgeisler0303.github.io/deBruijnDecode/#decoderTest)
-[de Bruijn cycles for neural decoding](http://www.ncbi.nlm.nih.gov/pubmed/21315160)
+[Wiki  De Bruijn sequence](http://en.wikipedia.org/wiki/De_Bruijn_sequence)  
+[Wolfram Mathworld de Bruijn Sequence](http://mathworld.wolfram.com/deBruijnSequence.html)    
+[http://chessprogramming.wikispaces.com/De+Bruijn+sequence](http://chessprogramming.wikispaces.com/De+Bruijn+sequence)    
+[The On-Line Encyclopedia of Integer Sequences](http://oeis.org/A166315)  
+[De Bruijn cycle generator](https://cfn.upenn.edu/aguirre/wiki/public:de_bruijn_software)  
+[On line Sequence Generator](http://jgeisler0303.github.io/deBruijnDecode/#decoderTest)  
+[de Bruijn cycles for neural decoding](http://www.ncbi.nlm.nih.gov/pubmed/21315160)  
 
 
 ------------------------------------------------------
