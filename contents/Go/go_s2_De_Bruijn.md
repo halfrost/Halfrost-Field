@@ -114,9 +114,19 @@ De Bruijn 序列的奇妙不仅体现在魔术上。我们还可以使用它为�
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-99ed5c4a1baaa75c.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-最后关于德布鲁因序列还有一些值得研究的方向：窗口长度为 K 的德布鲁因序列是否一定存在并且唯一 ？如果不唯一，有多少个呢？是否有构造任意窗口长度的德布鲁因序列的方法？
+最后关于德布鲁因序列还有一些值得研究的方向：窗口长度为 K 的德布鲁因序列是否一定存在并且唯一 ？如果不唯一，有多少个呢？是否有构造任意窗口长度的德布鲁因序列的方法？比如推广到 n ，窗口长度为 n ，
 
+------------------------------------------------------
 
+Reference：
+
+[Wiki  De Bruijn sequence](http://en.wikipedia.org/wiki/De_Bruijn_sequence)
+[Wolfram Mathworld de Bruijn Sequence](http://mathworld.wolfram.com/deBruijnSequence.html)  
+[http://chessprogramming.wikispaces.com/De+Bruijn+sequence](http://chessprogramming.wikispaces.com/De+Bruijn+sequence)  
+[The On-Line Encyclopedia of Integer Sequences](http://oeis.org/A166315)
+[De Bruijn cycle generator](https://cfn.upenn.edu/aguirre/wiki/public:de_bruijn_software)
+[On line Sequence Generator](http://jgeisler0303.github.io/deBruijnDecode/#decoderTest)
+[de Bruijn cycles for neural decoding](http://www.ncbi.nlm.nih.gov/pubmed/21315160)
 
 
 ------------------------------------------------------
