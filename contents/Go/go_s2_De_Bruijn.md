@@ -173,12 +173,18 @@ s[i+1]=(2s[i]+(0|1))mod(2^n)
 在德布鲁因图中的汉密尔顿回路 即为 德布鲁因序列。如下图，左图中红色的汉密尔顿回路 ，图中对应的德布鲁因序列是 00010111，且这个汉密尔顿回路等价于窗口长度为 2 的德布鲁因序列中的一个欧拉回路，见下右图中标记的欧拉回路对应的顺序编号。
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-769a4dfccfe70a99.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='../images/De_Bruijn_B(2,3)0.png'>
+</p>
+
 
 
 所以，**窗口为 n 的德布鲁因图中的汉密尔顿回路可以等价转换为窗口为 n - 1 的德布鲁因图中的欧拉回路。**
 
-![](http://upload-images.jianshu.io/upload_images/1194012-d36dc2ff0a493e2b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='../images/De_Bruijn_B(2,3)1.png'>
+</p>
+
 
 
 当然，一个德布鲁因图中的汉密尔顿回路并不一定唯一。如上左图，同样是 k = 2，n = 3 的德布鲁因图，还可以找到一条汉密尔顿回路。对应的欧拉回路的顺序也对应的发生了变化，见右图。
@@ -187,9 +193,17 @@ s[i+1]=(2s[i]+(0|1))mod(2^n)
 
 再进一步，既然说高阶的德布鲁因图的汉密尔顿回路可以转换成低级的欧拉回路。那么我们就用 k = 2，n = 3 的德布鲁因图的欧拉回路去构造高阶的汉密尔顿图，可以么？答案是当然可以。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-cc3b7d7b2ffbfdfe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='../images/De_Bruijn_B(2,4).png'>
+</p>
+
 
 如上图，用 k = 2，n = 3 的德布鲁因图中的一条欧拉回路，我们构造出了 k = 2，n = 4 的德布鲁因序列。
+
+<p align='center'>
+<img src='../images/De_Bruijn_B(3,2).png'>
+</p>
 
 ## 五. 位运算
 
