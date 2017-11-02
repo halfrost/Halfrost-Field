@@ -455,6 +455,212 @@ B(2，5) 和 B(2，6) 在实际生产中都有广泛的用途。
 
 德布鲁因序列用的比较广泛的一点应用就是 位扫描器。在 Google S2 中也是这个作用。
 
+先来看一个比较常见的问题。
+
+有一个非0的正数，它用二进制表示的。问如何快速的找到它二进制位中最后的1所在的位置。例如，0101010010010100，它的最后一个1所在的位置是从右往左数的第2位(从0开始数)。
+
+这道题有几种做法，从粗糙到最优依次分析分析。
+
+最直接的想法是能把这个二进制数转换成只有一位为1的情况。如果上面这个问题转换成只有一个位上为1的情况，那很好解决。
+
+那么问题转化为如何把末尾的1分离出来。如果这个数只有2个位置上为1，可以直接用位运算进行分离。
+
+```go
+
+x &= (~x+1)
+
+// 或者
+
+x &= -x
+
+```
+
+通过上面的操作可以把最后一位的1分离出来。
+
+分离出来以后的解法就很多种了。
+
+### 1. 循环
+
+可以用 for 循环，不断的右移目标数。
+
+```go
+
+for ( index = -1; x > 0; x >>= 1, ++index ) ;
+
+```
+
+这种方式简单粗暴，时间复杂度为 O(n) 。
+
+
+### 2. 二分搜索
+
+把上述循环改成二分，时间复杂度就变成了 O(lgn)
+
+### 3. 构造特殊数字进行位运算
+
+这种方式看上去比较巧，但是实际还是利用了二分搜索的思想。
+
+```go
+
+index = 0;
+index += (!!(x & 0xAAAAAAAA)) * 1;
+index += (!!(x & 0xCCCCCCCC)) * 2;
+index += (!!(x & 0xF0F0F0F0)) * 4;
+index += (!!(x & 0xFF00FF00)) * 8;
+index += (!!(x & 0xFFFF0000)) * 16;
+
+```
+
+这种方式的时间复杂度也是  O(lgn) ，但是实际计算会比二分搜索快很多，因为它不需要比较运算，都位运算即可完成。
+
+### 5. 哈希
+
+这种方式就比之前的方式都要高效了。
+
+假设 x 有32位，所以末尾的1出现的可能只有32种。如果 x 为64，那就是64种可能，每一位上都有可能。通过哈希的方式 O(1) 的时间复杂度查询出结果。
+
+### 6. 德布鲁因序列
+
+
+这种方式的原理也是哈希，但是这种方式比单纯的哈希要快，因为它避免的取余的计算。
+
+如果 x 为32位，那么哈希函数可以构造成下面这样：
+
+```go
+
+(x * 0x077CB531) >> 27 
+
+
+```
+
+0x077CB531 是32位的德布鲁因序列之一。
+
+构造这样一个哈希函数有2点优点：
+
+1. 二进制数本身是二的次方，所以任何一个数字乘以这个二进制的数，都相当于左移运算。
+2. 德布鲁因序列相当于是全排列，枚举了所有的情况。所以它的两两子序列之间肯定不相同，这就是完美的哈希。
+
+最后又移动27位是为了保证能取出开头的5位。
+
+
+在 Go 的原生代码包中，有一个 nat.go 文件，在这个文件里面有这样一段代码：
+
+```go
+
+
+const deBruijn32 = 0x077CB531
+
+var deBruijn32Lookup = []byte{
+	0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+	31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9,
+}
+
+const deBruijn64 = 0x03f79d71b4ca8b09
+
+var deBruijn64Lookup = []byte{
+	0, 1, 56, 2, 57, 49, 28, 3, 61, 58, 42, 50, 38, 29, 17, 4,
+	62, 47, 59, 36, 45, 43, 51, 22, 53, 39, 33, 30, 24, 18, 12, 5,
+	63, 55, 48, 27, 60, 41, 37, 16, 46, 35, 44, 21, 52, 32, 23, 11,
+	54, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6,
+}
+
+```
+
+在这个文件中，同样有一个函数在解决上述的问题，只不过它换了一个角度。
+
+求一个二进制数的末尾1所在的位置，其实可以转化为求这个二进制数末尾连续0有多少个的问题。
+
+这个经典的问题在图灵奖获得者 Donald Ervin Knuth 的著作 《计算机程序设计艺术》的第四卷，section 7.3.1 上有，感兴趣的同学可以看看这个问题。
+
+```go
+
+// trailingZeroBits returns the number of consecutive zero bits on the right
+// side of the given Word.
+// See Knuth, volume 4, section 7.3.1
+func trailingZeroBits(x Word) int {
+	// x & -x leaves only the right-most bit set in the word. Let k be the
+	// index of that bit. Since only a single bit is set, the value is two
+	// to the power of k. Multiplying by a power of two is equivalent to
+	// left shifting, in this case by k bits.  The de Bruijn constant is
+	// such that all six bit, consecutive substrings are distinct.
+	// Therefore, if we have a left shifted version of this constant we can
+	// find by how many bits it was shifted by looking at which six bit
+	// substring ended up at the top of the word.
+	switch _W {
+	case 32:
+		return int(deBruijn32Lookup[((x&-x)*deBruijn32)>>27])
+	case 64:
+		return int(deBruijn64Lookup[((x&-x)*(deBruijn64&_M))>>58])
+	default:
+		panic("Unknown word size")
+	}
+
+	return 0
+}
+
+```
+
+
+这里还需要解释一下 deBruijn32Lookup 和 deBruijn64Lookup 数组里面初始装入的数字到底代表了什么意思。
+
+deBruijn32 和 deBruijn64 分别是德布鲁因序列。两两之间的子序列都是不相同的，并且所有的子序列构成了一个全排列。
+
+```go
+
+const deBruijn32 = 0x077CB531
+// 0000 0111 0111 1100 1011 0101 0011 0001
+
+const deBruijn64 = 0x03f79d71b4ca8b09
+// 0000 0011 1111 0111 1001 1101 0111 0001 1011 0100 1100 1010 1000 1011 0000 1001
+
+```
+
+我们用下面的哈希函数构造一个“完美”的哈希函数。
+
+```go
+
+h(x) = (x * deBruijn) >> (n - lg n)
+
+```
+
+n 是二进制数的位数。于是也就可以理解 ((x&-x)*deBruijn32)>>27 和 ((x&-x)*(deBruijn64&\_M))>>58 是什么意思了，这就是在算对应的哈希值。
+
+那么数组里面存的值就是我们最终的结果了，即末尾1所在的位置或者末尾连续有多少个0 。
+
+其实数组里面存的数字是这样算出来的：
+
+```go
+
+void setup( void )
+{	
+	int i;
+	for(i=0; i<32; i++)
+		index32[ (debruijn32 << i) >> 27 ] = i;
+}
+
+```
+
+即把算出来的哈希值作为下标，对应下标存储的值是左移的位数。这个左移的位数就是我们要的结果。所以先算哈希值，然后通过数组取出哈希值里面存储的值即为我们的结果了。
+
+
+```go
+
+// findLSBSetNonZero64 returns the index (between 0 and 63) of the least
+// significant set bit. Passing zero to this function has undefined behavior.
+//
+// This code comes from trailingZeroBits in https://golang.org/src/math/big/nat.go
+// which references (Knuth, volume 4, section 7.3.1).
+func findLSBSetNonZero64(bits uint64) int {
+	return int(deBruijn64Lookup[((bits&-bits)*(deBruijn64&digitMask))>>58])
+}
+
+
+```
+
+上述程序和之前的实现方式完全一致，只不过这里函数名的意义代表查找末尾1的位置，和查找末尾有多少个0，完全一致！
+
+上述代码也是 Google S2 中的源码，它也是直接利用德布鲁因序列来查找末尾1所在的位。
+
 
 ## 六. 工业应用
 
@@ -464,10 +670,23 @@ De Bruijn 序列的奇妙不仅体现在魔术上。我们还可以使用它为�
 
 研究人员利用 De Bruijn 序列设计了每次可以产生一个用于加密的不同随机数字的简单电子元件“反馈移位寄存器”，上一个随机数字和下一个随机数字之间只改变一个数位和移位一下就可以，电路构造非常简单。
 
+![](http://upload-images.jianshu.io/upload_images/1194012-4dfebc6cd83539a7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![](http://upload-images.jianshu.io/upload_images/1194012-99ed5c4a1baaa75c.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-最后关于德布鲁因序列还有一些值得研究的方向：窗口长度为 K 的德布鲁因序列是否一定存在并且唯一 ？如果不唯一，有多少个呢？是否有构造任意窗口长度的德布鲁因序列的方法？比如推广到 n ，窗口长度为 n 的德布鲁因的通项公式。
+在测量工程上，德布鲁因序列还可以用在基于光栅投影模式的三维形貌快速测量系统研究中。
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-56ca782ec8b769ad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+在基因工程中，德布鲁因序列可以用在基因组重复区域组装上。
+
+在人工智能算法中，神经网络时间序列预测也有德布鲁因序列的身影。
+
+
 
 
 ------------------------------------------------------
