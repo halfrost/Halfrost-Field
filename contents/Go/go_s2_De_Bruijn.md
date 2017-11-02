@@ -707,7 +707,7 @@ Reference：
 [De Bruijn cycle generator](https://cfn.upenn.edu/aguirre/wiki/public:de_bruijn_software)  
 [On line Sequence Generator](http://jgeisler0303.github.io/deBruijnDecode/#decoderTest)  
 [de Bruijn cycles for neural decoding](http://www.ncbi.nlm.nih.gov/pubmed/21315160)  
-
+[De Bruijn sequence](https://zhouer.org/DeBruijn/)  
 
 ------------------------------------------------------
 
