@@ -670,7 +670,12 @@ De Bruijn 序列的奇妙不仅体现在魔术上。我们还可以使用它为�
 
 研究人员利用 De Bruijn 序列设计了每次可以产生一个用于加密的不同随机数字的简单电子元件“反馈移位寄存器”，上一个随机数字和下一个随机数字之间只改变一个数位和移位一下就可以，电路构造非常简单。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-4dfebc6cd83539a7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-4dfebc6cd83539a7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 在测量工程上，德布鲁因序列还可以用在基于光栅投影模式的三维形貌快速测量系统研究中。
