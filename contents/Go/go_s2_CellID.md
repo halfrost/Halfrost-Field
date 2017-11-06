@@ -179,8 +179,31 @@ func face(r r3.Vector) int {
 
 ```
 
-选定主轴以后就要把另外2个轴上的坐标点投影到这个面上，具体做法就是投影。
+所以 face 的6个面上的值就确定下来了。主轴为 x 正半轴，face = 0；主轴为 y 正半轴，face = 1；主轴为 z 正半轴，face = 2；主轴为 x 负半轴，face = 3；主轴为 y 负半轴，face = 4；主轴为 z 负半轴，face = 5 。
 
+选定主轴以后就要把另外2个轴上的坐标点投影到这个面上，具体做法就是投影或者坐标系转换。
+
+```go
+
+func validFaceXYZToUV(face int, r r3.Vector) (float64, float64) {
+	switch face {
+	case 0:
+		return r.Y / r.X, r.Z / r.X
+	case 1:
+		return -r.X / r.Y, r.Z / r.Y
+	case 2:
+		return -r.X / r.Z, -r.Y / r.Z
+	case 3:
+		return r.Z / r.X, r.Y / r.X
+	case 4:
+		return r.Z / r.Y, -r.X / r.Y
+	}
+	return -r.Y / r.Z, -r.X / r.Z
+}
+
+```
+
+上述就是 face 6个面上的坐标系转换。如果直观的对应一个外切立方体的哪6个面，那就是 face = 0 对应的是前面，face = 1 对应的是右面，face = 2 对应的是上面，face = 3 对应的是后面，face = 4 对应的是左面，face = 5 对应的是下面。
 
 ## 三. g(face,u,v) -> h(face,s,t)
 
