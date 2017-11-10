@@ -3,6 +3,9 @@
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-64ce626aba0ed519.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+
+
+
 笔者在[《高效的多维空间点索引算法 — Geohash 和 Google S2》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)文章中详细的分析了 Google S2 的算法实现思想。文章发出来以后，一部分读者对它的实现产生了好奇。本文算是对上篇文章的补充，将从代码实现的角度来看看 Google S2 的算法具体实现。建议先读完上篇文章里面的算法思想，再看本篇的代码实现会更好理解一些。
 
 
@@ -290,26 +293,30 @@ func cellIDFromPoint(p Point) CellID {
 
 S(lat,lng) -> f(x,y,z) -> g(face,u,v) -> h(face,s,t) -> H(face,i,j) -> CellID 总共有5步转换。
 
+
+在解释最后一步转换 CellID 之前，先说明一下方向的问题。
+
+
 ```go
 
-func cellIDFromFaceIJ(f, i, j int) CellID {
-	n := uint64(f) << (posBits - 1)
-	bits := f & swapMask
-	for k := 7; k >= 0; k-- {
-		mask := (1 << lookupBits) - 1
-		bits += int((i>>uint(k*lookupBits))&mask) << (lookupBits + 2)
-		bits += int((j>>uint(k*lookupBits))&mask) << 2
-		bits = lookupPos[bits]
-		n |= uint64(bits>>2) << (uint(k) * 2 * lookupBits)
-		bits &= (swapMask | invertMask)
-	}
-	return CellID(n*2 + 1)
-}
+posToOrientation = [4]int{swapMask, 0, 0, invertMask | swapMask}
+
+initLookupCell(level, i+(r[0]>>1), j+(r[0]&1), origOrientation, pos, orientation^posToOrientation[0])
+initLookupCell(level, i+(r[1]>>1), j+(r[1]&1), origOrientation, pos+1, orientation^posToOrientation[1])
+initLookupCell(level, i+(r[2]>>1), j+(r[2]&1), origOrientation, pos+2, orientation^posToOrientation[2])
+initLookupCell(level, i+(r[3]>>1), j+(r[3]&1), origOrientation, pos+3, orientation^posToOrientation[3])
 
 ```
 
 
+这里两步是很关键的两行。这里就是针对希尔伯特曲线的方向进行换算的。
+
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-73a4a7c9135a26a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+posToOrientation 数组里面装的原始的值是 [01，00，00，11]，这个4个数值并不是随便初始化的。其实这个对应的就是 图0 中4个小方块接下来再划分的方向。图0 中0号的位置下一个图的方向应该是图1，即01；图0 中1号的位置下一个图的方向应该是图0，即00；图0 中2号的位置下一个图的方向应该是图0，即00；图0 中3号的位置下一个图的方向应该是图3，即11 。这就是初始化 posToOrientation 数组里面的玄机了。
+
+再看看每次入参都异或 posToOrientation 数组。这样就能保证每次都能根据上一次的原始的方向推算出当前的 pos 所在的方向。
 
 
 
@@ -351,8 +358,47 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 
 那么 希尔伯特 曲线的生成方式是什么呢？它先将经纬度坐标转换成了三维直角坐标系坐标，然后再投影到外切立方体的6个面上，于是三维直角坐标系坐标 (x，y，z) 就转换成了 (face，u，v) 。 (face，u，v) 经过一个二次变换变成 (face，s，t) ， (face，s，t) 经过坐标系变换变成了 (face，i，j) 。然后将 i，j 分别4位4位的取出来，i 的4位二进制位放前面，j 的4位二进制位放后面。最后再加上希尔伯特曲线的方向位 orientation 的2位。组成 iiii jjjj oo 类似这样的10位二进制位。通过 lookupPos 数组这个桥梁，找到对应的 pos 的值。pos 的值就是对应希尔伯特曲线上的位置。然后依次类推，再取出 i 的4位，j 的4位进行这样的转换，直到所有的 i 和 j 的二进制都取完了，最后把这些生成的 pos 值安全先生成的放在高位，后生成的放在低位的方式拼接成最终的 CellID。
 
+
+在 Google S2 中，i，j 每次转换都是4位，所以 i，j 的有效值取值是 0 - 15，所以 iiii jjjj oo 是一个十进制的数，能表示的范围是 2^10^ = 1024 。那么 pos 初始化值也需要计算到 1024 。由于 pos 是4个小方块组成的大方块，它本身就是一个一阶的希尔伯特曲线。所以初始化需要生成一个5阶的希尔伯特曲线。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-9feb6afa0ffbb81b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上图是一阶的希尔伯特曲线。是由4个小方格组成的。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-9ac5960d43dcfbaa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上图是二阶的希尔伯特曲线，是由4个 pos 方格组成的。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-0f4790f1ac760d63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上图是三阶的希尔伯特曲线。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-cc038a117b63438f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+上图是四阶的希尔伯特曲线。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-65eedea2a62b6caf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上图是五阶的希尔伯特曲线。pos 方格总共有1024个。
+
+
+至此已经说清楚了希尔伯特曲线的方向和在 Google S2 中生成希尔伯特曲线的阶数，五阶希尔伯特曲线。
+
+由此也可以看出，**希尔伯特曲线的生成完全是和方向相关的，而且是唯一相关的。**
+
+
+那么现在我们再推算55就比较简单了。从五阶希尔伯特曲线开始推，推算过程如下图。
+
 ![](http://upload-images.jianshu.io/upload_images/1194012-418f28aa82592e42.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+
+首先55是在上图中每个小图中绿色点的位置。我们不断的进行方向的判断。第一张小图，绿点在00的位置。第二张小图，绿点在00的位置。第三张小图，绿点在11的位置。第四张小图，绿点在01的位置。第五张小图，绿点在11的位置。其实换算到第四步，得到的数值就是 pos 的值，即 00001101 = 13 。最后2位是具体的点在 pos 方格里面的位置，是11，所以 13 * 4 + 3 = 55 。
+
+当然直接根据方向推算到底，也可以得到 0000110111 = 55 ，同样也是55 。
+
+最后举个具体的完整的例子：
 
 |  | 纬度| | 经度|
 |:-------:|:-------:|:------:|:------:|
@@ -361,10 +407,48 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 |(face,s,t)|1|0.6623542747924445|0.8415931842598497|
 |(face,i,j)|1|711197487|903653800|
 
+上面完成了前4步的转换。
+
+最后一步转换成 CellID 。具体实现代码如下。由于 CellID 是64位的，除去 face 占的3位，最后一个标志位 1 占的位置，剩下 60 位。
+
+```go
+
+func cellIDFromFaceIJ(f, i, j int) CellID {
+  // 1.
+	n := uint64(f) << (posBits - 1)
+  // 2.
+	bits := f & swapMask
+  // 3.
+	for k := 7; k >= 0; k-- {
+		mask := (1 << lookupBits) - 1
+		bits += int((i>>uint(k*lookupBits))&mask) << (lookupBits + 2)
+		bits += int((j>>uint(k*lookupBits))&mask) << 2
+		bits = lookupPos[bits]
+    // 4.
+		n |= uint64(bits>>2) << (uint(k) * 2 * lookupBits)
+    // 5.
+		bits &= (swapMask | invertMask)
+	}
+  // 6.
+	return CellID(n*2 + 1)
+}
+
+```
 
 
+具体步骤如下：
 
-|  | i| j| orientation |ij<<2 + orientation |pos<<2 + orientation|CellID|
+1. 将 face 左移 60 位。
+2. 计算初始的 origOrientation
+3. 循环，从头开始依次取出 i ，j 的4位二进制位，计算出 ij<<2 + origOrientation，然后查 lookupPos 数组找到对应的 pos<<2 + orientation 。
+4. 拼接 CellID 。
+5. 计算下一个循环的 origOrientation。
+6. 最后拼接上最后一个标志位 1 。
+
+
+用表展示出每一步：
+
+|  | i| j| orientation |ij<<2 + origOrientation |pos<<2 + orientation|CellID|
 |:-------:|:-------:|:------:|:------:|:------:|:------:|:------:|
 ||711197487| 903653800 |1||||
 |对应二进制|101010011001000000001100101111|110101110111001010100110101000|01||||
@@ -377,16 +461,20 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 |再取 i , j 的19，20，21，22位|0011 000000|1001 00|00|11100100|100011001|1101101110111111001111110000011101100010001100000000000000000|
 |再取 i , j 的23，24，25，26位|0010 000000|1010 00|01|10101001|1110001011|1101101110111111001111110000011101100010001101110001000000000|
 |再取 i , j 的27，28，29，30位|1111 000000|1000 00|11|1111100011|1010110|1101101110111111001111110000011101100010001101110001000010101|
+|最终结果||||||11011011101111110011111100000111011000100011011100010000101011|
 
+
+到此，所有的 CellID 生成过程就结束了。
 
 ------------------------------------------------------
 
 空间搜索系列文章：
 
-[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)    
-[高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)    
-[Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)    
-[神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)  
+[如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)  
+[高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)  
+[Google S2 中的 CellID 是如何生成的 ？]()  
+[Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
+[神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)
 
 
 
