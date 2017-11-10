@@ -446,7 +446,7 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 6. 最后拼接上最后一个标志位 1 。
 
 
-用表展示出每一步：
+用表展示出每一步（表比较长，请右滑）：
 
 |  | i| j| orientation |ij<<2 + origOrientation |pos<<2 + orientation|CellID|
 |:-------:|:-------:|:------:|:------:|:------:|:------:|:------:|
@@ -472,7 +472,7 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 
 [如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)  
 [高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)  
-[Google S2 中的 CellID 是如何生成的 ？]()  
+[Google S2 中的 CellID 是如何生成的 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_CellID.md)     
 [Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
 [神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)
 
