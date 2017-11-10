@@ -1,6 +1,8 @@
 # Google S2 中的 CellID 是如何生成的 ？
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-64ce626aba0ed519.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 笔者在[《高效的多维空间点索引算法 — Geohash 和 Google S2》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)文章中详细的分析了 Google S2 的算法实现思想。文章发出来以后，一部分读者对它的实现产生了好奇。本文算是对上篇文章的补充，将从代码实现的角度来看看 Google S2 的算法具体实现。建议先读完上篇文章里面的算法思想，再看本篇的代码实现会更好理解一些。
 
 
