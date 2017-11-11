@@ -6,6 +6,7 @@
 
 
 
+
 笔者在[《高效的多维空间点索引算法 — Geohash 和 Google S2》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)文章中详细的分析了 Google S2 的算法实现思想。文章发出来以后，一部分读者对它的实现产生了好奇。本文算是对上篇文章的补充，将从代码实现的角度来看看 Google S2 的算法具体实现。建议先读完上篇文章里面的算法思想，再看本篇的代码实现会更好理解一些。
 
 
@@ -297,9 +298,77 @@ S(lat,lng) -> f(x,y,z) -> g(face,u,v) -> h(face,s,t) -> H(face,i,j) -> CellID �
 在解释最后一步转换 CellID 之前，先说明一下方向的问题。
 
 
+有2个存了常量的数组：
+
 ```go
 
-posToOrientation = [4]int{swapMask, 0, 0, invertMask | swapMask}
+
+	ijToPos = [4][4]int{
+		{0, 1, 3, 2}, // canonical order
+		{0, 3, 1, 2}, // axes swapped
+		{2, 3, 1, 0}, // bits inverted
+		{2, 1, 3, 0}, // swapped & inverted
+	}
+	posToIJ = [4][4]int{
+		{0, 1, 3, 2}, // canonical order:    (0,0), (0,1), (1,1), (1,0)
+		{0, 2, 3, 1}, // axes swapped:       (0,0), (1,0), (1,1), (0,1)
+		{3, 2, 0, 1}, // bits inverted:      (1,1), (1,0), (0,0), (0,1)
+		{3, 1, 0, 2}, // swapped & inverted: (1,1), (0,1), (0,0), (1,0)
+	}
+
+```
+
+
+这两个二维数组里面的值用图表示出来如下两个图：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-cd6a5af8e42d89a0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上图是 posToIJ ，注意这里的 i，j 指的是坐标值，如上图。这里是一阶的希尔伯特曲线，所以 i，j 就等于坐标轴上的值。posToIJ[0] = {0, 1, 3, 2} 表示的就是上图中图0的样子。同理，posToIJ[1] 表示的是图1，posToIJ[2] 表示的是图2，posToIJ[3] 表示的是图3 。
+
+从上面这四张图我们可以看出：
+**posToIJ 的四张图其实是“ U ” 字形逆时针分别旋转90°得到的。这里我们只能看出四张图相互之间的联系，即兄弟之间的联系，但是看不到父子图相互之间的联系。**
+
+posToIJ[0] = {0, 1, 3, 2} 里面存的值是 ij 合在一起表示的值。posToIJ[0][0] = 0，指的是 i = 0，j = 0 的那个方格，ij 合在一起是00，即0。posToIJ[0][1] = 1，指的是 i = 0，j = 1 的那个方格，ij 合在一起是01，即1。posToIJ[0][2] = 1，指的是 i = 1，j = 1 的那个方格，ij 合在一起是11，即3。posToIJ[0][3] = 2，指的是 i = 1，j = 0 的那个方格，ij 合在一起是10，即2。数组里面的顺序是 “ U ” 字形画的顺序。所以 posToIJ[0] = {0, 1, 3, 2} 表示的是图0中的样子。其他图形同理。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-cbfcef53b1758394.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+这上面的四张图是 ijToPos 数组。这个数组在整个库中也没有被用到，这里不用关系它对应的关系。
+
+
+初始化 lookupPos 数组和 lookupIJ 数组 由如下的代码实现的。
+
+```go
+
+func init() {
+	initLookupCell(0, 0, 0, 0, 0, 0)
+	initLookupCell(0, 0, 0, swapMask, 0, swapMask)
+	initLookupCell(0, 0, 0, invertMask, 0, invertMask)
+	initLookupCell(0, 0, 0, swapMask|invertMask, 0, swapMask|invertMask)
+}
+
+
+```
+
+我们把变量的值都代进去，代码就会变成下面的样子：
+
+```go
+
+func init() {
+	initLookupCell(0, 0, 0, 0, 0, 0)
+	initLookupCell(0, 0, 0, 1, 0, 1)
+	initLookupCell(0, 0, 0, 2, 0, 2)
+	initLookupCell(0, 0, 0, 3, 0, 3)
+}
+
+```
+
+initLookupCell 入参有6个参数，有4个参数都是0，我们需要重点关注的是第四个参数和第六个参数。第四个参数是 origOrientation，第六个参数是 orientation。
+
+进入到 initLookupCell 方法中，有如下的4行：
+
+```go
 
 initLookupCell(level, i+(r[0]>>1), j+(r[0]&1), origOrientation, pos, orientation^posToOrientation[0])
 initLookupCell(level, i+(r[1]>>1), j+(r[1]&1), origOrientation, pos+1, orientation^posToOrientation[1])
@@ -308,17 +377,141 @@ initLookupCell(level, i+(r[3]>>1), j+(r[3]&1), origOrientation, pos+3, orientati
 
 ```
 
+这里顺带说一下 r[0]>>1 和 r[0]&1 究竟做了什么。
 
-这里两步是很关键的两行。这里就是针对希尔伯特曲线的方向进行换算的。
+```go
+
+	r := posToIJ[orientation]
+
+```
+
+r 数组来自于 posToIJ 数组。posToIJ 数组上面说过了，它里面装的其实是4个不同方向的“ U ”字。相当于表示了当前四个小方格兄弟相互之间的方向。r[0]、r[1]、r[2]、r[3] 取出的其实就是 00，01，10，11 这4个数。那么 r[0]>>1 操作就是取出二位二进制位的前一位，即 i 位。r[0]&1 操作就是取出二位二进制位的后一位，即 j 位。r[1]、r[2]、r[3] 同理。
+
+再回到方向的问题上来。需要优先说明的是下面4行干了什么。
+
+```go
+
+orientation^posToOrientation[0]
+orientation^posToOrientation[1]
+orientation^posToOrientation[2]
+orientation^posToOrientation[3]
+
+```
+
+再解释之前，先让我们看看 posToOrientation 数组：
+
+```go
+
+posToOrientation = [4]int{swapMask, 0, 0, invertMask | swapMask}
+
+```
+
+把数值代入到上面数组中：
+
+```go
+
+posToOrientation = [4]int{1, 0, 0, 3}
+
+```
+
+
+
+
+posToOrientation 数组里面装的原始的值是 [01，00，00，11]，这个4个数值并不是随便初始化的。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-73a4a7c9135a26a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+其实这个对应的就是 图0 中4个小方块接下来再划分的方向。图0 中0号的位置下一个图的方向应该是图1，即01；图0 中1号的位置下一个图的方向应该是图0，即00；图0 中2号的位置下一个图的方向应该是图0，即00；图0 中3号的位置下一个图的方向应该是图3，即11 。这就是初始化 posToOrientation 数组里面的玄机了。
+
+
+**posToIJ 的四张图我们只能看出兄弟之间的关系，那么 posToOrientation 的四张图让我们知道了父子之间的关系。**
+
+回到上面说的代码：
+
+```go
+
+orientation^posToOrientation[0]
+orientation^posToOrientation[1]
+orientation^posToOrientation[2]
+orientation^posToOrientation[3]
+
+```
+
+
+每次 orientation 都异或 posToOrientation 数组。这样就能保证每次都能根据上一次的原始的方向推算出当前的 pos 所在的方向。即计算父子之间关系。
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-73a4a7c9135a26a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-posToOrientation 数组里面装的原始的值是 [01，00，00，11]，这个4个数值并不是随便初始化的。其实这个对应的就是 图0 中4个小方块接下来再划分的方向。图0 中0号的位置下一个图的方向应该是图1，即01；图0 中1号的位置下一个图的方向应该是图0，即00；图0 中2号的位置下一个图的方向应该是图0，即00；图0 中3号的位置下一个图的方向应该是图3，即11 。这就是初始化 posToOrientation 数组里面的玄机了。
 
-再看看每次入参都异或 posToOrientation 数组。这样就能保证每次都能根据上一次的原始的方向推算出当前的 pos 所在的方向。
+还是回到这张图上来。兄弟之间的关系是逆时针旋转90°的关系。那这4个兄弟都作为父亲，分别和各自的4个孩子之间什么关系呢？结论是，**父子之间的关系都是 01，00，00，11 的关系。**从图上我们也可以看出这一点，图1中，“ U ” 字形虽然逆时针旋转了90°，但是它们的孩子也跟着旋转了90°(相对于图0来说)。图2，图3也都如此。
+
+用代码表示这种关系，就是下面这4行代码
 
 
+```go
+
+orientation^posToOrientation[0]
+orientation^posToOrientation[1]
+orientation^posToOrientation[2]
+orientation^posToOrientation[3]
+
+```
+
+
+举个例子，假设 orientation = 0，即图0，那么：
+
+```
+
+00 ^ 01 = 01
+00 ^ 00 = 00
+00 ^ 00 = 00
+00 ^ 11 = 11
+
+```
+
+图0 的四个孩子的方向就被我们算出来了，01，00，00，11，1003 。和上面图片中图0展示的是一致的。
+
+orientation = 1，orientation = 2，orientation = 3，都是同理的：
+
+```go
+
+01 ^ 01 = 00
+01 ^ 00 = 01
+01 ^ 00 = 01
+01 ^ 11 = 10
+
+
+10 ^ 01 = 11
+10 ^ 00 = 10
+10 ^ 00 = 10
+10 ^ 11 = 01
+
+11 ^ 01 = 10
+11 ^ 00 = 11
+11 ^ 00 = 11
+11 ^ 11 = 00
+
+
+```
+
+图1孩子的方向是0，1，1，2 。图2孩子的方向是3，2，2，1 。图3孩子的方向是2，3，3，0 。和图上画的是完全一致的。
+
+
+所以上面的转换是很关键的。这里就是针对希尔伯特曲线的父子方向进行换算的。
+
+
+最后会有读者有疑问，origOrientation 和 orientation 是啥关系？
+
+```go
+
+lookupPos[(ij<<2)+origOrientation] = (pos << 2) + orientation
+lookupIJ[(pos<<2)+origOrientation] = (ij << 2) + orientation
+
+```
+
+数组下标里面存的都是 origOrientation，下标里面存的值都是 orientation。
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-4903cd17303c485b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
@@ -333,7 +526,10 @@ pos 指的是在 希尔伯特曲线上的位置。这个位置是从 希尔伯�
 
 在 55 的这个例子里，pos 其实是等于 13 的。代表当前4块小方块组成的大方块是距离起点的第13块大方块。由于每个大方块是由4个小方块组成的。所以当前这个大方块的第一个数字是 13 * 4 = 52 。代码实现就是左移2位，等价于乘以 4 。再加上 55 的偏移的 orientation = 11，再加 3 ，所以 52 + 3 = 55 。 
 
-再说说 i 和 j 的问题，在 55 的这个例子里面 i = 14，1110，j = 13，1101 。如果直观的看坐标系，其实 55 是在 (5，2) 的坐标上。但是现在为何 i = 14，j = 13 呢 ？这里容易弄混的就是 i ，j 和 pos 的关系。**i，j 并不是直接对应的 希尔伯特曲线 坐标系上的坐标。**
+再说说 i 和 j 的问题，在 55 的这个例子里面 i = 14，1110，j = 13，1101 。如果直观的看坐标系，其实 55 是在 (5，2) 的坐标上。但是现在为何 i = 14，j = 13 呢 ？这里容易弄混的就是 i ，j 和 pos 的关系。
+
+**注意：**
+**i，j 并不是直接对应的 希尔伯特曲线 坐标系上的坐标。因为初始化需要生成的是五阶希尔伯特曲线。在 posToIJ 数组表示的一阶希尔伯特曲线，所以 i，j 才直接对应的 希尔伯特曲线 坐标系上的坐标。**
 
 读者到这里就会疑问了，那是什么参数对应的是希尔伯特曲线坐标系上的坐标呢？
 
@@ -359,7 +555,7 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 那么 希尔伯特 曲线的生成方式是什么呢？它先将经纬度坐标转换成了三维直角坐标系坐标，然后再投影到外切立方体的6个面上，于是三维直角坐标系坐标 (x，y，z) 就转换成了 (face，u，v) 。 (face，u，v) 经过一个二次变换变成 (face，s，t) ， (face，s，t) 经过坐标系变换变成了 (face，i，j) 。然后将 i，j 分别4位4位的取出来，i 的4位二进制位放前面，j 的4位二进制位放后面。最后再加上希尔伯特曲线的方向位 orientation 的2位。组成 iiii jjjj oo 类似这样的10位二进制位。通过 lookupPos 数组这个桥梁，找到对应的 pos 的值。pos 的值就是对应希尔伯特曲线上的位置。然后依次类推，再取出 i 的4位，j 的4位进行这样的转换，直到所有的 i 和 j 的二进制都取完了，最后把这些生成的 pos 值安全先生成的放在高位，后生成的放在低位的方式拼接成最终的 CellID。
 
 
-在 Google S2 中，i，j 每次转换都是4位，所以 i，j 的有效值取值是 0 - 15，所以 iiii jjjj oo 是一个十进制的数，能表示的范围是 2^10^ = 1024 。那么 pos 初始化值也需要计算到 1024 。由于 pos 是4个小方块组成的大方块，它本身就是一个一阶的希尔伯特曲线。所以初始化需要生成一个5阶的希尔伯特曲线。
+在 Google S2 中，i，j 每次转换都是4位，所以 i，j 的有效值取值是 0 - 15，所以 iiii jjjj oo 是一个十进制的数，能表示的范围是 2^10^ = 1024 。那么 pos 初始化值也需要计算到 1024 。由于 pos 是4个小方块组成的大方块，它本身就是一个一阶的希尔伯特曲线。所以初始化需要生成一个五阶的希尔伯特曲线。
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-9feb6afa0ffbb81b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -386,8 +582,10 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 
 至此已经说清楚了希尔伯特曲线的方向和在 Google S2 中生成希尔伯特曲线的阶数，五阶希尔伯特曲线。
 
-由此也可以看出，**希尔伯特曲线的生成完全是和方向相关的，而且是唯一相关的。**
+由此也可以看出，**希尔伯特曲线的是由 “ U ” 字形构成的，由4个不同方向的  “ U ” 字构成。初始方向是开口朝上的 “ U ”。**
 
+
+关于希尔伯特曲线生成的动画，见上篇[《高效的多维空间点索引算法 — Geohash 和 Google S2》—— 希尔伯特曲线的构造方法](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#2-希尔伯特曲线的构造方法) 这一章节。
 
 那么现在我们再推算55就比较简单了。从五阶希尔伯特曲线开始推，推算过程如下图。
 
@@ -441,8 +639,8 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 1. 将 face 左移 60 位。
 2. 计算初始的 origOrientation
 3. 循环，从头开始依次取出 i ，j 的4位二进制位，计算出 ij<<2 + origOrientation，然后查 lookupPos 数组找到对应的 pos<<2 + orientation 。
-4. 拼接 CellID 。
-5. 计算下一个循环的 origOrientation。
+4. 拼接 CellID，右移 pos<<2 + orientation 2位，只留下 pos ，把pos 继续拼接到 上次循环的 CellID 后面。
+5. 计算下一个循环的 origOrientation。&= (swapMask | invertMask) 即 & 11，也就是取出末尾的2位二进制位。
 6. 最后拼接上最后一个标志位 1 。
 
 
@@ -452,17 +650,21 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 |:-------:|:-------:|:------:|:------:|:------:|:------:|:------:|
 ||711197487| 903653800 |1||||
 |对应二进制|101010011001000000001100101111|110101110111001010100110101000|01||||
-|进行转换|||||||
-|取 i , j 的首两位|10 000000<br>(右移6位，给 j 的4位和方向位2位留出位置)|11 00<br>(右移2位，给方向位留出位置)|01|10001101|101110 |1101100000000000000000000000000000000000000000000000000000000<br>(初始值：face 左移 60 位 + pos + orientation)|
+||||||||
+|进行转换|i 左移6位，给 j 的4位和方向位 orientation 2位留出位置|j 左移2位，给方向位 orientation 留出位置| orientation 初始值是 face 的值|[iiii jjjj oo] i的四位，j的四位，o的两位依次排在一起组成10位二进制位 |从前面一列转换过来是通过查 lookupPos 数组查出来的|初始值：face 左移 60 位，接着以后每次循环都拼接 pos ，注意不带orientation ，即前一列需要右移2位去掉末尾的 orientation|
+||||||||
+|取 i , j 的首两位|10 000000|11 00|01|(00)10001101|101110 |1101100000000000000000000000000000000000000000000000000000000|
 |再取 i , j 的3，4，5，6位|1010 000000|0101 00|10|1010010110|111011110|1101101110111000000000000000000000000000000000000000000000000|
-|再取 i , j 的7，8，9，10位|0110 000000|1101 00|10|110110110|1110011110|1101101110111111001110000000000000000000000000000000000000000|
-|再取 i , j 的11，12，13，14位|0100 000000|1100 00|10|100110010|1110000001|1101101110111111001111110000000000000000000000000000000000000|
-|再取 i , j 的15，16，17，18位|0000 000000|1010 00|01|101001|1110110000|1101101110111111001111110000011101100000000000000000000000000|
-|再取 i , j 的19，20，21，22位|0011 000000|1001 00|00|11100100|100011001|1101101110111111001111110000011101100010001100000000000000000|
-|再取 i , j 的23，24，25，26位|0010 000000|1010 00|01|10101001|1110001011|1101101110111111001111110000011101100010001101110001000000000|
+|再取 i , j 的7，8，9，10位|0110 000000|1101 00|10|(0)110110110|1110011110|1101101110111111001110000000000000000000000000000000000000000|
+|再取 i , j 的11，12，13，14位|0100 000000|1100 00|10|(0)100110010|1110000001|1101101110111111001111110000000000000000000000000000000000000|
+|再取 i , j 的15，16，17，18位|0000 000000|1010 00|01|(0000)101001|1110110000|1101101110111111001111110000011101100000000000000000000000000|
+|再取 i , j 的19，20，21，22位|0011 000000|1001 00|00|(00)11100100|100011001|1101101110111111001111110000011101100010001100000000000000000|
+|再取 i , j 的23，24，25，26位|0010 000000|1010 00|01|(00)10101001|1110001011|1101101110111111001111110000011101100010001101110001000000000|
 |再取 i , j 的27，28，29，30位|1111 000000|1000 00|11|1111100011|1010110|1101101110111111001111110000011101100010001101110001000010101|
-|最终结果||||||11011011101111110011111100000111011000100011011100010000101011|
+|最终结果||||||11011011101111110011111100000111011000100011011100010000101011<br>(拼接上末尾的标志位1)|
 
+
+注意：由于 CellID 是64位的，头三位是 face ，末尾一位是标志位，所以中间有 60 位。
 
 到此，所有的 CellID 生成过程就结束了。
 
@@ -472,7 +674,7 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 
 [如何理解 n 维空间和 n 维时空](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/n-dimensional_space_and_n-dimensional_space-time.md)  
 [高效的多维空间点索引算法 — Geohash 和 Google S2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)  
-[Google S2 中的 CellID 是如何生成的 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_CellID.md)     
+[Google S2 中的 CellID 是如何生成的 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_CellID.md)   
 [Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
 [神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)
 
