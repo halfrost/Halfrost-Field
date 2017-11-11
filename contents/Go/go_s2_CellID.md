@@ -461,7 +461,7 @@ orientation^posToOrientation[3]
 
 举个例子，假设 orientation = 0，即图0，那么：
 
-```
+```go
 
 00 ^ 01 = 01
 00 ^ 00 = 00
