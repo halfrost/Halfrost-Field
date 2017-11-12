@@ -595,7 +595,6 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 
 当然直接根据方向推算到底，也可以得到 0000110111 = 55 ，同样也是55 。
 
-
 ## 六. 举例
 
 
@@ -640,12 +639,29 @@ func cellIDFromFaceIJ(f, i, j int) CellID {
 具体步骤如下：
 
 1. 将 face 左移 60 位。
-2. 计算初始的 origOrientation
+2. 计算初始的 origOrientation。初始的 origOrientation 是 face 转换得来的，face & 01 以后的结果是为了使每个面都有一个右手坐标系。
 3. 循环，从头开始依次取出 i ，j 的4位二进制位，计算出 ij<<2 + origOrientation，然后查 lookupPos 数组找到对应的 pos<<2 + orientation 。
 4. 拼接 CellID，右移 pos<<2 + orientation 2位，只留下 pos ，把pos 继续拼接到 上次循环的 CellID 后面。
 5. 计算下一个循环的 origOrientation。&= (swapMask | invertMask) 即 & 11，也就是取出末尾的2位二进制位。
 6. 最后拼接上最后一个标志位 1 。
 
+
+这里说说第二步，origOrientation 的转换。
+
+我们知道 face 是有6个面的，编号依次是 000，001，010，011，100，101 。想让这6个面都具有右手坐标系的性质，就必须进行转换，转换的规则其实进行一次位运算即可：
+
+```go
+
+000 & 001 = 00
+001 & 001 = 01
+010 & 001 = 00
+011 & 001 = 01
+100 & 001 = 00
+101 & 001 = 01
+
+```
+
+经过转换以后，face & 01 的值就是初始的 origOrientation 了。
 
 用表展示出每一步（表比较长，请右滑）：
 
