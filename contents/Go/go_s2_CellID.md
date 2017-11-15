@@ -113,6 +113,9 @@ r3.Vector{math.Cos(theta) * cosphi, math.Sin(theta) * cosphi, math.Sin(phi)}
 
 ```
 
+(x, y, z) 为方向向量，它们并不要求是单位向量。(x, y, z) 的取值范围在 [-1,+1] x [-1,+1] x [-1,+1] 这样的立方体三维空间中。它们可以被标准化以使得在单位球上获得对应的点。
+
+
 至此，已经完成了球面上的点S(lat,lng) -> f(x,y,z) 的转换。
 
 
