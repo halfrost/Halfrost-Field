@@ -259,6 +259,11 @@ func uvToST(u float64) float64 {
 
 ```
 
+
+
+**(face,s,t) 表示一个 cell 空间坐标系，s，t 的值域都是 [0,1] 之间。它们代表了一个 face 上的一个 point。例如，点 (s,t) = (0.5,0.5) 代表的是在这个 face 面上的中心点。这个点也是当前这个面上再细分成4个小 cell 的顶点。**
+
+
 ## 四. h(face,s,t) -> H(face,i,j)
 
 这一部分是坐标系的转换，具体思想见[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#4-点与坐标轴点相互转换)。
