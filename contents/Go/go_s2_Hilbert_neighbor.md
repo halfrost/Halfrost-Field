@@ -6,6 +6,7 @@
 
 
 
+
 关于邻居的定义，相邻即为邻居，那么邻居分为2种，边相邻和点相邻。边相邻的有4个方向，上下左右。点相邻的也有4个方向，即4个顶点相邻的。
 
 
@@ -106,8 +107,6 @@ cellIDFromFaceIJ 是把 face，i，j 这个当入参传进去，返回值是 Cel
 关于 “00” 会对原始的方向产生影响，这点其实比较好理解。CellID 从最先开始的方向进行四分，每次四分都将带来一次方向的变换。直到变换到最后一个4个小格子的时候，方向就不会变化了，因为在4个小格子之间就可以唯一确定是哪一个 Cell 被选中。所以这也是上面看到了， Level - 30 和 Level - 29 的方向是不变的，除此以外的 Level 是需要再异或一次 01 ，变换以后得到原始的 orientation。
 
 
-
-
 最后进行转换，具体代码实现如下：
 
 ```go
@@ -129,14 +128,98 @@ func cellIDFromFaceIJWrap(f, i, j int) CellID {
 
 ```
 
+转换过程总共分为三步。第一步先处理 i，j 边界的问题。第二步，将 i，j 转换成 u，v 。第三步，u，v 转 xyz，再转回 u，v，最后转回 CellID 。
 
+
+第一步：
+
+```go
+
+func clamp(x, min, max int) int {
+	if x < min {
+		return min
+	}
+	if x > max {
+		return max
+	}
+	return x
+}
+
+```
+
+clamp 函数就是用来限定 i ， j 的范围的。i，j 的范围始终限定在 [-1，maxSize] 之间。
+
+
+第二步：
+
+最简单的想法是将（i，j）坐标转换为（x，y，z）（这个点不在边界上），然后调用 xyzToFaceUV 方法投影到对应的 face 上。
+
+我们知道在生成 CellID 的时候，stToUV 的时候，用的是一个二次变换：
+
+```go
+
+func stToUV(s float64) float64 {
+	if s >= 0.5 {
+		return (1 / 3.) * (4*s*s - 1)
+	}
+	return (1 / 3.) * (1 - 4*(1-s)*(1-s))
+}
+
+```
+
+但是此处，我们用的变换就简单一点，用的是线性变换。
+
+```go
+
+u = 2 * s - 1
+v = 2 * t - 1
+
+```
+
+u，v 的取值范围都被限定在 [-1，1] 之间。具体代码实现：
+
+
+```go
+
+const scale = 1.0 / maxSize
+limit := math.Nextafter(1, 2)
+u := math.Max(-limit, math.Min(limit, scale*float64((i<<1)+1-maxSize)))
+v := math.Max(-limit, math.Min(limit, scale*float64((j<<1)+1-maxSize)))
+
+```
+
+第三步：找到叶子节点，把 u，v 转成 对应 Level 的 CellID。
+
+```go
+
+f, u, v = xyzToFaceUV(faceUVToXYZ(f, u, v))
+return cellIDFromFaceIJ(f, stToIJ(0.5*(u+1)), stToIJ(0.5*(v+1)))
+
+```
+
+这样就求得了一个 CellID 。
+
+由于边有4条边，所以边邻居有4个。
+
+```go
+
+	return [4]CellID{
+		cellIDFromFaceIJWrap(f, i, j-size).Parent(level),
+		cellIDFromFaceIJWrap(f, i+size, j).Parent(level),
+		cellIDFromFaceIJWrap(f, i, j+size).Parent(level),
+		cellIDFromFaceIJWrap(f, i-size, j).Parent(level),
+	}
+
+
+```
+
+
+上面数组里面分别会装入当前 CellID 的上边邻居，右边邻居，下边邻居，左边邻居。
 
 ## 二. 顶点邻居
 
 
 ## 三. 全邻居
-
-
 
 
 
