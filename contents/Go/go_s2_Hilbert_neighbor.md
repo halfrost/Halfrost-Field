@@ -7,6 +7,7 @@
 
 
 
+
 关于邻居的定义，相邻即为邻居，那么邻居分为2种，边相邻和点相邻。边相邻的有4个方向，上下左右。点相邻的也有4个方向，即4个顶点相邻的。
 
 
@@ -214,13 +215,304 @@ return cellIDFromFaceIJ(f, stToIJ(0.5*(u+1)), stToIJ(0.5*(v+1)))
 ```
 
 
-上面数组里面分别会装入当前 CellID 的上边邻居，右边邻居，下边邻居，左边邻居。
+上面数组里面分别会装入当前 CellID 的下边邻居，右边邻居，上边邻居，左边邻居。
 
-## 二. 顶点邻居
+
+如果在地图上显示出来的话，就是下图的这样子。
+
+中间方格的 CellID = 3958610196388904960 , Level 10 。按照上面的方法求出来的边邻居，分别是：
+
+```go
+
+
+3958603599319138304 // 下边邻居
+3958607997365649408 // 右边邻居
+3958612395412160512 // 上边邻居
+3958599201272627200 // 左边邻居
+
+
+
+
+```
+
+
+在地图上展示出来：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-4ef6c57835e72159.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+## 二. 共顶点邻居
+
+
+这里的共顶点邻居和文章开始讲的顶点邻居有点区别。并且下面还会有一些看似奇怪的例子，也是笔者在实际编码中踩过的坑，分享一下。
+
+这里先说明一种特殊情况，即 Cell 正好在地球的外切立方体的8个顶点上。那么这个点的顶点邻居只有3个，而不是4个。因为这8个顶点每个点只有3个面与其连接，所以每个面上有且只有一个 Cell 是它们的顶点邻居。除去这8个点以外的 Cell 的顶点邻居都有4个！
+
+
+
+```go
+
+j
+|
+|  (0,1)  (1,1)
+|  (0,0)  (1,0)
+|
+----------------------------> i
+
+```
+
+在上述的坐标轴中，i 轴方向如果为1，就落在4个象限的右边一列上。如果 j 轴方向如果为，就落在4个象限的上面一行上。
+
+
+
+>**假设 Cell Level 不等于 30，即末尾标志位1后面还有0，那么这种 Cell 转换成 i，j 以后，i，j 的末尾就都是1 。**
+>
+>
+>上面的结论可以证明的，因为在 faceIJOrientation 函数拆分 Cell 的时候，如果遇到了都是0的情况，比如 orientation = 11，Cell 末尾都是0，那么取出末尾8位加上orientation，00000000 11，经过 lookupIJ 转换以后得到 1111111111 ，于是 i = 1111，j = 1111 ，方向还是 11。Cell 末尾的00还是继续循环上述的过程，于是 i，j 末尾全是1111 了。
+
+
+所以我们只需要根据 i，j 判断入参给的 Level 在哪个象限，就可以把共顶点的邻居都找到。
+
+
+假设入参给定的 Level 小，即 Cell 的面积大，那么就需要判断当前 Cell (函数调用者) 的共顶点是位于入参 Cell 的4个顶点的哪个顶点上。Cell 是一个矩形，有4个顶点。当前 Cell (函数调用者) 离哪个顶点近，就选那个顶点为公共顶点。再依次求出以公共顶点周围的4个 Cell 即可。
+
+假设入参给定的 Level 大，即 Cell 的面积小，那么也需要判断入参 Cell 的共顶点是位于当前 Cell (函数调用者)的4个顶点的哪个顶点上。Cell 是一个矩形，有4个顶点。入参 Cell 离哪个顶点近，就选那个顶点为公共顶点。再依次求出以公共顶点周围的4个 Cell 即可。
+
+
+由于需要判断位于一个 Cell 的四等分的哪一个，所以需要判断它的4个孩子的位置情况。即判断 Level - 1 的孩子的相对位置情况。
+
+
+```go
+
+	halfSize := sizeIJ(level + 1)
+	size := halfSize << 1
+	f, i, j, _ := ci.faceIJOrientation()
+
+	var isame, jsame bool
+	var ioffset, joffset int
+
+```
+
+这里需要拿到 halfSize ，halfSize 其实就是入参 Cell 的孩子的格子的 size 。
+
+```go
+
+	if i&halfSize != 0 {
+		// 位于后边一列，所以偏移量要加上一个格子
+		ioffset = size
+		isame = (i + size) < maxSize
+	} else {
+		// 位于左边一列，所以偏移量要减去一个格子
+		ioffset = -size
+		isame = (i - size) >= 0
+	}
+
+
+```
+
+这里我们根据 halfSize 那一位是否为1来判断距离矩形的4个顶点哪个顶点近。这里还需要注意的是，如果 i + size 不能超过 maxSize，如果超过了，就不在同一个 face 上了。同理， i - size 也不能小于 0，小于0页不在同一个 face 上了。
+
+j 轴判断原理和 i 完全一致。
+
+```go
+
+	if j&halfSize != 0 {
+		// 位于上边一行，所以偏移量要加上一个格子
+		joffset = size
+		jsame = (j + size) < maxSize
+	} else {
+		// 位于下边一行，所以偏移量要减去一个格子
+		joffset = -size
+		jsame = (j - size) >= 0
+	}
+
+
+```
+
+
+最后计算结果，先把入参的 Cell 先计算出来，然后在把它周围2个轴上的 Cell 计算出来。
+
+
+```go
+
+
+	results := []CellID{
+		ci.Parent(level),
+		cellIDFromFaceIJSame(f, i+ioffset, j, isame).Parent(level),
+		cellIDFromFaceIJSame(f, i, j+joffset, jsame).Parent(level),
+	}
+
+```
+
+如果 i，j 都在同一个 face 上，那么共顶点就肯定不是位于外切立方体的8个顶点上了。那么就可以再把第四个共顶点的 Cell 计算出来。
+
+```go
+
+	if isame || jsame {
+		results = append(results, cellIDFromFaceIJSame(f, i+ioffset, j+joffset, isame && jsame).Parent(level))
+	}
+
+```
+
+
+综上，完整的计算共顶点邻居的代码实现如下：
+
+
+```go
+
+func (ci CellID) VertexNeighbors(level int) []CellID {
+	halfSize := sizeIJ(level + 1)
+	size := halfSize << 1
+	f, i, j, _ := ci.faceIJOrientation()
+
+	fmt.Printf("halfsize 原始的值 = %v-%b\n", halfSize, halfSize)
+	var isame, jsame bool
+	var ioffset, joffset int
+
+	if i&halfSize != 0 {
+		// 位于后边一列，所以偏移量要加上一个格子
+		ioffset = size
+		isame = (i + size) < maxSize
+	} else {
+		// 位于左边一列，所以偏移量要减去一个格子
+		ioffset = -size
+		isame = (i - size) >= 0
+	}
+	if j&halfSize != 0 {
+		// 位于上边一行，所以偏移量要加上一个格子
+		joffset = size
+		jsame = (j + size) < maxSize
+	} else {
+		// 位于下边一行，所以偏移量要减去一个格子
+		joffset = -size
+		jsame = (j - size) >= 0
+	}
+
+	results := []CellID{
+		ci.Parent(level),
+		cellIDFromFaceIJSame(f, i+ioffset, j, isame).Parent(level),
+		cellIDFromFaceIJSame(f, i, j+joffset, jsame).Parent(level),
+	}
+
+	if isame || jsame {
+		results = append(results, cellIDFromFaceIJSame(f, i+ioffset, j+joffset, isame && jsame).Parent(level))
+	}
+
+	return results
+}
+
+
+```
+
+
+下面来举几个例子。
+
+第一个例子是相同大小 Cell 。入参和调用者 Cell 都是相同 Level - 10 的。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-e9b551a5674b7ebf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+```go
+
+VertexNeighbors := cellID.Parent(10).VertexNeighbors(10)
+
+// 11011011101111110011110000000000000000000000000000000000000000
+3958610196388904960 // 右上角 
+3958599201272627200 // 左上角
+3958603599319138304 // 右下角
+3958601400295882752 // 左下角
+
+```
+
+
+第二个例子是不是大小的 Cell 。调用者 Cell 是默认 Level - 30 的。
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-a4b3c0f0d516017f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+```go
+
+VertexNeighbors := cellID.VertexNeighbors(10)
+
+// 11011011101111110011110000000000000000000000000000000000000000
+3958610196388904960 // 右下角
+3958599201272627200 // 左下角
+3958612395412160512 // 右上角
+3958623390528438272 // 左上角
+
+```
+
+
+上面两个例子可以说明一个问题，同样是调用 VertexNeighbors(10) 得到的 Cell 都是 Level - 10 的，但是方向和位置是不同的。本质在它们共的顶点是不同的，所以生成出来的4个Cell生成方向也就不同。
+
+
+在 C++ 的版本中，查找顶点邻居有一个限制：
+
+```c
+
+DCHECK_LT(level, this->level());
+
+
+```
+
+
+入参的 Level 必须严格的比要找的 Cell 的 Level 小才行。也就是说入参的 Cell 的格子面积大小要比 Cell 格子大小更小才行。但是在 Go 的版本实现中并没有这个要求，入参或大或小都可以。
+
+
+下面这个举例，入参比 Cell 的 Level 小。（可以看到成都市已经小成一个点了）
+
+![](http://upload-images.jianshu.io/upload_images/1194012-12642816fd82c439.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+```go
+
+VertexNeighbors := cellID.Parent(10).VertexNeighbors(5)
+
+3957538172551823360 // 右下角
+3955286372738138112 // 左下角
+3959789972365508608 // 右上角
+3962041772179193856 // 左上角
+
+
+```
+
+下面这个举例，入参比 Cell 的 Level 大。（可以看到 Level 15 的面积已经很小了）
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f0207c8399eb2c0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
+
+```go
+
+VertexNeighbors := cellID.Parent(10).VertexNeighbors(15)
+
+
+3958610197462646784 // 左下角
+3958610195315163136 // 右下角
+3958610929754570752 // 左上角
+3958609463023239168 // 右上角
+
+
+```
 
 
 ## 三. 全邻居
 
+最后回来文章开头问的那个问题中。如何在四叉树上如何求希尔伯特曲线的邻居 ？经过前文的一些铺垫，再来看这个问题，也许读者心里已经明白该怎么做了。
+
+
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f1cb54645884ce6d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
