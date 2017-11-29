@@ -57,7 +57,7 @@ func Array : 0xc4200bec30 , [100 200]
 ```go
 
 func main() {
-	arrayA := []int{100, 200}
+	arrayA := [2]int{100, 200}
 	testArrayPoint(&arrayA)   // 1.传数组指针
 	arrayB := arrayA[:]
 	testArrayPoint(&arrayB)   // 2.传切片
