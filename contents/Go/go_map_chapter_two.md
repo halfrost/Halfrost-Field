@@ -1071,7 +1071,7 @@ UpsertCb 函数在这里值得说明的是，这个函数是回调返回待插�
 
 ### 2. Lock - Free 方案
 
-在 Go 1.9 的版本中默认就实现了一种线程安全的 Map，摒弃了Segment（分段锁）的概念，而是启用了一种全新的方式实现，利用了 CAS 算法，即 Lock - Free 方案。
+在 Go 1.9 的版本中默认就实现了一种线程安全的 Map，摒弃了 Segment（分段锁）的概念，而是启用了一种全新的方式实现，利用了 CAS 算法，即 Lock - Free 方案。
 
 采用 Lock - Free 方案以后，能比上一个分案，分段锁更进一步缩小锁的范围。性能大大提升。
 
@@ -1149,6 +1149,10 @@ p 指针指向 \*interface{} 类型，里面存储的是 entry 的地址。如�
 除去以上两种情况外，entry 都是有效的，并且被记录在 m.read.m[key] 中，如果 m.dirty!= nil，entry 被存储在 m.dirty[key] 中。
 
 一个 entry 可以通过原子替换操作成 nil 来删除它。当 m.dirty 在下一次被创建，entry 会被 expunged 指针原子性的替换为 nil，m.dirty[key] 不对应任何 value。只要 p != expunged，那么一个 entry 就可以通过原子替换操作更新关联的 value。如果 p \=\= expunged，那么一个 entry 想要通过原子替换操作更新关联的 value，只能在首次设置 m.dirty[key] = e 以后才能更新 value。这样做是为了能在 dirty map 中查找到它。
+
+
+所以从上面分析可以看出，read 中的 key 是 readOnly 的（key 的集合不会变，删除也只是打一个标记），value 的操作全都可以原子完成，所以这个结构不用加锁。dirty 是一个 read 的拷贝，加锁的操作都在这里，如增加元素、删除元素等（dirty上执行删除操作就是真的删除）具体操作见下面分析。
+
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-1c0e2faffeb6147a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -1354,6 +1358,19 @@ func (e *entry) delete() (hadValue bool) {
 
 
 至此，关于 Go 1.9 中自带的线程安全的 sync.map 的实现就分析完了。官方的实现里面基本没有用到锁，互斥量的 lock 也是基于 CAS的。read map 也是原子性的。所以比之前加锁的实现版本性能有所提升。
+
+
+如果 read 中的一个 key 被删除了，即被打了 expunged 标记，然后如果再添加相同的 key，不需要操作 dirty，直接恢复回来就可以了。
+
+如果 dirty 没有任何数据的时候，删除了 read 中的 key，同样也是加上 expunged 标记，再添加另外一个不同的 key，dirtyLocked() 函数会把 read 中所有已经有的 key-value 全部都拷贝到 dirty 中保存，并再追加上 read 中最后添加上的和之前删掉不同的 key。
+
+这就等同于：
+
+当 dirty 不存在的时候，read 就是全部 map 的数据。  
+当 dirty 存在的时候，dirty 才是正确的 map 数据。  
+
+
+从 sync.map 的实现中我们可以看出，它的思想重点在读取是无锁的。字典大部分操作也都是读取，多个读者之间是可以无锁的。当 read 中的数据 miss 到一定程度的时候，（有点命中缓存的意思），就会考虑直接把 dirty 替换成 read，整个一个赋值替换就可以了。但是在 dirty 重新生成新的时候，或者说第一个 dirty 生成的时候，还是需要遍历整个 read，这里会消耗很多性能，那官方的这个 sync.map 的性能究竟是怎么样的呢？
 
 究竟 Lock \- Free 的性能有多强呢？接下来做一下性能测试。
 
