@@ -666,6 +666,13 @@ z = r * cos θ
 Uber 在一个公开分享上提到了他们用的是六边形的网格，把城市划分为很多六边形。这块应该是他们自己开发的。也许滴滴也是划分六边形，也许滴滴有更好的划分方案也说不定。
 
 
+在 Google S2 中，它是把地球展开成如下的样子：
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-3472cad968d278f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
 回到 S2 上面来，S2是用的正方形。这样第一步的球面坐标进一步的被转换成 f(x,y,z) -> g(face,u,v)，face是正方形的六个面，u，v对应的是六个面中的一个面上的x，y坐标。
 
 ### 3. 球面矩形投影修正
