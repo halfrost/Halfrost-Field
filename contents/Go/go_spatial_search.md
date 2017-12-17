@@ -673,6 +673,34 @@ Uber 在一个公开分享上提到了他们用的是六边形的网格，把城
 </p>
 
 
+如果上面展开的6个面，假设都用5阶的希尔伯特曲线表示出来的话，6个面会是如下的样子：
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-9978b4ac57426b8f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-d524b0af62173ad3.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-99e6f52a9296342c.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-dfee54f587abe7b8.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-04f932dc2cb636f2.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-6548d38d895e447a.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 回到 S2 上面来，S2是用的正方形。这样第一步的球面坐标进一步的被转换成 f(x,y,z) -> g(face,u,v)，face是正方形的六个面，u，v对应的是六个面中的一个面上的x，y坐标。
 
 ### 3. 球面矩形投影修正
