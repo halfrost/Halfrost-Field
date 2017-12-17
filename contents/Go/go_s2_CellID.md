@@ -333,6 +333,16 @@ func cellIDFromPoint(p Point) CellID {
 S(lat,lng) -> f(x,y,z) -> g(face,u,v) -> h(face,s,t) -> H(face,i,j) -> CellID 总共有5步转换。
 
 
+
+经过上面5步转换以后，等效于把地球上的经纬度的点都转换到了希尔伯特曲线上的点了。
+
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-dee23e3aa755dafc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 在解释最后一步转换 CellID 之前，先说明一下方向的问题。
 
 
