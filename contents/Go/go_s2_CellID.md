@@ -11,6 +11,21 @@
 
 ## 一. 什么是 Cell ？
 
+
+Google S2 库中定义了一个将单位球体分解成单元格层次结构的框架。每个 Cell 的单元格是由四个测地线限定的四边形。通过将立方体的六个面投影到单位球上来获得层级的顶层，通过递归地将每个单元细分为四个子层来获得较低层。例如，下面的图片显示了六个 face 中 Cell 的两个，其中一个已经细分了几次：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-59278816e3f3761f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+注意 Cell 边缘似乎是弯曲的，这是因为它们是球形测地线，即球体上的直线（类似于飞机飞行的路线）
+
+
+S2 Level 对于空间索引和将区域逼近为单元集合非常有用。Cell 可用于表示点和区域：点通常表示为叶子节点，而区域表示为任何 Level 的 Cell 的集合。例如，下面是夏威夷近似的22个单元的集合：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-402b7c697ac2fed5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+
 ## 二. S(lat,lng) -> f(x,y,z) 
 
 
