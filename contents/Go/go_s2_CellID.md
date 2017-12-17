@@ -9,7 +9,9 @@
 笔者在[《高效的多维空间点索引算法 — Geohash 和 Google S2》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md)文章中详细的分析了 Google S2 的算法实现思想。文章发出来以后，一部分读者对它的实现产生了好奇。本文算是对上篇文章的补充，将从代码实现的角度来看看 Google S2 的算法具体实现。建议先读完上篇文章里面的算法思想，再看本篇的代码实现会更好理解一些。
 
 
-## 一. S(lat,lng) -> f(x,y,z) 
+## 一. 什么是 Cell ？
+
+## 二. S(lat,lng) -> f(x,y,z) 
 
 
 **纬度 Latitude 的取值范围在 [-90°,90°] 之间。**  
@@ -119,7 +121,7 @@ r3.Vector{math.Cos(theta) * cosphi, math.Sin(theta) * cosphi, math.Sin(phi)}
 至此，已经完成了球面上的点S(lat,lng) -> f(x,y,z) 的转换。
 
 
-## 二. f(x,y,z) -> g(face,u,v)
+## 三. f(x,y,z) -> g(face,u,v)
 
 接下来进行 f(x,y,z) -> g(face,u,v) 的转换
 
@@ -226,7 +228,7 @@ func validFaceXYZToUV(face int, r r3.Vector) (float64, float64) {
 **(face,u,v) 表示一个立方空间坐标系，三个轴的值域都是 [-1,1] 之间。为了使得每个 cell 的大小都一样，就要进行变换，具体变换规则就在下一步转换中。**
 
 
-## 三. g(face,u,v) -> h(face,s,t)
+## 四. g(face,u,v) -> h(face,s,t)
 
 
 从 u、v 转换到 s、t 用的是二次变换。在 C ++ 的版本中有三种变换，至于为何最后选了这种二次变换，原因见[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#3-球面矩形投影修正)。
@@ -264,7 +266,7 @@ func uvToST(u float64) float64 {
 **(face,s,t) 表示一个 cell 空间坐标系，s，t 的值域都是 [0,1] 之间。它们代表了一个 face 上的一个 point。例如，点 (s,t) = (0.5,0.5) 代表的是在这个 face 面上的中心点。这个点也是当前这个面上再细分成4个小 cell 的顶点。**
 
 
-## 四. h(face,s,t) -> H(face,i,j)
+## 五. h(face,s,t) -> H(face,i,j)
 
 这一部分是坐标系的转换，具体思想见[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_spatial_search.md#4-点与坐标轴点相互转换)。
 
@@ -282,7 +284,7 @@ func stToIJ(s float64) int {
 s，t的值域是[0,1]，现在值域要扩大到[0,2^30^-1]。这里只是其中一个面。
 
 
-## 五. H(face,i,j) -> CellID 
+## 六. H(face,i,j) -> CellID 
 
 
 在进行最后的转换之前，先回顾一下到目前为止的转换流程。
@@ -613,7 +615,7 @@ Z - index 曲线的生成方式是把经纬度坐标分别进行区间二分，�
 
 当然直接根据方向推算到底，也可以得到 0000110111 = 55 ，同样也是55 。
 
-## 六. 举例
+## 七. 举例
 
 
 最后举个具体的完整的例子：
