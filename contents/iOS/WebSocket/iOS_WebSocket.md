@@ -138,6 +138,7 @@ WebSocket开源框架有:[facebook/*Socket*Rocket](https://github.com/facebook/S
 
 我们今天来看看[facebook/*Socket*Rocket](https://github.com/facebook/SocketRocket)的实现方法
 首先这是SRWebSocket定义的一些成员变量
+
 ```
 
 @property (nonatomic, weak) id <SRWebSocketDelegate> delegate;
@@ -167,6 +168,7 @@ WebSocket开源框架有:[facebook/*Socket*Rocket](https://github.com/facebook/S
 
 
 下面这些是SRWebSocket的一些方法
+
 ```
 
 // Protocols should be an array of strings that turn into Sec-WebSocket-Protocol.
@@ -209,6 +211,7 @@ WebSocket开源框架有:[facebook/*Socket*Rocket](https://github.com/facebook/S
 ```
 
 对应5种状态的代理方法
+
 ```
 ///--------------------------------------
 #pragma mark - SRWebSocketDelegate
@@ -234,6 +237,7 @@ didReceiveMessage方法是必须实现的，用来接收消息的。
 方法就上面这些了，我们实际来看看代码怎么写
 
 先是初始化Websocket连接，注意此处ws://或者wss://连接有且最多只能有一个，这个是Websocket协议规定的
+
 ```
     self.ws = [[SRWebSocket alloc] initWithURLRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@:%zd/ws", serverProto, serverIP, serverPort]]]];
     self.ws.delegate = delegate;
@@ -241,6 +245,7 @@ didReceiveMessage方法是必须实现的，用来接收消息的。
 ```
 
 发送消息
+
 ```
     [self.ws send:message];
 ```
@@ -283,8 +288,10 @@ didReceiveMessage方法是必须实现的，用来接收消息的。
 最后，微信和QQ的实现方法也许并不是只用Websocket和Socket这么简单，也许是他们自己开发的一套能支持这么大用户，大数据的，各方面也都优化都最优的方法。如果有开发和微信和QQ的大神看到这篇文章，可以留言说说看你们用什么方式实现的，也可以和我们一起分享，我们一起学习！我先谢谢大神们的指点了！
 
 
+
+
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/ios\_coredata\_migration/](https://halfrost.com/ios_coredata_migration/)
+> Source: [https://halfrost.com/ios\_weixin\_qq\_websocket/](https://halfrost.com/ios_weixin_qq_websocket/)
