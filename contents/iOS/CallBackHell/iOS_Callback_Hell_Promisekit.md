@@ -54,6 +54,7 @@ PromiseKit里面目前有2个类，一个是Promise<T>(Swift)，一个是AnyProm
 上图的代码是真实存在的，也是朋友告诉我的，来自[快的的代码](http://www.kuaidadi.com/assets/js/animate.js)，当然现在人家肯定改掉了。虽然这种代码看着像这样：
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-77a2f359c5a95e9d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 代码虽然看上去不优雅，功能都是正确的，但是这种代码基本大家都自己写过，我自己也写过很多。今天就让我们动起手来，用PromiseKit来优雅的处理掉Callback hell吧。
 
 
@@ -85,10 +86,13 @@ $ pod setup
 ```
 
 2.找到项目的路径，进入项目文件夹下面，执行：
+
 ```
 $ touch Podfile && open -e Podfile
 ```
+
 此时会打开TextEdit，然后输入一下命令:
+
 ```
 platform:ios, ‘7.0’
 
@@ -133,6 +137,7 @@ $ pod install
 
 ```
 上面的写法也不是错误的，就是它在调用函数中保存了一个属性，在调用alertView会使用到这个属性。其实这个中间属性是不需要存储的。接下来我们就用then来去掉这个中间变量。
+
 ```
 
 - (void)showUndoRedoAlert:(UndoRedoState *)state
@@ -144,6 +149,7 @@ $ pod install
 }
 ```
 这时就有人问了，为啥能调用[alert promise]这个方法？后面点语法跟着then是什么？我来解释一下，原因其实只要打开Promise源码就一清二楚了。在pormise源码中
+
 ```
 
 @interface UIAlertView (PromiseKit)
@@ -157,7 +163,9 @@ $ pod install
 */
 - (PMKPromise *)promise;
 ```
+
 对应的实现是这样的
+
 ```
 - (PMKPromise *)promise {
     PMKAlertViewDelegater *d = [PMKAlertViewDelegater new];
@@ -174,10 +182,11 @@ $ pod install
 在PromiseKit里面，其实就默认给你创建了几个类的延展，如下图
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-ab9c742c3b4ce5a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 这些扩展类里面就封装了一些常用的生成promise方法，调用这些方法就可以愉快的一路.then执行下去了！
 
-2.dispatch_promise
-项目中我们经常会异步的下载图片
+2.dispatch\_promise 项目中我们经常会异步的下载图片
+
 ```
 typedefvoid(^onImageReady) (UIImage* image);
 
@@ -194,6 +203,7 @@ typedefvoid(^onImageReady) (UIImage* image);
 }
 ```
 使用dispatch_promise，我们可以将它改变成下面这样:
+
 ```
     dispatch_promise(^{
         return [NSData dataWithContentsOfURL:url];     
@@ -203,7 +213,9 @@ typedefvoid(^onImageReady) (UIImage* image);
         // add code to happen next here
     });
 ```
+
 我们看看源码，看看调用的异步过程对不对
+
 ```
 - (PMKPromise *(^)(id))then {
     return ^(id block){
@@ -219,6 +231,7 @@ PMKPromise *dispatch_promise(id block) {
 
 3.catch
 在异步操作中，处理错误也是一件很头疼的事情，如下面这段代码，每次异步请求回来都必须要处理错误。
+
 ```
 
 void (^errorHandler)(NSError *) = ^(NSError *error) {
@@ -246,7 +259,9 @@ void (^errorHandler)(NSError *) = ^(NSError *error) {
     }
 }];
 ```
+
 我们可以用promise的catch来解决上面的错误处理的问题
+
 ```
 //oc版
 [NSURLSession GET:url].then(^(NSDictionary *json){
@@ -269,11 +284,13 @@ firstly {
     UIAlertView(…).show()
 }
 ```
+
 用了catch以后，在传递promise的链中，一旦中间任何一环产生了错误，都会传递到catch去执行Error Handler。
 
 4.when
 通常我们有这种需求:
 在执行一个A任务之前还有1，2个异步的任务，在全部异步操作完成之前，需要阻塞A任务。代码可能会写的像下面这样子：
+
 ```
 
 __block int x = 0;
@@ -285,7 +302,9 @@ void (^completionHandler)(id, id) = ^(MKLocalSearchResponse *response, NSError *
 [[[MKLocalSearch alloc] initWithRequest:rq1] startWithCompletionHandler:completionHandler];
 [[[MKLocalSearch alloc] initWithRequest:rq2] startWithCompletionHandler:completionHandler];
 ```
+
 这里就可以使用when来优雅的处理这种情况:
+
 ```
 
 id search1 = [[[MKLocalSearch alloc] initWithRequest:rq1] promise];
@@ -297,9 +316,11 @@ PMKWhen(@[search1, search2]).then(^(NSArray *results){
     // called if either search fails
 });
 ```
+
 在when后面传入一个数组，里面是2个promise，只有当这2个promise都执行完，才会去执行后面的then的操作。这样就达到了之前所说的需求。
 
 这里when还有2点要说的，when的参数还可以是字典。
+
 ```
 
 id coffeeSearch = [[MKLocalSearch alloc] initWithRequest:rq1];
@@ -313,6 +334,7 @@ PMKWhen(input).then(^(NSDictionary *results){
 这个例子里面when传入了一个input字典，处理完成之后依旧可以生成新的promise传递到下一个then中，在then中可以去到results的字典，获得结果。传入字典的工作原理放在第四章会解释。
 
 when传入的参数还可以是一个可变的属性：
+
 ```
 
 @property id dataSource;
@@ -331,6 +353,7 @@ when传入的参数还可以是一个可变的属性：
 dataSource如果为空就新建一个promise，传入到when中，执行完之后，在then中拿到result，并把result赋值给dataSource，这样dataSource就有数据了。由此看来，when的使用非常灵活！
 
 5.always & finally
+
 ```
 //oc版
 [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
@@ -362,10 +385,12 @@ promise必须实现then方法（可以说，then就是promise的核心），而�
 then方法接受两个参数，第一个参数是成功时的回调，在promise由“等待”态转换到“完成”态时调用，另一个是失败时的回调，在promise由“等待”态转换到“拒绝”态时调用。同时，then可以接受另一个promise传入，也接受一个“类then”的对象或方法，即thenable对象
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-2f135482415329ef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 总结起来就是上图，pending状态的promise对象既可转换为带着一个成功值的 fulfilled 状态，也可变为带着一个 error 信息的 rejected 状态。当状态发生转换时， promise.then 绑定的方法就会被调用。(当绑定方法时，如果 promise 对象已经处于 fulfilled 或 rejected 状态，那么相应的方法将会被立刻调用， 所以在异步操作的完成情况和它的绑定方法之间不存在竞争关系。)从Pending转换为fulfilled或Rejected之后， 这个promise对象的状态就不会再发生任何变化。因此 then是只被调用一次的函数，从而也能说明，then生成的是一个新的promise，而不是原来的那个。
 
 
 了解完流程之后，就可以开始继续研究源码了。在PromiseKit当中，最常用的当属then，thenInBackground，catch，finally
+
 ```
 
 - (PMKPromise *(^)(id))then {
@@ -422,6 +447,7 @@ then方法接受两个参数，第一个参数是成功时的回调，在promise
 }
 ```
 这个thenon就是返回一个方法，所以继续往下看
+
 ```
 - (id)resolved:(PMKResolveOnQueueBlock(^)(id result))mkresolvedCallback
        pending:(void(^)(id result, PMKPromise *next, dispatch_queue_t q, id block, void (^resolver)(id)))mkpendingCallback
@@ -468,9 +494,10 @@ then方法接受两个参数，第一个参数是成功时的回调，在promise
 ```
 这个方法看上去很复杂，仔细看看，函数的形参其实就是2个block，一个是resolved的block，还有一个是pending的block。当一个promise经历过resolved之后，可能是fulfill，也可能是reject，之后生成next新的promise，传入到下一个then中，并且状态会变成pending。上面代码中第一个return，如果next为nil，那么意味着promise没有生成，这是会再调用一次mkresolvedCallback，并传入参数result，生成的PMKResolveOnQueueBlock，再次传入(q, block)，直到next的promise生成，并把pendingCallback存入到handler当中。这个handler存了所有待执行的block，如果把这个数组里面的block都执行，那么就相当于依次完成了上面的所有异步操作。第二个return是在callblock为nil的时候，还会再调一次mkresolvedCallback(result)，保证一定要生成next的promise。
 
-这个函数里面的这里dispatch_barrier_sync这个方法，就是promise后面可以链式调用then的原因，因为GCD的这个方法，让后面then变得像一行行的then顺序执行了。
+这个函数里面的这里dispatch\_barrier\_sync这个方法，就是promise后面可以链式调用then的原因，因为GCD的这个方法，让后面then变得像一行行的then顺序执行了。
 
 可能会有人问了，并没有看到各个block执行，仅仅只是加到handler数组里了，这个问题的答案，就是promise的核心了。promise执行block的操作是放在resove里面的。先来看看源码
+
 ```
 
 static void PMKResolve(PMKPromise *this, id result) {
@@ -535,6 +562,7 @@ static void PMKResolve(PMKPromise *this, id result) {
 这里只截取了return的部分，理解了then，这里再看when就好理解了。when就是在传入的promises的数组里面，依次执行各个promise，结果最后传给新生成的一个promise，作为返回值返回。
 
 这里要额外提一点的就是如果给when传入一个字典，它会如何处理的
+
 ```
 
     if ([promises isKindOfClass:[NSDictionary class]])
@@ -559,6 +587,7 @@ static void PMKResolve(PMKPromise *this, id result) {
 ####五.使用PromiseKit优雅的处理回调地狱
 这里我就举个例子，大家一起来感受感受用promise的简洁。
 先描述一下环境，假设有这样一个提交按钮，当你点击之后，就会提交一次任务。首先要先判断是否有权限提交，没有权限就弹出错误。有权限提交之后，还要请求一次，判断当前任务是否已经存在，如果存在，弹出错误。如果不存在，这个时候就可以安心提交任务了。
+
 ```
 
 void (^errorHandler)(NSError *) = ^(NSError *error) {
@@ -605,6 +634,7 @@ void (^errorHandler)(NSError *) = ^(NSError *error) {
 }];
 ```
 上面的代码里面有3层回调，看上去就很晕，接下来我们用promise来整理一下。
+
 ```
 
 [NSURLSession GET:url].then(^(NSDictionary *json){
@@ -631,3 +661,11 @@ void (^errorHandler)(NSError *) = ^(NSError *error) {
 我自己的看法是，PromiseKit是个解决异步问题很优秀的一个开源库，尤其是解决回调嵌套，回调地狱的问题，效果非常明显。虽然需要自己封装AFNetWorking的promise，但是它的思想非常值得我们学习的！这也是接下来第二篇想和大家一起分享的内容，利用promise的思想，自己来优雅的处理回调地狱！这一篇PromiseKit先分享到这里。
 
 如有错误，还请大家请多多指教。
+
+
+
+> GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
+> 
+> Follow: [halfrost · GitHub](https://github.com/halfrost)
+>
+> Source: [https://halfrost.com/ios\_callback\_hell\_promisekit/](https://halfrost.com/ios_callback_hell_promisekit/)
