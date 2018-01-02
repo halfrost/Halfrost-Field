@@ -41,6 +41,36 @@
 
 ## 一. 空间类型
 
+Developer Guides
+Basic Types
+Finding Nearby Edges
+S2Cell Hierarchy
+Covering Examples
+
+-----------------------------------------------------
+
+https://s2geometry.io/devguide/cpp/quickstart
+
+
+Other S2Region Types
+As its name implies, S2RegionTermIndexer supports indexing and querying any type of S2Region. In addition to points and discs (S2Cap), other useful S2Region types include:
+
+S2LatLngRect - a rectangle in latitude-longitude coordinates.
+S2Polyline - a polyline.
+S2Polygon - a polygon (can have holes and multiple shells).
+S2CellUnion - a region approximated as a collection of S2CellIds.
+S2ShapeIndexRegion - an arbitrary collection of points, polylines, and polygons.
+S2ShapeIndexBufferedRegion - like the above, but expanded by a given radius.
+S2RegionUnion - the union of arbitrary other regions.
+S2RegionIntersection - the intersection of arbitrary other regions.
+For example, you could use S2RegionTermIndexer to index a set of polylines, and then query which polylines intersect a given polygon.
+
+
+-----------------------------------------------------
+
+https://s2geometry.io/devguide/
+
+-----------------------------------------------------
 
 ## 二. RegionCoverer 核心算法 Covering 的实现
 
