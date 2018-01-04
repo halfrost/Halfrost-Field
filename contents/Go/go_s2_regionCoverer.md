@@ -122,9 +122,50 @@ https://s2geometry.io/devguide/
 
 -----------------------------------------------------
 
-## 二. RegionCoverer 核心算法 Covering 的实现
+## 二. RegionCoverer 举例
 
-## 三. 
+RegionCoverer 主要是要找到一个能覆盖当前区域的近似最优解(为何不是最优解？)
+
+转换条件主要有3个，MaxLevel, MaxCells, MinLevel。MaxCells 决定了最大 cell 的个数，但是太接近最大值以后又会导致覆盖面积太大，不精确。所以最大个数仅仅是限制在满足最大精度的条件下最多不能超过这个个数。由于这一点导致并不是满足 MaxCells 的最优解。
+
+举几个例子：
+
+下面是一个半径为 10 公里的 cap，并且这个 cap 位于 3 个 face 夹角处，我们假设需要最大个数为 10 的 cell 去覆盖它。结果如下：
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-06147cab0700189c.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+相同的设置，我们把个数改到 20，如下：
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-9986012502eab78b.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+还是相同的配置，把个数改到 50 个：
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-0bd56144b9a22a11.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+到目前，精确度马马虎虎，边缘部门覆盖的还是多于原始的 cap 了，我们继续提高精度，把个数调整到 200 。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-74a80a89d27c0f09.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+200 个看似比较精确了，我们再提高一下，提高到 1000，看看会出现什么结果。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-39a5bd16c9e688cf.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+代码配置上虽然设置的 1000 个，实际只有 706 个 cell。原因是代码上虽然是按照 1000 个计算的，但是实际算法处理上还会进行 cell 剪枝后的合并。所以最终个数会小于 1000 个。
+
+## 三. RegionCoverer 核心算法 Covering 的实现
 
 
 ## 四. 最后
