@@ -165,6 +165,34 @@ RegionCoverer 主要是要找到一个能覆盖当前区域的近似最优解(�
 
 代码配置上虽然设置的 1000 个，实际只有 706 个 cell。原因是代码上虽然是按照 1000 个计算的，但是实际算法处理上还会进行 cell 剪枝后的合并。所以最终个数会小于 1000 个。
 
+再看一个例子，下面这个矩形是表示一个纬度/经度矩形从北纬 60 度延伸到北纬 80 度，从 -170 度经度延伸到 +170 度。覆盖范围限于 8 个单元。请注意，中间的洞被完全覆盖。这明显是不符合我们的意图的。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-b400bf236651eeaa.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+我们把 cell 的个数提高到 20 个。中间的孔依旧被填补上了。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-c0f6fe597231fee0.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+我们把参数调节到 100 个，其他配置都完全一样。现在中间的孔有一定样子了。但是日期线附近的空白还是没有出来。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-9a99f328cffd1bd7.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+最后把参数调整到 500 个。现在中间的孔就比较完整的显示出来了。
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-5ae24704889d70f0.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
+
+
 ## 三. RegionCoverer 核心算法 Covering 的实现
 
 
