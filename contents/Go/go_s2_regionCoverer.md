@@ -1,4 +1,4 @@
-# 如何解决空间覆盖最优解的问题?
+# Google S2 是如何解决空间覆盖最优解问题的?
 
 
 
@@ -41,6 +41,8 @@
 
 ## 一. 空间类型
 
+在 Google S2 中能进行 RegionCovering 的有以下几种类型。基本上都是必须满足 Region interface 的。
+
 ### 1. Cap 球帽
 
 Cap 代表由中心和半径限定的盘形区域。从技术上讲，这种形状被称为“球形帽”（而不是圆盘），因为它不是平面的。帽子代表被飞机切断的球体的一部分。帽的边界是由球面与平面的交点所定义的圆。帽子是一个封闭的组合，即它包含了它的边界。 大多数情况下，无论在平面几何中使用光盘，都可以使用球冠。帽的半径是沿着球体表面测量的（而不是通过内部的直线距离）。因此，一个半径为 π/ 2 的帽是一个半球，半径为 π 的帽覆盖整个球。 中心是单位球面上的一个点。（因此需要它是单位长度）帽子也可以由其中心点和高度来定义。高度是从中心点到截断平面的距离。还有支持“空”和“全”的上限，分别不包含任何点数和所有点数。 下面是帽高（h），帽半径（r），帽中心的最大弦长（d）和帽底部半径（a）之间的一些有用关系。
@@ -80,7 +82,8 @@ S2 区域表示单位球体上的二维区域。它是一个具有各种具体�
 
 
 ### 6. Shape 形状
-形状以灵活的方式表示几何多边形。它被组织成边缘的集合，可选地定义内部。由给定 Shape 表示的所有几何图形必须具有相同的尺寸，这意味着 Shape 可以表示一组点，一组多边形或一组多边形。 Shape 被定义为一个接口，以便让客户端控制底层的数据表示。有时一个 Shape 没有自己的数据，而是包装其他类型的数据。 Shape 操作通常在 ShapeIndex 上定义，而不是单独的形状。 ShapeIndex 只是一个 Shapes 集合，可能有不同的维度（例如10个点和3个多边形），组织成一个数据结构，以便高效的边访问。 Shape 的边缘由从 0 开始的连续范围的边缘 ID 索引。边缘被进一步细分为链，其中每个链由端到端连接的一系列边（多段线）组成。例如，表示两条折线 AB 和 CDE 的形状将具有分成两条链（AB）和（CD，DE）的三条边（AB，CD，DE）。类似地，代表5个点的形状将具有由一个边缘组成的5个链。 Shape具有允许使用全局编号（边缘ID）或在特定链中访问边的方法。全局编号对于大多数目的是足够的，但链表示对于某些算法（如交集（请参阅BooleanOperation））非常有用。
+
+Shape 算是一切图形或者形状的“基类”了。它可以最灵活的方式表示几何多边形。它是由边缘的集合构成的，可选地定义内部。由给定 Shape 表示的所有几何图形必须具有相同的尺寸，这意味着 Shape 可以表示一组点，一组多边形或一组多边形。 Shape 被定义为一个接口，以便让客户端更加方便的控制底层的数据表示。有时一个 Shape 没有自己的数据，而是包装其他类型的数据。 Shape 操作通常在 ShapeIndex 上定义，而不是单独的形状。 ShapeIndex 只是一个 Shapes 集合，可能有不同的维度（例如10个点和3个多边形），组织成一个数据结构，以便高效的访问。 Shape 的边缘由从 0 开始的连续范围的边缘 ID 索引。边缘被进一步细分为链，其中每个链由端到端连接的一系列边（多段线）组成。例如，表示两条折线 AB 和 CDE 的形状将具有分成两条链（AB）和（CD，DE）的三条边（AB，CD，DE）。类似地，代表5个点的形状将具有由一个边缘组成的5个链。 Shape具有允许使用全局编号（边缘ID）或在特定链中访问边的方法。全局编号对于大多数情况来说是足够的，但链表示对于某些算法（如交集（请参阅BooleanOperation））非常有用。
 
 S2 中总共定义了两个用于表示几何的可扩展接口：S2Shape 和 S2Region。
 
@@ -89,38 +92,22 @@ S2Shape 的目的是灵活地表示多边形几何。 （这不仅包括多边�
 
 S2Region 的目的是计算几何的近似值。例如，有计算边界矩形和圆盘的方法，S2RegionCoverer 可以用来逼近一个区域，以任意期望的精度作为单元的集合。与S2Shape 不同，S2Region 可以表示非多边形几何形状，例如球帽（S2Cap）。
 
--------------------------------
 
-Developer Guides
-Basic Types
-Finding Nearby Edges
-S2Cell Hierarchy
-Covering Examples
-
------------------------------------------------------
-
-https://s2geometry.io/devguide/cpp/quickstart
+除去上面说的这几种常用的类型以外，还有以下这些中间类型或者更加底层的类型可以供开发者使用。
 
 
-Other S2Region Types
-As its name implies, S2RegionTermIndexer supports indexing and querying any type of S2Region. In addition to points and discs (S2Cap), other useful S2Region types include:
-
-S2LatLngRect - a rectangle in latitude-longitude coordinates.
-S2Polyline - a polyline.
-S2Polygon - a polygon (can have holes and multiple shells).
-S2CellUnion - a region approximated as a collection of S2CellIds.
-S2ShapeIndexRegion - an arbitrary collection of points, polylines, and polygons.
-S2ShapeIndexBufferedRegion - like the above, but expanded by a given radius.
-S2RegionUnion - the union of arbitrary other regions.
-S2RegionIntersection - the intersection of arbitrary other regions.
-For example, you could use S2RegionTermIndexer to index a set of polylines, and then query which polylines intersect a given polygon.
+- S2LatLngRect - 经纬度坐标系中的矩形。
+- S2Polyline - 折线。
+- S2CellUnion - 一个近似为S2CellIds集合的区域。RegionCoverer 转换以后都是这种类型。
+- S2ShapeIndexRegion - 点，多义线和多边形的任意集合。
+- S2ShapeIndexBufferedRegion - 定义和 S2ShapeIndexRegion 一样，只是扩大了给定的半径。
+- S2RegionUnion - 任意区域的集合。
+- S2RegionIntersection - 任意其他区域的交集部分。
 
 
------------------------------------------------------
+最后，额外说一句，S2RegionTermIndexer 这个类型是支持索引和查询任何类型的S2Region，也就是上述说的所有的类型。可以使用 S2RegionTermIndexer 来索引一组多段线，然后查询哪些多段线与给定的多边形相交。
 
-https://s2geometry.io/devguide/
 
------------------------------------------------------
 
 ## 二. RegionCoverer 举例
 
@@ -190,6 +177,75 @@ RegionCoverer 主要是要找到一个能覆盖当前区域的近似最优解(�
 <p align='center'>
 <img src='http://upload-images.jianshu.io/upload_images/1194012-5ae24704889d70f0.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
 </p>
+
+
+在举几个我们实际项目中用到的例子。下面是上海的一个网格的边缘。我们先用
+
+```go
+
+defaultCoverer := &s2.RegionCoverer{MaxLevel: 16, MaxCells: 100, MinLevel: 13}
+
+```
+
+去转换，得到的结果如下:
+
+![](http://upload-images.jianshu.io/upload_images/1194012-97b0cb74e9505b83.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+```go
+
+defaultCoverer := &s2.RegionCoverer{MaxLevel: 30, MaxCells: 1000, MinLevel: 1}
+
+```
+
+精确度提高到1000，结果就会如下：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-39da9d80faadb81f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+还有一些区域更大的情况，比如一个省，湖北省：
+
+
+![](http://upload-images.jianshu.io/upload_images/1194012-68b697c17ab0ea94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+或者一个湖，太湖：
+
+![](http://upload-images.jianshu.io/upload_images/1194012-f29b4ed9cb846ca6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+最后在举一个 polygon 的例子。我们知道 polygon 是由多个 loop 组成的：
+
+```go
+
+	loops := []*s2.Loop{}
+	loops = append(loops, loop1)
+	loops = append(loops, loop2)
+
+	polygon := s2.PolygonFromLoops(loops)
+
+	defaultCoverer := &s2.RegionCoverer{MaxLevel: 16, MaxCells: 100, MinLevel: 8}
+	fmt.Println("----  polygon-----")
+
+	cvr = defaultCoverer.Covering(polygon)
+
+	for i := 0; i < len(cvr); i++ {
+		fmt.Printf("%d,\n", cvr[i])
+	}
+	fmt.Printf("------------\n")
+
+
+```
+
+下面一次是两个 loop 在地图上的样子。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-09a758bab8beb8b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![](http://upload-images.jianshu.io/upload_images/1194012-7591f2062cb4af4f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+最后是 polygon,它包含了以上2个 loop。
+
+![](http://upload-images.jianshu.io/upload_images/1194012-4c8c2fa4ec88dd9e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
