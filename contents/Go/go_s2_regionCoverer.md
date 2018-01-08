@@ -251,15 +251,55 @@ defaultCoverer := &s2.RegionCoverer{MaxLevel: 30, MaxCells: 1000, MinLevel: 1}
 
 ## 三. RegionCoverer 核心算法 Covering 的实现
 
-覆盖的区域是球面上的盘子区域
 
-低等级的 level 的 cell 会优先使用。即大格子会优先使用。
+这一章节详细分析一下 Covering 是如何实现的。
 
-关于 MaxCells 的设置，如果是所需的最小的单元数，就返回最小的单元数。如果待覆盖的区域正好位于三个立方体的交点处，那么就要返回3个 cell，即使覆盖的面会比要求的大一些。
+最常见的用法就是下面几行：
 
-如果设置的单元格的最小 cell 的 level 太高了，即格子太小了，那么就会返回任意数量的单元格数量。
+```go
 
-如果 MaxCells 小于4，即使该区域是凸的，比如 cap 或者 rect ，最终覆盖的面积也要比原生区域大。
+	rc := &s2.RegionCoverer{MaxLevel: 30, MaxCells: 5}
+	r := s2.Region(CapFromCenterArea(center, area))
+	covering := rc.Covering(r)
+
+
+```
+
+上面例子展示的是最多转换以后 CellUnion 里面有5个 CellID。上面这三行覆盖的区域是一个 Cap。
+
+
+
+```go
+
+type RegionCoverer struct {
+	MinLevel int // the minimum cell level to be used.
+	MaxLevel int // the maximum cell level to be used.
+	LevelMod int // the LevelMod to be used.
+	MaxCells int // the maximum desired number of cells in the approximation.
+}
+
+
+```
+
+
+RegionCoverer 是一个结构体，实际上里面是包含4个元素的。MinLevel、MaxLevel、MaxCells，这3个应该不用解释了，用的很多。关键要说明说明 LevelMod。
+
+LevelMod 这个值一旦设置了以后，在进行 RegionCover 转换的时候，选取的 Cell Level 只能是 (level - MinLevel) % LevelMod = 0，即 (level - MinLevel) 只能是 LevelMod 的倍数，满足这个条件的 Cell Level 才会被选取。这能有效地允许S2 CellID 层级的分支因子增加。当前的参数取值只能是0，1，2，3，对应的分支因子是0，4，16，64 。
+
+再来谈谈算法的核心思想。
+
+
+RegionCover 可以被抽象成这样一种问题，给定一个区域，用尽可能精确的 Cell 去覆盖它，但是个数最多不要超过 MaxCells 的个数，问如何去找到这些 Cell ？
+
+这个问题就是一个近视最优解的问题。如果想最精确，方案当然是边缘部分全部都用 MaxLevel 去铺（Level 越大，格子越小）这样就最精确。但是这样会导致 Cell 的个数陡增，远远超过 MaxCells，这样就又不符合要求了。那如何能在 <= MaxCells 的情况下还能最精确的覆盖给定的区域呢？
+
+有几点需要提前说明的是：
+
+- 1. MinLevel 优先级高于 MaxCells（注意这里不是 MaxLevel），即低于给定 Level 的 Cell 永远都不会被使用，即使用一个它能替代掉很多面积小（Level 大）的 Cell。
+- 2. 对于 MaxCells 的最小取值范围，如果某一种情况要求的是所需的最小单元数量（例如，如果该区域与所有六个面单元相交），则可以返回多达6个单元。 如果碰巧位于三个立方体面的交点处，即使对于非常小的凸起区域也可能返回多达3个单元格。
+- 3. 如果 MinLevel 对于近似的区域来说都太大了，那么 MaxCells 是会失去约束的限制，可以返回任意数量的单元格。
+- 4. 如果 MaxCells 小于4，即使该区域是凸的，比如 cap 或者 rect ，最终覆盖的面积也要比原生区域大。所以这种情况开发者心里要清楚。
+
 
 这个近似算法并不是最优算法，但是在实践中效果还不错。输出的结果并不总是使用的满足条件的最多的单元数，因为这样也不是总能产生更好的近似结果(比如上面举例的，区域整好位于三个面的交点处，得到的结果比原区域要大很多) 并且 MaxCells 对搜索的工作量和最终输出的 cell 的数量是一种限制。
 
