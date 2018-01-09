@@ -301,6 +301,146 @@ RegionCover 可以被抽象成这样一种问题，给定一个区域，用尽�
 - 4. 如果 MaxCells 小于4，即使该区域是凸的，比如 cap 或者 rect ，最终覆盖的面积也要比原生区域大。所以这种情况开发者心里要清楚。
 
 
+好了，接下来从源码开始看起。RegionCoverer 转换的核心函数就是这个了。
+
+```go
+
+func (rc *RegionCoverer) Covering(region Region) CellUnion {
+	covering := rc.CellUnion(region)
+	covering.Denormalize(maxInt(0, minInt(maxLevel, rc.MinLevel)), maxInt(1, minInt(3, rc.LevelMod)))
+	return covering
+}
+
+```
+
+从这个函数实现我们可以看到，转换实际上就分为2步，一步是 Normalize Cell + 转换，另外一步是 Denormalize Cell。
+
+
+### 1. CellUnion
+
+CellUnion 方法的具体实现：
+
+```go
+
+func (rc *RegionCoverer) CellUnion(region Region) CellUnion {
+	c := rc.newCoverer()
+	c.coveringInternal(region)
+	cu := c.result
+	cu.Normalize()
+	return cu
+}
+
+
+```
+
+
+这个方法主要也可以分解成三个部分，新建 newCoverer、coveringInternal、Normalize。
+
+```go
+
+func (rc *RegionCoverer) newCoverer() *coverer {
+	return &coverer{
+		minLevel: maxInt(0, minInt(maxLevel, rc.MinLevel)),
+		maxLevel: maxInt(0, minInt(maxLevel, rc.MaxLevel)),
+		levelMod: maxInt(1, minInt(3, rc.LevelMod)),
+		maxCells: rc.MaxCells,
+	}
+}
+
+
+```
+
+newCoverer() 方法是初始化一个 coverer 的结构体。maxLevel 是一个之前定义过的常量，maxLevel = 30。coverer 的初始化参数全部都来自于 RegionCoverer 的参数。我们在外部初始化了一个 RegionCoverer ，它主要包含的4个参数，MinLevel，MaxLevel，LevelMod，MaxCells，都会传到这里。上面这段初始化函数里面用到的 maxInt、minInt 主要用来进行非法值的处理。
+
+其实 coverer 结构体里面包含了8个元素项。
+
+```go
+
+type coverer struct {
+	minLevel         int // the minimum cell level to be used.
+	maxLevel         int // the maximum cell level to be used.
+	levelMod         int // the LevelMod to be used.
+	maxCells         int // the maximum desired number of cells in the approximation.
+	region           Region
+	result           CellUnion
+	pq               priorityQueue
+	interiorCovering bool
+}
+
+
+```
+
+
+除去上面初始化的4项，其实它还包含其他重要的4项，这4项会在下面用到。region 要覆盖的区域。result 就是最终转换的结果，结果是一个 CellUnion 的数组，pq 是优先队列 priorityQueue，interiorCovering 是一个 bool 变量，标志的当前转换是否是内部转换。
+
+接下来看看 coveringInternal 方法。
+
+```go
+
+func (c *coverer) coveringInternal(region Region) {
+	c.region = region
+
+	c.initialCandidates()
+	for c.pq.Len() > 0 && (!c.interiorCovering || len(c.result) < c.maxCells) {
+		cand := heap.Pop(&c.pq).(*candidate)
+
+		if c.interiorCovering || int(cand.cell.level) < c.minLevel || cand.numChildren == 1 || len(c.result)+c.pq.Len()+cand.numChildren <= c.maxCells {
+			for _, child := range cand.children {
+				if !c.interiorCovering || len(c.result) < c.maxCells {
+					c.addCandidate(child)
+				}
+			}
+		} else {
+			cand.terminal = true
+			c.addCandidate(cand)
+		}
+	}
+	c.pq.Reset()
+	c.region = nil
+}
+
+
+```
+
+
+
+```go
+
+
+func (cu *CellUnion) Normalize() {
+	sortCellIDs(*cu)
+
+	output := make([]CellID, 0, len(*cu)) // the list of accepted cells
+	
+	for _, ci := range *cu {
+
+		if len(output) > 0 && output[len(output)-1].Contains(ci) {
+			continue
+		}
+
+		j := len(output) - 1 // last index to keep
+		for j >= 0 {
+			if !ci.Contains(output[j]) {
+				break
+			}
+			j--
+		}
+		output = output[:j+1]
+
+		for len(output) >= 3 && areSiblings(output[len(output)-3], output[len(output)-2], output[len(output)-1], ci) {
+			output = output[:len(output)-3]
+			ci = ci.immediateParent() // checked !ci.isFace above
+		}
+		output = append(output, ci)
+	}
+	*cu = output
+}
+
+
+```
+
+### 2. Denormalize
+
 这个近似算法并不是最优算法，但是在实践中效果还不错。输出的结果并不总是使用的满足条件的最多的单元数，因为这样也不是总能产生更好的近似结果(比如上面举例的，区域整好位于三个面的交点处，得到的结果比原区域要大很多) 并且 MaxCells 对搜索的工作量和最终输出的 cell 的数量是一种限制。
 
 
