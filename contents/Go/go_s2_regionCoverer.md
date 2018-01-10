@@ -402,6 +402,156 @@ func (c *coverer) coveringInternal(region Region) {
 
 ```
 
+coveringInternal 方法会生成覆盖的方案，并把结果存储在 result 内。覆盖转换的大体策略是：
+
+**从立方体的6个面开始。丢弃任何与该区域不相交的形状。然后重复选择与形状相交的最大单元格并将其细分**。
+
+coverer 结构体里面的8个元素，前4个是外部传进来初始化的，后4个元素就是在这里被用到的。首先
+
+
+```go
+
+c.region = region
+
+```
+
+初始化 coverer 的区域。另外三个元素是 result、pq、interiorCovering 在下面都会被用到。
+
+
+result 中只是包含将成为最终输出的一部分的满足条件的 Cell，而 pq 优先队列里面包含可能仍然需要继续再细分的 Cell。
+
+如果一个 Cell 100% 完全被包含在覆盖区域内，就会被立即添加到输出中，而完全不和该区域有任何相交的部分的 Cell 会立即丢弃。所以 pq 优先队列中只会包含部分与该区域相交的 Cell。
+
+pq 优先队列出队的策略是：
+
+**1. 首先根据 Cell 大小（首先开始是大的 Cell）优先考虑候选人  
+2. 然后根据相交的孩子的数量（最少的孩子优先级高，先出列）  
+3. 最后按完全容纳的孩子的数量（最少的孩子优先级高，先出列）**
+
+经过 pq 优先队列的筛选以后，最终留下来的 Cell 必定是优先级最低的，即 Cell 面积是比较小的，并且和区域相交的部分较大且和完全容纳孩子数量最多。也就是说和区域边缘上最贴近的 Cell（Cell 覆盖的区域比要覆盖转换的区域多余的部分最少）是会被最终留下来的。
+
+```go
+
+if c.interiorCovering || int(cand.cell.level) < c.minLevel || cand.numChildren == 1 || len(c.result)+c.pq.Len()+cand.numChildren <= c.maxCells {
+
+}
+
+
+```
+
+
+coveringInternal 函数实现中的这个判断条件的意图是：
+
+对于内部覆盖转换，无论候选人有多少孩子，我们都会将其继续不断细分。如果我们在扩大所有孩子之前到达 MaxCells，我们将只使用其中的一些。对于外部覆盖我们不能这样做，因为结果必须覆盖整个地区，所以所有的孩子都必须使用。 
+
+```go
+
+candidate.numChildren == 1
+
+```
+
+在上述的情况下，我们已经有更多的 MaxCells 结果（minLevel太高）的情况下照顾情况。有一个孩子的候选人就算继续细分在这种情况下对最终结果也没有什么影响。
+
+
+接下来看看如何初始化候选人的：
+
+```go
+
+func (c *coverer) initialCandidates() {
+	// Optimization: start with a small (usually 4 cell) covering of the region's bounding cap.
+	temp := &RegionCoverer{MaxLevel: c.maxLevel, LevelMod: 1, MaxCells: min(4, c.maxCells)}
+
+	cells := temp.FastCovering(c.region)
+	c.adjustCellLevels(&cells)
+	for _, ci := range cells {
+		c.addCandidate(c.newCandidate(CellFromCellID(ci)))
+	}
+}
+
+
+```
+
+这个函数里面有一个小优化，把区域第一步覆盖转换成4个 Cell 覆盖区域边缘的 Cap。initialCandidates 方法实现中比较重要的两个方法是 FastCovering 和 adjustCellLevels。
+
+
+
+```go
+
+func (rc *RegionCoverer) FastCovering(region Region) CellUnion {
+	c := rc.newCoverer()
+	cu := CellUnion(region.CellUnionBound())
+	c.normalizeCovering(&cu)
+	return cu
+}
+
+
+```
+
+
+FastCovering 函数会返回一个 CellUnion 集合，这个集合里面的 Cell 覆盖了给定的区域，但是这个方法的不同之处在于，这个方法速度很快，得到的结果也比较粗糙。当然得到的 CellUnion 集合也是满足 MaxCells, MinLevel, MaxLevel, 和 LevelMod 要求的。只不过结果不尝试去使用 MaxCells 的大值。一般会返回少量的 Cell，所以结果比较粗糙。
+
+所以把 FastCovering 这个函数作为递归细分 Cell 的起点，非常管用。
+
+在这个方法中，会调用 region.CellUnionBound() 方法。这个要看各个 region 区域是如何实现这个 interface 的。
+
+这里以 loop 为例，loop 对 CellUnionBound() 的实现如下：
+
+```go
+
+func (l *Loop) CellUnionBound() []CellID {
+	return l.CapBound().CellUnionBound()
+}
+
+
+
+```
+
+上面方法就是快速计算边界转换的具体实现。也是实现空间覆盖的核心部分。
+
+
+CellUnionBound 返回覆盖区域的 CellID 数组。 Cell 没有排序，可能有冗余（例如包含其他单元格的单元格），可能覆盖的区域多于必要的区域。
+
+也由于上面这个理由，导致此方法不适用于客户端代码直接使用。 客户通常应该使用 Region.Covering 方法，Covering 方法可以用来控制覆盖物的大小和准确性。 另外，如果你想快速覆盖，不关心准确性，可以考虑调用 FastCovering（它会返回一个由此方法计算出来的被覆盖的清理版本）。
+
+CellUnionBound 实现应该尝试返回覆盖区域的小覆盖（理想情况下为4个或更少），并且可以快速计算。所以 CellUnionBound 方法被 RegionCoverer 用作进一步改进的起点。
+
+
+
+```go
+
+func (l *Loop) CapBound() Cap {
+	return l.bound.CapBound()
+}
+
+```
+
+CapBound 返回一个边界上限，它可能比相应的 RectBound 会有更多的填充。它的边界是保守的，如果 loop 包含点P，那么边界也一定包含这个点。
+
+
+
+```go
+
+
+func (c Cap) CellUnionBound() []CellID {
+
+	level := MinWidthMetric.MaxLevel(c.Radius().Radians()) - 1
+
+	// If level < 0, more than three face cells are required.
+	if level < 0 {
+		cellIDs := make([]CellID, 6)
+		for face := 0; face < 6; face++ {
+			cellIDs[face] = CellIDFromFace(face)
+		}
+		return cellIDs
+	}
+
+	return cellIDFromPoint(c.center).VertexNeighbors(level)
+}
+
+
+```
+
+上面这段代码就是转换的最粗糙版本的核心算法了。
 
 
 ```go
