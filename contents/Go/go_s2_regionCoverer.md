@@ -885,4 +885,4 @@ adjustLevel 意图是为了返回更小一级的 Level，以使其满足 levelMo
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/go\_s2\_regionCoverer/](https://halfrost.com/go_s2_Hilbert_regionCoverer/)
+> Source: [https://halfrost.com/go\_s2\_regionCoverer/](https://halfrost.com/go_s2_regionCoverer/)
