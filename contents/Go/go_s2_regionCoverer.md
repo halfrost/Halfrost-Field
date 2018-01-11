@@ -831,6 +831,7 @@ adjustLevel 意图是为了返回更小一级的 Level，以使其满足 levelMo
 
 
 
+![](http://upload-images.jianshu.io/upload_images/1194012-14ebab5dcd205250.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 
@@ -876,7 +877,7 @@ adjustLevel 意图是为了返回更小一级的 Level，以使其满足 levelMo
 [Google S2 中的四叉树求 LCA 最近公共祖先](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)  
 [神奇的德布鲁因序列](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_De_Bruijn.md)  
 [四叉树上如何求希尔伯特曲线的邻居 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_Hilbert_neighbor.md)  
-[如何解决空间覆盖最优解问题？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_regionCoverer.md)
+[Google S2 是如何解决空间覆盖最优解问题的?](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_regionCoverer.md)
 
 
 
