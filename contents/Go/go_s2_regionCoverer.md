@@ -2,8 +2,7 @@
 
 
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-c71d0b0615179e9e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/1194012-94c4e3b05a487f59.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ## 前言
 
@@ -669,11 +668,13 @@ func (cu *CellUnion) Normalize() {
 	output := make([]CellID, 0, len(*cu)) // the list of accepted cells
 	
 	for _, ci := range *cu {
-
+	
+		// 1
 		if len(output) > 0 && output[len(output)-1].Contains(ci) {
 			continue
 		}
-
+		
+		// 2
 		j := len(output) - 1 // last index to keep
 		for j >= 0 {
 			if !ci.Contains(output[j]) {
@@ -683,6 +684,7 @@ func (cu *CellUnion) Normalize() {
 		}
 		output = output[:j+1]
 
+		// 3
 		for len(output) >= 3 && areSiblings(output[len(output)-3], output[len(output)-2], output[len(output)-1], ci) {
 			output = output[:len(output)-3]
 			ci = ci.immediateParent() // checked !ci.isFace above
@@ -694,6 +696,22 @@ func (cu *CellUnion) Normalize() {
 
 
 ```
+
+Normalize 这个方法的主要意图是想整理 CellUnion 中各个 CellID，经过排序输出没有冗余的 CellUnion。
+
+排序是第一步。
+
+接下来整理冗余的 Cell 是第二步，也是这个函数实现里面关键的一步。冗余分为2种，一种是完全包含，另外一种是4个小的 Cell 可以合并成一个大的。
+
+先处理是否有一个 Cell 完全包含另外一个 Cell 的情况，这种情况下，被包含的那个 Cell 就是冗余的 Cell，就该被丢弃。对应的是上述代码中标1的地方。
+
+在实现上，我们只需要检查最后接受的单元格。 Cell 首先经过排序以后，如果当前这个候选的 Cell 不被最后接受的 Cell 所包含，那么它就不能被任何先前接受的 Cell 所包含。
+
+同理，如果当前候选的 Cell 包含了之前已经接受过检查的 Cell，那么之前已经在 output 里面的 Cell 也需要被丢弃掉。因为 output 维护的是一个连续的尾序列，前面也提到了 S2 Cell 是被排序了，所以这里就不能破坏它的连续性。这里对应的是上述代码中标2的地方。
+
+最后代码中标3的地方是看是否最后三个单元格加上这个可以合并。 如果连续的3个 Cell 加上当前的 Cell 可以级联到最近的一个父节点上，我们就把它们三个用大的 Cell 替换掉。
+
+经过 Normalize 这一步的“格式化”以后，输出的 Cell 都是有序且无冗余的 Cell。
 
 
 #### 7. Denormalize()
@@ -730,24 +748,102 @@ func (cu *CellUnion) Denormalize(minLevel, levelMod int) {
 
 ```
 
+Denormalize 这个函数实现很简单了，它是 normalize 的另一面（名称上虽然是反义）。这个函数是为了“规范” Cell 是否满足覆盖转换之前的几个预定条件：MinLevel、MaxLevel、LevelMOD、MaxCell。
+
+所有 level 小于 minLevel 或者（level-minLevel）不是 levelMod 的倍数的任何 Cell 都会被它的孩子节点替换，直到满足这两个条件或者达到 maxLevel。
+
+Denormalize 函数的意图是确保得到的结果能满足 minLevel 和 levelMod，最好也能满足 MaxCells。
+
+到这里读者也应该清楚为何函数名叫 Denormalize 了吧，为了满足条件，它把大的 Cell 替换成了自己的孩子，小的 Cell，而 Normalize 正好相反，是把4个小的孩子 Cell 用它们直系父亲节点去替换。
+
+分析到这里 FastCovering() 函数也就都分析完毕了。
+
+
+#### 8. adjustCellLevels()
+
+在回到 initialCandidates() 函数中，在这个函数中 FastCovering() 之后还有一步操作，adjustCellLevels。
+
+```go
+
+c.adjustCellLevels(&cells)
+
+```
+
+接下来就看看 adjustCellLevels 的具体实现。
+
+```go
+
+func (c *coverer) adjustCellLevels(cells *CellUnion) {
+	if c.levelMod == 1 {
+		return
+	}
+
+	var out int
+	for _, ci := range *cells {
+		level := ci.Level()
+		newLevel := c.adjustLevel(level)
+		if newLevel != level {
+			ci = ci.Parent(newLevel)
+		}
+		if out > 0 && (*cells)[out-1].Contains(ci) {
+			continue
+		}
+		for out > 0 && ci.Contains((*cells)[out-1]) {
+			out--
+		}
+		(*cells)[out] = ci
+		out++
+	}
+	*cells = (*cells)[:out]
+}
+
+
+```
+
+adjustCellLevels 是用来确保 level> minLevel 的所有 Cell 也能满足 levelMod，必要时可以用祖先替换它们。 小于 minLevel 的这些 Cell ，它们的 Level 的不会被修改（请参阅调整级别）。 最终得到的结果是标准化以确保不存在冗余单元的 CellUnion。
+
+adjustCellLevels 和 Denormalize 有点类似，都是为了满足条件调整 CellUnion。但是两者调整的方向不同，Denormalize 是把 Cell 往孩子的方向替换，adjustCellLevels 是把 Cell 往父亲节点的方向替换。
+
+
+```go
+
+func (c *coverer) adjustLevel(level int) int {
+	if c.levelMod > 1 && level > c.minLevel {
+		level -= (level - c.minLevel) % c.levelMod
+	}
+	return level
+}
+
+
+```
+
+adjustLevel 意图是为了返回更小一级的 Level，以使其满足 levelMod 条件。 小于minLevel的 level 不受影响（因为这些 level 的单元最终会被 Denormalize 函数处理）。
+
+
 ### （二）. Denormalize
 
 关于 Denormalize 的实现已经在上面分析过了。这里就不再分析了。
 
 
+### （三）. 小结
 
-----------------------------------------------
+用一张图来表示 Google S2 对整个空间区域覆盖算法实现的全流程：
 
-这个近似算法并不是最优算法，但是在实践中效果还不错。输出的结果并不总是使用的满足条件的最多的单元数，因为这样也不是总能产生更好的近似结果(比如上面举例的，区域整好位于三个面的交点处，得到的结果比原区域要大很多) 并且 MaxCells 对搜索的工作量和最终输出的 cell 的数量是一种限制。
+
+
+
+
+
+上图中每个关键实现都分析过了，哪个节点还不明白的同学可以回过头往上再翻一翻。
+
+这个近似算法并不是最优算法，但是在实践中效果还不错。输出的结果并不总是使用的满足条件的最多的 Cell 个数，因为这样也不是总能产生更好的近似结果(比如上面举例的，待覆盖的区域整好位于三个面的交点处，得到的结果比原区域要大很多) 并且 MaxCells 对搜索的工作量和最终输出的 Cell 的数量是一种限制。
 
 
 由于这是一个近似算法，所以不能依赖它输出的稳定性。特别的，覆盖算法的输出结果会在不同的库的版本上有所不同。
 
-这个算法还可以产生内部覆盖的 cell，内部覆盖的 cell 指的是完全被包含在区域内的 cell。
+这个算法还可以产生内部覆盖的 Cell，内部覆盖的 Cell 指的是完全被包含在区域内的 Cell。如果没有满足条件的 Cell ，即使对于非空区域，内部覆盖 Cell 也可能是空的。
 
-如果没有满足条件的 cell ，即使对于非空区域，内部覆盖 cell 也可能是空的。
-
-请注意，处于性能考虑，在计算内部覆盖 cell 的时候，指定 MaxLevel 是明智的做法。否则，对于小的或者零面积的区域，算法可能会花费大量时间将单元格细分到叶子 level ，以尝试找到满足条件的内部覆盖单元格 cell。
+请注意，处于性能考虑，在计算内部覆盖 Cell 的时候，指定 MaxLevel 是明智的做法。否则，对于小的或者零面积的区域，算法可能会花费大量时间将 Cell 细分到叶子 level ，以尝试找到满足条件的内部覆盖的 Cell。
 
 ## 四. 最后
 
