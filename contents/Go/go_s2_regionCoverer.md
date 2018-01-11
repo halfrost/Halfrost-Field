@@ -316,7 +316,7 @@ func (rc *RegionCoverer) Covering(region Region) CellUnion {
 从这个函数实现我们可以看到，转换实际上就分为2步，一步是 Normalize Cell + 转换，另外一步是 Denormalize Cell。
 
 
-### 1. CellUnion
+### (一). CellUnion
 
 CellUnion 方法的具体实现：
 
@@ -335,6 +335,9 @@ func (rc *RegionCoverer) CellUnion(region Region) CellUnion {
 
 
 这个方法主要也可以分解成三个部分，新建 newCoverer、coveringInternal、Normalize。
+
+
+#### 1. newCoverer()
 
 ```go
 
@@ -372,6 +375,9 @@ type coverer struct {
 
 
 除去上面初始化的4项，其实它还包含其他重要的4项，这4项会在下面用到。region 要覆盖的区域。result 就是最终转换的结果，结果是一个 CellUnion 的数组，pq 是优先队列 priorityQueue，interiorCovering 是一个 bool 变量，标志的当前转换是否是内部转换。
+
+
+#### 2. coveringInternal()
 
 接下来看看 coveringInternal 方法。
 
@@ -452,6 +458,7 @@ candidate.numChildren == 1
 
 在上述的情况下，我们已经有更多的 MaxCells 结果（minLevel太高）的情况下照顾情况。有一个孩子的候选人就算继续细分在这种情况下对最终结果也没有什么影响。
 
+#### 3. initialCandidates()
 
 接下来看看如何初始化候选人的：
 
@@ -473,6 +480,8 @@ func (c *coverer) initialCandidates() {
 
 这个函数里面有一个小优化，把区域第一步覆盖转换成4个 Cell 覆盖区域边缘的 Cap。initialCandidates 方法实现中比较重要的两个方法是 FastCovering 和 adjustCellLevels。
 
+
+#### 4. FastCovering()
 
 
 ```go
@@ -551,8 +560,105 @@ func (c Cap) CellUnionBound() []CellID {
 
 ```
 
-上面这段代码就是转换的最粗糙版本的核心算法了。
+上面这段代码就是转换的最粗糙版本的核心算法了。在这段算法里面核心一步就是算出要找的 level。
 
+```go
+
+level := MinWidthMetric.MaxLevel(c.Radius().Radians()) - 1
+
+```
+
+这里找到的 Level 就是该 Cap 所能包含的最大的 Cell。
+
+
+```go
+
+return cellIDFromPoint(c.center).VertexNeighbors(level)
+
+```
+
+上面这句就是返回了 4 个 Cell，距离 Cap 中心点最近的。当然，如果 Cap 非常大，有可能会返回 6 个 Cell。当然，返回的这些 Cell 是没有经过任何排序的。
+
+
+#### 5. normalizeCovering()
+
+FastCovering 的最后一步就是 normalizeCovering。
+
+
+```go
+
+func (c *coverer) normalizeCovering(covering *CellUnion) {
+	// 1
+	// 
+	if c.maxLevel < maxLevel || c.levelMod > 1 {
+		for i, ci := range *covering {
+			level := ci.Level()
+			newLevel := c.adjustLevel(minInt(level, c.maxLevel))
+			if newLevel != level {
+				(*covering)[i] = ci.Parent(newLevel)
+			}
+		}
+	}
+	// 2
+	// 
+	covering.Normalize()
+
+	// 3
+	// 
+	for len(*covering) > c.maxCells {
+		bestIndex := -1
+		bestLevel := -1
+		for i := 0; i+1 < len(*covering); i++ {
+			level, ok := (*covering)[i].CommonAncestorLevel((*covering)[i+1])
+			if !ok {
+				continue
+			}
+			level = c.adjustLevel(level)
+			if level > bestLevel {
+				bestLevel = level
+				bestIndex = i
+			}
+		}
+
+		if bestLevel < c.minLevel {
+			break
+		}
+		(*covering)[bestIndex] = (*covering)[bestIndex].Parent(bestLevel)
+		covering.Normalize()
+	}
+	// 4
+	// 
+	if c.minLevel > 0 || c.levelMod > 1 {
+		covering.Denormalize(c.minLevel, c.levelMod)
+	}
+}
+
+
+
+```
+
+
+normalizeCovering 会对前一步的覆盖转换结果进行进一步的规范化，使其符合当前覆盖参数（MaxCells，minLevel，maxLevel和levelMod）。 这种方法不会尝试最佳结果。 特别是，如果minLevel> 0或者levelMod> 1，那么即使这不是必需的，它也可能返回比期望的 Cell 更多的值。
+
+在上面的代码实现中标注了4处需要注意的地方。
+
+第一处，判断的是，如果 Cell 太小了，或者不满足 levelMod 的条件，就用他们的祖先来替换掉他们。
+
+第二处，是对前一步的结果排序并且进一步简化。
+
+第三处，如果 Cell 数量上还是太多，仍然有太多的 Cell，则用 for 循环去查找两个相邻的 Cell 的最近公共祖先 LCA 并替换掉它们俩，for 循环的顺序就是以 CellID 的顺序进行循环的。
+
+这里用到的 LCA 的具体实现在前面一篇文章里面有详解，[文章链接](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_lowest_common_ancestor.md)，这里就不再赘述了。
+
+第四处，最后确保得到的结果能满足 minLevel 和 levelMod，最好也能满足 MaxCells。
+
+
+接下来还需要进一步分析的就是 Normalize() 和 Denormalize() 这两个函数实现了。
+
+
+#### 6. Normalize()
+
+先看 Normalize()。
 
 ```go
 
@@ -589,7 +695,48 @@ func (cu *CellUnion) Normalize() {
 
 ```
 
-### 2. Denormalize
+
+#### 7. Denormalize()
+
+
+```go
+
+func (cu *CellUnion) Denormalize(minLevel, levelMod int) {
+	var denorm CellUnion
+	for _, id := range *cu {
+		level := id.Level()
+		newLevel := level
+		if newLevel < minLevel {
+			newLevel = minLevel
+		}
+		if levelMod > 1 {
+			newLevel += (maxLevel - (newLevel - minLevel)) % levelMod
+			if newLevel > maxLevel {
+				newLevel = maxLevel
+			}
+		}
+		if newLevel == level {
+			denorm = append(denorm, id)
+		} else {
+			end := id.ChildEndAtLevel(newLevel)
+			for ci := id.ChildBeginAtLevel(newLevel); ci != end; ci = ci.Next() {
+				denorm = append(denorm, ci)
+			}
+		}
+	}
+	*cu = denorm
+}
+
+
+```
+
+### （二）. Denormalize
+
+关于 Denormalize 的实现已经在上面分析过了。这里就不再分析了。
+
+
+
+----------------------------------------------
 
 这个近似算法并不是最优算法，但是在实践中效果还不错。输出的结果并不总是使用的满足条件的最多的单元数，因为这样也不是总能产生更好的近似结果(比如上面举例的，区域整好位于三个面的交点处，得到的结果比原区域要大很多) 并且 MaxCells 对搜索的工作量和最终输出的 cell 的数量是一种限制。
 
