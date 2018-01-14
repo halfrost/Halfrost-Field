@@ -30,7 +30,7 @@
 ## 📖 目录
 
 
-Latest：[Google S2 是如何解决空间覆盖最优解问题的?](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/go_s2_regionCoverer.md)
+Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/T%20Salon%20share.pdf)
 
 （Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
