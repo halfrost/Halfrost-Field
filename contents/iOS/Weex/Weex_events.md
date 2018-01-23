@@ -1,7 +1,10 @@
 # Weex 事件传递的那些事儿
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-cc51f3fa785a0464.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-cc51f3fa785a0464.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
 
 

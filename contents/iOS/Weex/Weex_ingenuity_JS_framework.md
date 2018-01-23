@@ -1,7 +1,9 @@
 # Weex 中别具匠心的 JS Framework
 
 
-![](http://upload-images.jianshu.io/upload_images/1194012-e23e16836f54920d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-e23e16836f54920d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
 
 

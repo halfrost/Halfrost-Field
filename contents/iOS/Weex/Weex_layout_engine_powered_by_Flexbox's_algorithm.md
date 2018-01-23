@@ -1,6 +1,10 @@
 # 由 FlexBox 算法强力驱动的 Weex 布局引擎
 
-![](http://upload-images.jianshu.io/upload_images/1194012-e08b9b787f8fb07c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-e08b9b787f8fb07c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
+
 
 
 
