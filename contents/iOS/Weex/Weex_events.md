@@ -12,24 +12,24 @@
 
 ### 前言
 
-在前两篇文章里面分别谈了Weex如何在Native端初始化的和Weex是如何高效的渲染Native的原生UI的。Native这边还缺一块，那就是Native产生的一些事件，是怎么传回给JS的。这篇文章就详细分析这一部分。
+在前两篇文章里面分别谈了 Weex 如何在 Native 端初始化的和 Weex 是如何高效的渲染 Native 的原生 UI 的。Native 这边还缺一块，那就是 Native 产生的一些事件，是怎么传回给 JS 的。这篇文章就详细分析这一部分。
 
 
 
 ### 目录
 
-- 1.Weex的事件类型
-- 2.Weex的事件传递
+- 1.Weex 的事件类型
+- 2.Weex 的事件传递
 
 
 ### 一.Weex的事件类型
 
-在Weex中，目前最新版本中事件总共分为4种类型，通用事件，Appear 事件，Disappear 事件，Page 事件。
+在 Weex 中，目前最新版本中事件总共分为 4 种类型，通用事件，Appear 事件，Disappear 事件，Page 事件。
 
 
-在Weex的组件里面只包含前三种事件，即通用事件，Appear 事件，Disappear 事件。
+在 Weex 的组件里面只包含前三种事件，即通用事件，Appear 事件，Disappear 事件。
 
-当WXComponent添加事件的时候，会调用以下函数：
+当 WXComponent 添加事件的时候，会调用以下函数：
 
 ```objectivec
 
@@ -63,7 +63,7 @@
 ```
 
 
-WX\_ADD\_EVENT是一个宏：
+WX\_ADD\_EVENT 是一个宏：
 
 ```objectivec
 
@@ -75,11 +75,11 @@ if ([addEventName isEqualToString:@#eventName]) {\
 
 ```
 
-即是判断待添加的事件addEventName的名字和默认支持的事件名字eventName是否一致，如果一致，就执行addSelector方法。
+即是判断待添加的事件 addEventName 的名字和默认支持的事件名字 eventName 是否一致，如果一致，就执行 addSelector 方法。
 
-最后会执行一个addEvent:方法，每个组件里面会可以重写这个方法。在这个方法里面做的就是对组件的状态的标识。
+最后会执行一个 addEvent: 方法，每个组件里面会可以重写这个方法。在这个方法里面做的就是对组件的状态的标识。
 
-比如WXWebComponent组件里面的addEvent:方法：
+比如 WXWebComponent 组件里面的 addEvent: 方法：
 
 ```objectivec
 
@@ -100,14 +100,14 @@ if ([addEventName isEqualToString:@#eventName]) {\
 ```
 
 
-在这个方法里面即对Web组件里面的状态进行了标识。
+在这个方法里面即对 Web 组件里面的状态进行了标识。
 
 接下来就看看这几个组件是怎么识别事件的触发的。
 
 
 #### 1. 通用事件
 
-在WXComponent的定义里，定义了如下和事件相关的变量：
+在 WXComponent 的定义里，定义了如下和事件相关的变量：
 
 ```objectivec
 
@@ -162,7 +162,7 @@ if ([addEventName isEqualToString:@“click”]) {\
 
 ```
 
-如果addEventName传进来event的是@“click”，那么就是执行addClickEvent方法。
+如果 addEventName 传进来 event 的是 @“click”，那么就是执行 addClickEvent 方法。
 
 ```objectivec
 
@@ -179,7 +179,7 @@ if ([addEventName isEqualToString:@“click”]) {\
 ```
 
 
-给当前的视图增加一个点击手势，触发的方法是onClick:方法。
+给当前的视图增加一个点击手势，触发的方法是 onClick: 方法。
 
 ```objectivec
 
@@ -202,19 +202,19 @@ if ([addEventName isEqualToString:@“click”]) {\
 
 ```
 
-一旦用户点击屏幕，就会触发点击手势，点击手势就会执行上述的onClick:方法。在这个方法中，Weex会计算点击出点击到的视图的坐标以及宽高尺寸。
+一旦用户点击屏幕，就会触发点击手势，点击手势就会执行上述的 onClick: 方法。在这个方法中，Weex 会计算点击出点击到的视图的坐标以及宽高尺寸。
 
-说到这里就需要提到Weex的坐标计算方法了。
+说到这里就需要提到 Weex 的坐标计算方法了。
 
 #### （1）计算缩放比例因子
 
-在日常iOS开发中，开发者使用的计算单位是pt。
+在日常 iOS 开发中，开发者使用的计算单位是 pt。
 
-iPhone5分辨率320pt x 568pt 
-iPhone6分辨率375pt x 667pt
-iPhone6 Plus分辨率414pt x 736pt
+iPhone5 分辨率320pt x 568pt   
+iPhone6 分辨率375pt x 667pt  
+iPhone6 Plus 分辨率414pt x 736pt  
 
-由于每个屏幕的ppi不同(ppi:Pixels Per Inch，即每英寸所拥有的像素数目，屏幕像素密度。)，最终会导致分辨率的不同。
+由于每个屏幕的 ppi 不同(ppi:Pixels Per Inch，即每英寸所拥有的像素数目，屏幕像素密度。)，最终会导致分辨率的不同。
 
 
 
@@ -226,27 +226,27 @@ iPhone6 Plus分辨率414pt x 736pt
 ![](http://upload-images.jianshu.io/upload_images/1194012-07d0847d907f8fa9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-这也就是我们日常说的@1x，@2x，@3x，目前iPhone手机也就3种ppi
+这也就是我们日常说的@1x，@2x，@3x，目前 iPhone 手机也就3种 ppi
 
-@1x，163ppi（iPhone3gs）
-@2x，326ppi（iPhone4、4s、5、5s、6，6s，7）
-@3x，401ppi（iPhone6+、6s+、7+）
+@1x，163ppi（iPhone3gs）  
+@2x，326ppi（iPhone4、4s、5、5s、6，6s，7）  
+@3x，401ppi（iPhone6+、6s+、7+）  
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-7a8ad495c476db65.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-px即pixels像素，1px代表屏幕上一个物理的像素点。
+px 即 pixels 像素，1px 代表屏幕上一个物理的像素点。
 
-iPhone5像素640px x 1136px
-iPhone6像素750px x 1334px
-iPhone6 Plus像素1242px x 2208px
+iPhone5 像素640px x 1136px  
+iPhone6 像素750px x 1334px  
+iPhone6 Plus 像素1242px x 2208px  
 
-而Weex的开发中，目前都是用的px，而且**Weex 对于长度值目前只支持像素px值，还不支持相对单位（em、rem）**。
+而 Weex 的开发中，目前都是用的 px，而且**Weex 对于长度值目前只支持像素px值，还不支持相对单位（em、rem）**。
 
-那么就需要pt和px的换算了。
+那么就需要 pt 和 px 的换算了。
 
 
-在Weex的世界里，定义了一个默认屏幕尺寸，用来适配iOS，Android各种不同大小的屏幕。
+在 Weex 的世界里，定义了一个默认屏幕尺寸，用来适配 iOS，Android 各种不同大小的屏幕。
 
 ```c
 
@@ -256,7 +256,7 @@ static const CGFloat WXDefaultScreenWidth = 750.0;
 
 ```
 
-在Weex中定义的默认的屏幕宽度是750，注意是宽度。
+在 Weex 中定义的默认的屏幕宽度是750，注意是宽度。
 
 
 ```objectivec
@@ -276,7 +276,7 @@ static const CGFloat WXDefaultScreenWidth = 750.0;
 
 ```
 
-这里计算了一个默认的缩放比例因子，portraitScreenSize里面计算出了屏幕在portrait方向下的大小，即如果方向是landscape，那么缩放比例因子应该等于WXScreenSize().height / WXDefaultScreenWidth，反之应该等于WXScreenSize().width / WXDefaultScreenWidth。
+这里计算了一个默认的缩放比例因子，portraitScreenSize 里面计算出了屏幕在 portrait 方向下的大小，即如果方向是 landscape，那么缩放比例因子应该等于 WXScreenSize().height / WXDefaultScreenWidth，反之应该等于 WXScreenSize().width / WXDefaultScreenWidth。
 
 
 这里计算的是pt。
