@@ -241,7 +241,7 @@ iPhone5 像素640px x 1136px
 iPhone6 像素750px x 1334px  
 iPhone6 Plus 像素1242px x 2208px  
 
-而 Weex 的开发中，目前都是用的 px，而且**Weex 对于长度值目前只支持像素px值，还不支持相对单位（em、rem）**。
+而 Weex 的开发中，目前都是用的 px，而且 **Weex 对于长度值目前只支持像素 px 值，还不支持相对单位（em、rem）**。
 
 那么就需要 pt 和 px 的换算了。
 
@@ -279,11 +279,11 @@ static const CGFloat WXDefaultScreenWidth = 750.0;
 这里计算了一个默认的缩放比例因子，portraitScreenSize 里面计算出了屏幕在 portrait 方向下的大小，即如果方向是 landscape，那么缩放比例因子应该等于 WXScreenSize().height / WXDefaultScreenWidth，反之应该等于 WXScreenSize().width / WXDefaultScreenWidth。
 
 
-这里计算的是pt。
+这里计算的是 pt。
 
-iPhone 4、4s、5、5s、5c、SE的比例因子是0.42666667
-iPhone 6、6s、7比例因子是0.5
-iPhone 6+、6s+、7+比例因子是0.552
+iPhone 4、4s、5、5s、5c、SE的比例因子是 0.42666667  
+iPhone 6、6s、7比例因子是0.5  
+iPhone 6+、6s+、7+比例因子是0.552  
 
 
 #### （2）计算视图的缩放尺寸
@@ -333,9 +333,9 @@ iPhone 6+、6s+、7+比例因子是0.552
 
 ```
 
-newFrame就是计算出来的缩放过的Frame。
+newFrame 就是计算出来的缩放过的 Frame。
 
-如果尝试自己手动计算Vue.js上设置的px与实际的视图坐标值相比，你会发现永远都差一点，虽然偏差不多，但是总有误差，原因在哪里呢？就在WXRoundPixelValue这个函数里面。
+如果尝试自己手动计算 Vue.js 上设置的 px 与实际的视图坐标值相比，你会发现永远都差一点，虽然偏差不多，但是总有误差，原因在哪里呢？就在 WXRoundPixelValue 这个函数里面。
 
 
 ```objectivec
@@ -349,7 +349,7 @@ CGFloat WXRoundPixelValue(CGFloat value)
 
 ```
 
-WXRoundPixelValue这个函数里面进行了一次四舍五入的计算，这里会对精度有所损失，所以就会导致最终Native的组件的坐标会偏差一点。
+WXRoundPixelValue 这个函数里面进行了一次四舍五入的计算，这里会对精度有所损失，所以就会导致最终 Native 的组件的坐标会偏差一点。
 
 
 举个例子：
@@ -374,11 +374,11 @@ WXRoundPixelValue这个函数里面进行了一次四舍五入的计算，这里
 
 ```
 
-这里是一个imageComponent，坐标是距离上边距100px，距离左边距200px，宽200px，高200px。
+这里是一个 imageComponent，坐标是距离上边距 100px，距离左边距 200px，宽 200px，高 200px。
 
-假设我们是在iPhone 7+的屏幕上，ppi对应的应该是scale = 3（即@3x）。
+假设我们是在 iPhone 7+ 的屏幕上，ppi 对应的应该是 scale = 3（即@3x）。
 
-按照Weex的上述的计算方法算，那么对应缩放的px为：
+按照 Weex 的上述的计算方法算，那么对应缩放的 px 为：
 
 ```c
 
@@ -389,7 +389,7 @@ height = 200 * ( 414.0 / 750.0 ) = 110.400000
 
 ```
 
-再转换成pt：
+再转换成 pt：
 
 ```c
 
@@ -400,12 +400,12 @@ height = round ( 110.400000 * 3 ) / 3 = 110.333333
 
 ```
 
-如果只是单纯的认为是针对750的成比缩放，那么这里110.333333 / ( 414.0 / 750.0 ) = 199.87922101，你会发现这个数字距离200还是差了零点几。精度就是损失在了round函数上了
+如果只是单纯的认为是针对 750 的成比缩放，那么这里 110.333333 / ( 414.0 / 750.0 ) = 199.87922101，你会发现这个数字距离 200 还是差了零点几。精度就是损失在了 round函数上了
 
 
-那么当前的imageComponent在父视图里面的Frame = （110.333333，55.333333，110.333333，110.333333）。
+那么当前的 imageComponent 在父视图里面的 Frame = （110.333333，55.333333，110.333333，110.333333）。
 
-回到onClick:方法里面。
+回到 onClick: 方法里面。
 
 ```objectivec
 
@@ -429,7 +429,7 @@ height = round ( 110.400000 * 3 ) / 3 = 110.333333
 
 如果点击到视图，就会触发点击手势的处理方法，就会进入到上述方法里。
 
-这里会计算出点击到的视图相对于window的绝对坐标。
+这里会计算出点击到的视图相对于 window 的绝对坐标。
 
 ```objectivec
 
@@ -437,12 +437,12 @@ CGRect frame = [self.view.superview convertRect:self.calculatedFrame toView:self
 
 ```
 
-上面这句话会进行一个坐标转换。坐标系转换到全局的window的左边。
+上面这句话会进行一个坐标转换。坐标系转换到全局的 window 的左边。
 
 
-还是按照上面举的例子，如果imageComponent经过转换以后，frame = （110.33333333333333, 119.33333333333334, 110.33333333333333, 110.33333333333331），这里就是y轴的距离发生了变化，因为就加上了navigation + statusBar 的64的高度。
+还是按照上面举的例子，如果 imageComponent 经过转换以后，frame = （110.33333333333333, 119.33333333333334, 110.33333333333333, 110.33333333333331），这里就是 y 轴的距离发生了变化，因为就加上了 navigation + statusBar 的64的高度。
 
-计算出了这个window绝对坐标之后，还要还原成相对于750.0宽度的“尺寸”。这里之所以打引号，就是因为这里有精度损失，在round函数那里丢了一些精度。
+计算出了这个 window 绝对坐标之后，还要还原成相对于 750.0 宽度的“尺寸”。这里之所以打引号，就是因为这里有精度损失，在 round 函数那里丢了一些精度。
 
 
 ```c
@@ -455,7 +455,7 @@ height = 110.33333333333333 / ( 414.0 / 750.0 ) = 199.8792270531401
 
 ```
 
-上述就是点击以后经过转换最终得到的坐标，这个坐标会传递给JS。
+上述就是点击以后经过转换最终得到的坐标，这个坐标会传递给 JS。
 
 
 
@@ -479,7 +479,7 @@ height = 110.33333333333333 / ( 414.0 / 750.0 ) = 199.8792270531401
 
 这个宏和上面点击事件的展开原理一样，这里不再赘述。
 
-如果addEventName传进来event的是@“swipe”，那么就是执行addSwipeEvent方法。
+如果 addEventName 传进来event的是@“swipe”，那么就是执行 addSwipeEvent 方法。
 
 ```objectivec
 
@@ -532,10 +532,10 @@ height = 110.33333333333333 / ( 414.0 / 750.0 ) = 199.8792270531401
 
 ```
 
-上面会新建4个方向上的手势识别器。因为每个手势识别器又只能处理一个方向的手势，所以就导致了需要生成四个UISwipeGestureRecognizer的手势识别器。
+上面会新建4个方向上的手势识别器。因为每个手势识别器又只能处理一个方向的手势，所以就导致了需要生成四个 UISwipeGestureRecognizer 的手势识别器。
 
 
-给当前的视图增加一个轻扫手势，触发的方法是onSwipe:方法。
+给当前的视图增加一个轻扫手势，触发的方法是 onSwipe: 方法。
 
 
 ```objectivec
@@ -572,7 +572,7 @@ height = 110.33333333333333 / ( 414.0 / 750.0 ) = 199.8792270531401
 
 ```
 
-当用户轻扫以后，会触发轻扫手势，于是会在window上和rootView上会获取到2个坐标。
+当用户轻扫以后，会触发轻扫手势，于是会在 window 上和 rootView 上会获取到2个坐标。
 
 
 ```objectivec
@@ -594,7 +594,7 @@ height = 110.33333333333333 / ( 414.0 / 750.0 ) = 199.8792270531401
 
 ```
 
-screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原成相对于750宽度的页面的坐标。screenLocation的X值和Y值、pageLocation的X值和Y值分别封装到resultTouch字典里。
+screenLocation 和 pageLocation 两个坐标点，还是会根据缩放比例还原成相对于750宽度的页面的坐标。screenLocation 的 X 值和 Y 值、pageLocation 的 X 值和 Y 值分别封装到 resultTouch 字典里。
 
 
 ```objectivec
@@ -624,7 +624,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-最后resultTouch里面还包含一个identifier的参数，这个identifier是一个全局唯一的NSUInteger。wx\_identifier被关联到了各个手势识别器上了。
+最后 resultTouch 里面还包含一个 identifier 的参数，这个 identifier 是一个全局唯一的 NSUInteger。wx\_identifier 被关联到了各个手势识别器上了。
 
 
 
@@ -649,7 +649,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 这个宏和上面点击事件的展开原理一样，这里不再赘述。
 
-如果addEventName传进来event的是@“longpress”，那么就是执行addLongPressEvent方法。
+如果 addEventName 传进来 event 的是 @“longpress”，那么就是执行 addLongPressEvent 方法。
 
 ```objectivec
 
@@ -665,7 +665,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-给当前的视图增加一个长按手势，触发的方法是onLongPress:方法。
+给当前的视图增加一个长按手势，触发的方法是 onLongPress: 方法。
 
 
 ```objectivec
@@ -686,7 +686,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-长按手势传给JS的参数和轻扫的参数changedTouches几乎一致。在长按手势开始的时候就传递给JS两个Point，screenLocation和pageLoacation，以及手势的wx\_identifier。这部分和轻扫手势基本一样，不多赘述。
+长按手势传给 JS 的参数和轻扫的参数 changedTouches 几乎一致。在长按手势开始的时候就传递给 JS 两个 Point，screenLocation 和 pageLoacation，以及手势的wx\_identifier。这部分和轻扫手势基本一样，不多赘述。
 
 
 
@@ -699,7 +699,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 #### （四）拖动事件
 
-拖动事件在Weex里面包含5个事件。分别对应着拖动的5种状态：拖动开始，拖动中，拖动结束，水平拖动，竖直拖动。
+拖动事件在 Weex 里面包含5个事件。分别对应着拖动的5种状态：拖动开始，拖动中，拖动结束，水平拖动，竖直拖动。
 
 ```objectivec
 
@@ -712,7 +712,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-为了区分上面5种状态，Weex还对每个状态增加了一个BOOL变量来判断当前的状态。分别如下：
+为了区分上面5种状态，Weex 还对每个状态增加了一个 BOOL 变量来判断当前的状态。分别如下：
 
 
 ```objectivec
@@ -726,7 +726,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-通过宏增加的5个事件，实质都是执行了addPanGesture方法，只不过每个状态的事件都会跟对应的BOOL变量。
+通过宏增加的5个事件，实质都是执行了 addPanGesture 方法，只不过每个状态的事件都会跟对应的BOOL变量。
 
 
 ```objectivec
@@ -787,7 +787,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-给当前的视图增加一个拖动手势，触发的方法是onPan:方法。
+给当前的视图增加一个拖动手势，触发的方法是 onPan: 方法。
 
 ```obectivec
 
@@ -836,7 +836,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 ```
 
-拖动事件最终传给JS的resultTouch字典和前两个手势的原理一样，也是需要传入两个Point，screenLocation和pageLoacation，这里不再赘述。
+拖动事件最终传给 JS 的 resultTouch 字典和前两个手势的原理一样，也是需要传入两个 Point，screenLocation 和 pageLoacation，这里不再赘述。
 
 
 
@@ -846,10 +846,10 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 
 
-根据\_listenPanStart，\_listenPanEnd，\_listenPanMove判断当前的状态，并生成与之对应的eventName和state字符串。
+根据 \_listenPanStart，\_listenPanEnd，\_listenPanMove 判断当前的状态，并生成与之对应的 eventName 和 state 字符串。
 
 
-根据\_panGesture在当前视图上拖动形成的有方向的向量，进行判断当前拖动的方向。
+根据 \_panGesture 在当前视图上拖动形成的有方向的向量，进行判断当前拖动的方向。
 
 
 
@@ -861,7 +861,7 @@ screenLocation和pageLocation两个坐标点，还是会根据缩放比例还原
 
 最后就是通用的触摸事件。
 
-Weex里面对每个Component都新建了一个手势识别器。
+Weex 里面对每个 Component 都新建了一个手势识别器。
 
 ```objectivec
 
@@ -883,13 +883,13 @@ Weex里面对每个Component都新建了一个手势识别器。
 
 ```
 
-WXTouchGestureRecognizer是继承自UIGestureRecognizer。里面就5个BOOL。分别表示5种状态。
+WXTouchGestureRecognizer 是继承自 UIGestureRecognizer。里面就5个 BOOL。分别表示5种状态。
 
-WXTouchGestureRecognizer会弱引用当前的WXComponent，并且也依旧有touchIdentifier。
+WXTouchGestureRecognizer 会弱引用当前的 WXComponent，并且也依旧有touchIdentifier。
 
 
 
-Weex通过以下4个宏注册触摸事件方法。
+Weex 通过以下4个宏注册触摸事件方法。
 
 ```objectivec
 
@@ -986,7 +986,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-上述的4个事件里面实质都是在调用fireTouchEvent:withTouches:方法：
+上述的4个事件里面实质都是在调用 fireTouchEvent:withTouches: 方法：
 
 ```objectivec
 
@@ -1009,7 +1009,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-最终这个方法和前3个手势一样，都需要给resultTouches传入2个Point和1个wx\_identifier。原理一致。
+最终这个方法和前3个手势一样，都需要给 resultTouches 传入2个Point和1个wx\_identifier。原理一致。
 
 至于坐标如何传递给JS见第二章。
 
@@ -1017,7 +1017,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 如果一个位于某个可滚动区域内的组件被绑定了 appear 事件，那么当这个组件的状态变为在屏幕上可见时，该事件将被触发。
 
-所以绑定了Appear 事件的都是可以滚动的视图。
+所以绑定了 Appear 事件的都是可以滚动的视图。
 
 
 
@@ -1034,7 +1034,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-通过上述的宏给可以滚动的视图增加Appear 事件。也就是当前视图执行addAppearEvent方法。
+通过上述的宏给可以滚动的视图增加 Appear 事件。也就是当前视图执行 addAppearEvent 方法。
 
 
 ```objectivec
@@ -1048,7 +1048,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-在Weex的每个组件里面都有2个BOOL记录着当前\_appearEvent和\_disappearEvent的状态。
+在 Weex 的每个组件里面都有2个 BOOL 记录着当前 \_appearEvent 和 \_disappearEvent 的状态。
 
 ```objectivec
 
@@ -1057,7 +1057,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-当增加对应的事件的时候，就会把对应的BOOL变成YES。
+当增加对应的事件的时候，就会把对应的 BOOL 变成 YES。
 
 ```objectivec
 
@@ -1079,7 +1079,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-由于Appear 事件和 Disappear 事件都必须要求是滚动视图，所以这里会遍历当前视图的supercomponent，直到找到一个遵循WXScrollerProtocol的supercomponent。
+由于 Appear 事件和 Disappear 事件都必须要求是滚动视图，所以这里会遍历当前视图的 supercomponent，直到找到一个遵循 WXScrollerProtocol 的 supercomponent。
 
 
 ```objectivec
@@ -1104,7 +1104,7 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-在滚动视图里面包含有一个listenerArray，数组里面装的都是被监听的对象。添加进这个数组会先判断当前是否有相同的WXScrollToTarget，避免重复添加，如果没有重复的就新建一个WXScrollToTarget，再添加进listenerArray中。
+在滚动视图里面包含有一个 listenerArray，数组里面装的都是被监听的对象。添加进这个数组会先判断当前是否有相同的 WXScrollToTarget，避免重复添加，如果没有重复的就新建一个 WXScrollToTarget，再添加进 listenerArray中。
 
 ```objectivec
 
@@ -1116,10 +1116,10 @@ Weex通过以下4个宏注册触摸事件方法。
 
 ```
 
-WXScrollToTarget是一个普通的对象，里面弱引用了当前需要监听的WXComponent，以及一个BOOL变量记录当前是否Appear了。
+WXScrollToTarget 是一个普通的对象，里面弱引用了当前需要监听的 WXComponent，以及一个 BOOL 变量记录当前是否 Appear 了。
 
 
-当滚动视图滚动的时候，就会触发scrollViewDidScroll:方法。
+当滚动视图滚动的时候，就会触发 scrollViewDidScroll: 方法。
 
 ```objectivec
 
@@ -1159,7 +1159,7 @@ WXScrollToTarget是一个普通的对象，里面弱引用了当前需要监听�
 
 ```
 
-在上面的方法中[self handleAppear]就是触发了判断是否Appear了。
+在上面的方法中[self handleAppear]就是触发了判断是否 Appear 了。
 
 ```objectivec
 
@@ -1184,7 +1184,7 @@ WXScrollToTarget是一个普通的对象，里面弱引用了当前需要监听�
 
 ```
 
-上面这个方法会把listenerArray数组里面的每个WXScrollToTarget对象都调用scrollToTarget:scrollRect:方法。根据当前滚动的情况传入一个CGRect，这个CGRect就是当前滚动到那个矩形区域的坐标信息以及宽和高。
+上面这个方法会把 listenerArray 数组里面的每个 WXScrollToTarget 对象都调用 scrollToTarget:scrollRect: 方法。根据当前滚动的情况传入一个 CGRect，这个 CGRect 就是当前滚动到那个矩形区域的坐标信息以及宽和高。
 
 ```objectivec
 
@@ -1247,13 +1247,13 @@ WXScrollToTarget是一个普通的对象，里面弱引用了当前需要监听�
 
 
 
-scrollToTarget:scrollRect:方法的核心就是拿当前可视区域和传入的滚动区域进行对比，如果在该区域内，且监听了appear事件，就会触发appear事件，如果不在该区域内，且监听了disappear事件，就会触发disappear事件。
+scrollToTarget:scrollRect: 方法的核心就是拿当前可视区域和传入的滚动区域进行对比，如果在该区域内，且监听了 appear 事件，就会触发 appear 事件，如果不在该区域内，且监听了 disappear 事件，就会触发 disappear 事件。
 
 #### 3. Disappear 事件
 
 如果一个位于某个可滚动区域内的组件被绑定了 disappear 事件，那么当这个组件被滑出屏幕变为不可见状态时，该事件将被触发。
 
-同理，绑定了Disappear 事件的都是可以滚动的视图。
+同理，绑定了 Disappear 事件的都是可以滚动的视图。
 
 
 
@@ -1269,7 +1269,7 @@ scrollToTarget:scrollRect:方法的核心就是拿当前可视区域和传入的
 
 ```
 
-通过上述的宏给可以滚动的视图增加Disappear 事件。也就是当前视图执行addDisappearEvent方法。
+通过上述的宏给可以滚动的视图增加 Disappear 事件。也就是当前视图执行 addDisappearEvent 方法。
 
 
 ```objectivec
@@ -1283,21 +1283,21 @@ scrollToTarget:scrollRect:方法的核心就是拿当前可视区域和传入的
 
 ```
 
-接下去的和Appear 事件的原理就一模一样了。
+接下去的和 Appear 事件的原理就一模一样了。
 
 
 #### 4. Page 事件
 
 
-**暂时Weex只支持 iOS 和 Android，H5 暂不支持。**
+**暂时 Weex 只支持 iOS 和 Android，H5 暂不支持。**
 
 Weex 通过 viewappear 和 viewdisappear 事件提供了简单的页面状态管理能力。
 
 viewappear 事件会在页面就要显示或配置的任何页面动画被执行前触发，例如，当调用 navigator 模块的 push 方法时，该事件将会在打开新页面时被触发。viewdisappear 事件会在页面就要关闭时被触发。
 
-与组件Component的 appear 和 disappear 事件不同的是，viewappear 和 viewdisappear 事件关注的是整个页面的状态，所以它们必须绑定到页面的根元素上。
+与组件 Component的 appear 和 disappear 事件不同的是，viewappear 和 viewdisappear 事件关注的是整个页面的状态，所以它们必须绑定到页面的根元素上。
 
-特殊情况下，这两个事件也能被绑定到非根元素的body组件上，例如wxc-navpage组件。
+特殊情况下，这两个事件也能被绑定到非根元素的 body 组件上，例如 wxc-navpage 组件。
 
 举个例子：
 
@@ -1319,10 +1319,10 @@ viewappear 事件会在页面就要显示或配置的任何页面动画被执行
 
 ```
 
-比如在WXBaseViewController里面，有这样一个更新当前Instance状态的方法，这个方法里面就会触发 viewappear 和 viewdisappear 事件。
+比如在 WXBaseViewController 里面，有这样一个更新当前 Instance 状态的方法，这个方法里面就会触发 viewappear 和 viewdisappear 事件。
 
 
-其中WX\_SDK\_ROOT\_REF就是\_root
+其中 WX\_SDK\_ROOT\_REF 就是 \_root
 
 ```objectivec
 
@@ -1330,7 +1330,7 @@ viewappear 事件会在页面就要显示或配置的任何页面动画被执行
 
 ```
 
-上述更新状态的方法同样出现在WXEmbedComponent组件中。
+上述更新状态的方法同样出现在 WXEmbedComponent 组件中。
 
 ```objectivec
 
@@ -1352,10 +1352,10 @@ viewappear 事件会在页面就要显示或配置的任何页面动画被执行
 ```
 
 
-### 二.Weex的事件传递
+### 二.Weex 的事件传递
 
 
-在Weex中，iOS Native把事件传递给JS目前只有2种方式，一是Module模块的callback，二是通过Component组件自定义的通知事件。
+在 Weex 中，iOS Native 把事件传递给 JS 目前只有2种方式，一是 Module 模块的 callback，二是通过 Component 组件自定义的通知事件。
 
 
 
@@ -1368,7 +1368,7 @@ viewappear 事件会在页面就要显示或配置的任何页面动画被执行
 
 
 
-在WXModuleProtocol中定义了2种可以callback给JS的闭包。
+在 WXModuleProtocol 中定义了2种可以 callback 给 JS 的闭包。
 
 ```objectivec
 
@@ -1387,16 +1387,16 @@ typedef void (^WXModuleKeepAliveCallback)(id result, BOOL keepAlive);
 
 ```
 
-两个闭包都可以callback把data传递回给JS，data可以是字符串或者字典。
+两个闭包都可以 callback 把 data 传递回给 JS，data 可以是字符串或者字典。
 
 这两个闭包的区别在于：
 
-1. WXModuleCallback用于Module组件，为了节约内存，该回调只能回调通知JS一次，之后会被释放，多用于一次结果。
-2. WXModuleKeepAliveCallback同样是用于Module组件，但是该回调可以设置是否为多次回调类型，如果设置了keepAlive，那么可以进行持续监听变化，多次回调，并返回给 JS。
+1. WXModuleCallback 用于 Module 组件，为了节约内存，该回调只能回调通知 JS 一次，之后会被释放，多用于一次结果。
+2. WXModuleKeepAliveCallback 同样是用于 Module 组件，但是该回调可以设置是否为多次回调类型，如果设置了 keepAlive，那么可以进行持续监听变化，多次回调，并返回给 JS。
 
-在Weex中使用WXModuleCallback回调，很多情况是把状态回调给JS，比如成功或者失败的状态，还有一些出错的信息回调给JS。
+在 Weex 中使用 WXModuleCallback 回调，很多情况是把状态回调给 JS，比如成功或者失败的状态，还有一些出错的信息回调给 JS。
 
-比如在WXStorageModule中
+比如在 WXStorageModule 中
 
 ```objectivec
 
@@ -1429,9 +1429,9 @@ typedef void (^WXModuleKeepAliveCallback)(id result, BOOL keepAlive);
 
 ```
 
-在调用setItem:value:callback:方法里面，如果setKey-value的时候失败了，会把错误信息通过WXModuleCallback回调给JS。
+在调用 setItem:value:callback: 方法里面，如果 setKey-value 的时候失败了，会把错误信息通过 WXModuleCallback 回调给JS。
 
-当然，如果调用存储模块WXStorageModule的某些查询信息的方法：
+当然，如果调用存储模块 WXStorageModule 的某些查询信息的方法：
 
 
 ```objectivec
@@ -1449,23 +1449,23 @@ typedef void (^WXModuleKeepAliveCallback)(id result, BOOL keepAlive);
 
 ```
 
-length:和getAllKeys:方法调用成功，会把成功的状态和数据通过WXModuleCallback回调给JS。
+length: 和 getAllKeys: 方法调用成功，会把成功的状态和数据通过 WXModuleCallback 回调给JS。
 
 
 
 
 
-在Weex中使用了WXModuleKeepAliveCallback的模块总共只有以下4个：
+在 Weex 中使用了 WXModuleKeepAliveCallback 的模块总共只有以下4个：
 
 WXDomModule，WXStreamModule，WXWebSocketModule，WXGlobalEventModule
 
 
-在WXDomModule模块中，JS调用获取Component组件的位置信息和宽高信息的时候，需要把这些坐标和尺寸信息回调给JS，不过这里虽然用到了WXModuleKeepAliveCallback，但是keepAlive是false，并没有用到多次回调的功能。
+在 WXDomModule 模块中，JS 调用获取 Component 组件的位置信息和宽高信息的时候，需要把这些坐标和尺寸信息回调给 JS，不过这里虽然用到了WXModuleKeepAliveCallback，但是 keepAlive 是 false，并没有用到多次回调的功能。
 
 
-在WXStreamModule模块中，由于这是一个传输流的模块，所以肯定需要用到WXModuleKeepAliveCallback，需要持续不断的监听数据的变化，并把进度回调给JS，这里用到了keepAlive。WXStreamModule模块中也会用到WXModuleCallback，WXModuleCallback会即时把各个状态回调给JS。
+在 WXStreamModule 模块中，由于这是一个传输流的模块，所以肯定需要用到WXModuleKeepAliveCallback，需要持续不断的监听数据的变化，并把进度回调给 JS，这里用到了 keepAlive。WXStreamModule 模块中也会用到 WXModuleCallback，WXModuleCallback 会即时把各个状态回调给 JS。
 
-在WXWebSocketModule模块中
+在 WXWebSocketModule 模块中
 
 
 ```objectivec
@@ -1483,10 +1483,10 @@ WXDomModule，WXStreamModule，WXWebSocketModule，WXGlobalEventModule
 ```
 
 
-用到了4个WXModuleKeepAliveCallback回调，这4个callback分别是把error错误信息，message收到的数据，open打开链接的状态，close关闭链接的状态，持续的回调给JS。
+用到了4个 WXModuleKeepAliveCallback 回调，这4个 callback 分别是把 error 错误信息，message 收到的数据，open 打开链接的状态，close 关闭链接的状态，持续的回调给 JS。
 
 
-在WXGlobalEventModule模块中，有一个fireGlobalEvent:方法。
+在 WXGlobalEventModule 模块中，有一个 fireGlobalEvent: 方法。
 
 ```objectivec
 
@@ -1508,9 +1508,9 @@ WXDomModule，WXStreamModule，WXWebSocketModule，WXGlobalEventModule
 
 ```
 
-开发者可以通过WXGlobalEventModule进行全局的通知，在userInfo里面可以夹带weexInstance的参数。native是不需要关心userWeexInstanceId，这个参数是给JS用的。
+开发者可以通过 WXGlobalEventModule 进行全局的通知，在 userInfo 里面可以夹带 weexInstance 的参数。native 是不需要关心 userWeexInstanceId，这个参数是给 JS 用的。
 
-Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件的监听者，然后发送全局通知即可。userInfo[@"param"]会被回调给JS。
+Native 开发者只需要在用到了 WXGlobalEventModule 的模块里加上事件的监听者，然后发送全局通知即可。userInfo[@"param"]会被回调给 JS。
 
 
 #### （2）fireEvent:params:domChanges:
@@ -1523,9 +1523,9 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 
 
 
-在开头我们介绍的Weex事件的4种类型，通用事件，Appear 事件，Disappear 事件，Page 事件，全部都是通过fireEvent:params:domChanges:这种方式，Native触发事件之后，Native把参数传递给JS的。
+在开头我们介绍的 Weex 事件的4种类型，通用事件，Appear 事件，Disappear 事件，Page 事件，全部都是通过 fireEvent:params:domChanges: 这种方式，Native 触发事件之后，Native 把参数传递给 JS 的。
 
-在WXComponent里面定义了2个可以给JS发送消息的方法：
+在 WXComponent 里面定义了2个可以给 JS 发送消息的方法：
 
 ```objectivec
 
@@ -1552,7 +1552,7 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 ```
 
 
-这两个方法的区别就在于最后一个domChanges的参数，有这个参数的方法主要多用于Weex的Native和JS的双向数据绑定。
+这两个方法的区别就在于最后一个 domChanges 的参数，有这个参数的方法主要多用于 Weex 的 Native 和 JS 的双向数据绑定。
 
 
 ```objectivec
@@ -1577,11 +1577,11 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 
 ```
 
-上述就是两个方法的具体实现。可以看到fireEvent:params:方法就是调用了fireEvent:params:domChanges:方法，只不过最后的domChanges参数传了nil。
+上述就是两个方法的具体实现。可以看到 fireEvent:params: 方法就是调用了 fireEvent:params:domChanges: 方法，只不过最后的 domChanges 参数传了 nil。
 
-在fireEvent:params:domChanges:方法中会对params字典做了一次加工，加上了timestamp的键值。最终还是会调用WXBridgeManager 里面的fireEvent:ref: type:params:domChanges:方法。
+在fireEvent:params:domChanges: 方法中会对 params 字典做了一次加工，加上了 timestamp 的键值。最终还是会调用 WXBridgeManager 里面的 fireEvent:ref: type:params:domChanges: 方法。
 
-在WXBridgeManager中具体实现了上述的两个方法。
+在 WXBridgeManager 中具体实现了上述的两个方法。
 
 ```objectivec
 
@@ -1608,7 +1608,7 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 
 ```
 
-入参ref, type, params, domChanges封装到最终的args参数数组里面，最后会封装出WXCallJSMethod方法，通过WXBridgeManager的callJsMethod调用到JS的fireEvent方法。
+入参 ref, type, params, domChanges 封装到最终的 args 参数数组里面，最后会封装出 WXCallJSMethod 方法，通过 WXBridgeManager 的 callJsMethod 调用到 JS 的 fireEvent 方法。
 
 
 
@@ -1622,11 +1622,11 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 
 这里可以举个例子：
 
-假设一个场景，用户点击了一张图片，于是就会改变label上的一段文字。
+假设一个场景，用户点击了一张图片，于是就会改变 label 上的一段文字。
 
-首先图片是imageComponent，用户点击会触发该Component的onclick:方法
+首先图片是 imageComponent，用户点击会触发该 Component 的 onclick: 方法
 
-组件里面会调用fireEvent:params:方法：
+组件里面会调用 fireEvent:params: 方法：
 
 ```objectivec
 
@@ -1634,7 +1634,7 @@ Native开发者只需要在用到了WXGlobalEventModule的模块里加上事件�
 
 ```
 
-最终通过fireEvent:params:domChanges:方法，发送给JS的参数字典大概如下：
+最终通过 fireEvent:params:domChanges: 方法，发送给 JS 的参数字典大概如下：
 
 
 ```c
@@ -1666,7 +1666,7 @@ args:(
 
 ```
 
-JSFramework收到了fireEvent方法调用以后，处理完，知道label需要更新，于是又会开始call Native，调用Native的方法。调用Native的callNative方法，发过来的参数如下：
+JSFramework 收到了 fireEvent 方法调用以后，处理完，知道 label 需要更新，于是又会开始 call Native，调用 Native 的方法。调用 Native 的 callNative 方法，发过来的参数如下：
 
 ```c
 
@@ -1686,9 +1686,9 @@ JSFramework收到了fireEvent方法调用以后，处理完，知道label需要�
 
 ```
 
-最终会调用Dom的updateAttrs方法，会去更新id为4的value，id为4对应的就是label，更新它的值就是刷新label。
+最终会调用 Dom 的 updateAttrs 方法，会去更新 id 为4的 value，id 为4对应的就是 label，更新它的值就是刷新 label。
 
-接着JSFramework还会继续调用Native的callNative方法，发过来的参数如下：
+接着 JSFramework 还会继续调用 Native 的 callNative 方法，发过来的参数如下：
 
 ```c
 
@@ -1705,20 +1705,20 @@ JSFramework收到了fireEvent方法调用以后，处理完，知道label需要�
 
 ```
 
-调用Dom的updateFinish方法，即页面刷新完毕。
+调用 Dom 的 updateFinish 方法，即页面刷新完毕。
 
 
 ### 最后
 
-至此，Weex从View的创建，到渲染，产生事件回调JSFramework，这一系列的流程源码都解析完成了。
+至此，Weex 从 View 的创建，到渲染，产生事件回调 JSFramework，这一系列的流程源码都解析完成了。
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-c990ddac97537e7b.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-中间涉及到了3个子线程，mainThread，com.taobao.weex.component，com.taobao.weex.bridge，分别是UI主线程，DOM线程，JSbridge线程。
+中间涉及到了3个子线程，mainThread，com.taobao.weex.component，com.taobao.weex.bridge，分别是 UI 主线程，DOM 线程，JSbridge 线程。
 
 
-Native端目前还差神秘的JSFramework的源码解析。请大家多多指点。
+Native 端目前还差神秘的 JSFramework 的源码解析。请大家多多指点。
 
 
 
