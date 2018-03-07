@@ -1,10 +1,10 @@
 <p align='center'>
-<img src=''>
+<img src='../images/Machine-Learning_3.png'>
 </p>
 
 
 
-## What is Machine Learning?
+# What is Machine Learning?
 
 在机器学习的历史上，一共出现了两种定义。
 
@@ -26,6 +26,10 @@ P = 程序将赢得下一场比赛的概率。
 有监督学习 supervised learning 和无监督学习 unsupervised learning。
 
 简单的说，监督学习就是我们教计算机去做某件事情，无监督学习是我们让计算机自己学习。
+
+<p align='center'>
+<img src='../images/machine-learning.png'>
+</p>
 
 
 ------------------------------------------------------
