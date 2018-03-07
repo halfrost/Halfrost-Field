@@ -32,8 +32,14 @@
 
 Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/T%20Salon%20share.pdf)
 
-（Ps：由于文章有点多，所以有些文章地址还在简书上，我会慢慢的精编到GitHub上来的！）
 
+----------------------------
+
+# :octocat: Machine Learning
+
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md) |
 
 ---------------------------
 
@@ -92,7 +98,7 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 | Project | Version | Article |
 |:-------:|:-------:|:------|
 | 开篇 |  | [开篇](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/start.md)|
-| 2017 |  |[【星霜荏苒】 - 程序员如何在技术浪潮的更迭中保持较高的成长速度 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2017.md)|
+| 2017 |  |[【星霜荏苒】 - 程序员如何在技术浪潮的更迭中保持较高的成长速度 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2017.md)                                   |
 
 
 
