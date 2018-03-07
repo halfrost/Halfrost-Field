@@ -37,6 +37,7 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 
 # 🍉 Machine Learning
 
+
 | Project | Version | Article |
 |:-------:|:-------:|:------|
 |机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md) |
@@ -95,12 +96,6 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 
 # ❄️ 星霜荏苒
 
-
-<style>
-table th:first-of-type {
-    width: 100px;
-}
-</style>
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
