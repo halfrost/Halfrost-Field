@@ -70,10 +70,10 @@ A computer program is said to learn from experience E with respect to some task 
 Answer
 The process of the algorithm examining a large amount of historical weather data.
 
-解答：
-T := The weather prediction task.
-P := The probability of it correctly predicting a future date's weather.
-E := The process of the algorithm examining a large amount of historical weather data.
+解答：  
+T := The weather prediction task.  
+P := The probability of it correctly predicting a future date's weather.  
+E := The process of the algorithm examining a large amount of historical weather data.  
 
 ## Question 2
 Suppose you are working on weather prediction, and you would like to predict whether or not it will be raining at 5pm tomorrow. You want to use a learning algorithm for this. Would you treat this as a classification or a regression problem?
@@ -81,7 +81,7 @@ Suppose you are working on weather prediction, and you would like to predict whe
 Answer
 Classification
 
-解答：
+解答：  
 当我们试图预测少量离散值输出之一时，分类是合适的，比如是否会下雨（我们可能指定为0级），或者不会（例如1级）。
 
 ## Question 3
@@ -90,7 +90,7 @@ Suppose you are working on stock market prediction, and you would like to predic
 Answer
 Regression
 
-解答：
+解答：  
 当我们试图预测连续价值的产出时，回归是合适的，因为作为一种股票的价格（类似于讲座中的房价例子）。
 
 ## Question 4
@@ -128,7 +128,7 @@ Which of these is a reasonable definition of machine learning?
 Answer
 Machine learning is the field of study that gives computers the ability to learn without being explicitly programmed.
 
-解答：
+解答：  
 这是开发了西洋跳棋 AI 程序的 Arthur Samuel 给出的定义。
 
 ------------------------------------------------------
