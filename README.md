@@ -35,7 +35,7 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 
 ----------------------------
 
-# :octocat: Machine Learning
+# 🍉 Machine Learning
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
@@ -95,10 +95,17 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 
 # ❄️ 星霜荏苒
 
+
+<style>
+table th:first-of-type {
+    width: 100px;
+}
+</style>
+
 | Project | Version | Article |
 |:-------:|:-------:|:------|
 | 开篇 |  | [开篇](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/start.md)|
-| 2017 |  |[【星霜荏苒】 - 程序员如何在技术浪潮的更迭中保持较高的成长速度 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2017.md)                                   |
+| 2017 |  |[【星霜荏苒】 - 程序员如何在技术浪潮的更迭中保持较高的成长速度 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2017.md)|
 
 
 
