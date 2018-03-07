@@ -109,4 +109,4 @@ This was the definition given by Arthur Samuel (who had written the famous check
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine\_Learning/What\_is\_Machine\_Learning.md](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)
