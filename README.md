@@ -30,7 +30,7 @@
 ## 📖 目录
 
 
-Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Go/T%20Salon%20share.pdf)
+Latest：[Week1-Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)
 
 
 ----------------------------
@@ -40,7 +40,7 @@ Latest：[Code \<T\> share keynote](https://github.com/halfrost/Halfrost-Field/b
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md) |
+|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1-What\_is\_Machine\_Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1-Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)<br> |
 
 ---------------------------
 
