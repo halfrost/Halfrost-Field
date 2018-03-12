@@ -40,7 +40,7 @@ Latest：[Week1-Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/bl
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/contents.md)<br>[Week1——What\_is\_Machine\_Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1——Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)<br> |
+|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/contents.md)<br>[Week1——What\_is\_Machine\_Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1——Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)<br>[Week2——Multivariate\_Linear\_Regression](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Multivariate_Linear_Regression.ipynb) |
 
 ---------------------------
 
