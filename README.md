@@ -30,7 +30,7 @@
 ## 📖 目录
 
 
-Latest：[Week1-Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)
+Latest：[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/contents.md)
 
 
 ----------------------------
@@ -40,7 +40,7 @@ Latest：[Week1-Gradient\_Descent](https://github.com/halfrost/Halfrost-Field/bl
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/contents.md)<br>-----------------------------------------------------------------------<br>[Week1 —— What is Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1 —— Linear Regression with One Variable (Gradient Descent)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)<br>[Week2 —— Multivariate Linear Regression](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Multivariate_Linear_Regression.ipynb) <br>[Week2 —— Computing Parameters Analytically](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Multivariate_Linear_Regression.ipynb)|
+|机器学习|Andrew Ng Stanford University|[目录](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/contents.md)<br>-----------------------------------------------------------------------<br>[Week1 —— What is Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/What_is_Machine_Learning.md)<br>[Week1 —— Linear Regression with One Variable (Gradient Descent)](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Gradient_descent.ipynb)<br>[Week2 —— Multivariate Linear Regression](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Multivariate_Linear_Regression.ipynb) <br>[Week2 —— Computing Parameters Analytically](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Computing_Parameters_Analytically.ipynb)|
 
 ---------------------------
 
