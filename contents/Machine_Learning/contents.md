@@ -14,10 +14,9 @@
 
 ## 第二周：Linear Regression with Multiple Variables
 
-- 2.1 [Multivariate Linear Regression]()
-- 2.2 [Computing Parameters Analytically]()
-- 2.3 [Submitting Programming Assignments]()
-- 2.4 [Octave/Matlab Tutorial]()
+- 2.1 [Multivariate Linear Regression](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Multivariate_Linear_Regression.ipynb)
+- 2.2 [Computing Parameters Analytically](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Computing_Parameters_Analytically.ipynb)
+- 2.3 [Octave/Matlab Tutorial]()
 
 ## 附录
 
