@@ -18,6 +18,16 @@
 - 2.2 [Computing Parameters Analytically](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Computing_Parameters_Analytically.ipynb)
 - 2.3 [Octave/Matlab Tutorial](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Octave_Matlab_Tutorial.ipynb)
 
+## 第三周：Logistic Regression
+
+- 3.1 [Logistic Regression](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Logistic_Regression.ipynb)
+- 3.2 [Regularization](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Regularization.ipynb)
+
+
+## 第四周：Neural Networks: Representation
+
+
+
 ## 附录
 
 - A 
