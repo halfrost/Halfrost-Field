@@ -26,6 +26,10 @@
 
 ## 第四周：Neural Networks: Representation
 
+- 4.1 [Neural Networks Representation](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Neural_Networks_Representation.ipynb)
+
+
+## 第五周：Neural Networks: Learning
 
 
 ## 附录
