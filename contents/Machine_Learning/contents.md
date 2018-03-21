@@ -31,6 +31,14 @@
 
 ## 第五周：Neural Networks: Learning
 
+- 5.1 [Neural Networks Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Neural_Networks_Learning.ipynb)
+- 5.2 [Backpropagation in Practice](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Backpropagation_in_Practice.ipynb)
+
+
+## 第六周：Advice for Applying Machine Learning
+
+
+
 
 ## 附录
 
