@@ -37,7 +37,7 @@
 
 ## 第六周：Advice for Applying Machine Learning
 
-
+- 6.1 [Advice for Applying Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Advice_for_Applying_Machine_Learning.ipynb)
 
 
 ## 附录
