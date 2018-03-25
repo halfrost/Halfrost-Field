@@ -39,12 +39,18 @@ P = 程序将赢得下一场比赛的概率。
 
 在回归问题中，我们试图预测连续输出中的结果，这意味着我们试图将输入变量映射到某个连续函数。例如给定一个人的照片，根据照片预测年龄，这就是一个回归的问题。
 
-![](https://upload.wikimedia.org/wikipedia/commons/3/3a/Linear_regression.svg)
+
+<p align='center'>
+<img src='../images/Linear_regression.svg'>
+</p>
 
 
 在分类问题中，我们试图预测离散输出中的结果。换句话说，我们试图将输入变量映射到离散类别中。例如给予患有肿瘤的患者，我们必须预测肿瘤是恶性的还是良性的。
 
-![](https://upload.wikimedia.org/wikipedia/commons/f/fe/Kernel_Machine.svg)
+
+<p align='center'>
+<img src='../images/Kernel_Machine.svg'>
+</p>
 
 ## 2. unsupervised learning
 
@@ -53,7 +59,10 @@ P = 程序将赢得下一场比赛的概率。
 聚类：获取1,000,000个不同基因的集合，并找到一种方法将这些基因自动分组成不同变量的相似或相关的组，例如寿命，位置，角色等。 
 
 
-![](https://upload.wikimedia.org/wikipedia/commons/e/e5/KMeans-Gaussian-data.svg)
+<p align='center'>
+<img src='../images/KMeans-Gaussian-data.svg'>
+</p>
+
 
 非聚类：“鸡尾酒会算法”，允许您在混乱的环境中查找结果。 （即在鸡尾酒会上识别来自声音网格的个人声音和音乐）。
 
