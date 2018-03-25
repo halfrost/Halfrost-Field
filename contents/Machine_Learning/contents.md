@@ -38,6 +38,31 @@
 ## 第六周：Advice for Applying Machine Learning
 
 - 6.1 [Advice for Applying Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Advice_for_Applying_Machine_Learning.ipynb)
+- 6.2 Machine Learning System Design
+
+## 第七周：Support Vector Machines
+
+- 7.1 Support Vector Machines
+
+
+## 第八周：Unsupervised Learning
+
+- 8.1 Unsupervised Learning
+- 8.2 Dimensionality Reduction
+
+## 第九周：Anomaly Detection
+
+- 9.1 Anomaly Detection
+- 9.2 Recommender Systems
+
+## 第十周：Large Scale Machine Learning
+
+- 10.1 Large Scale Machine Learning
+
+## 第十一周：Application Example: Photo OCR
+
+- 11.1 Application Example: Photo OCR
+
 
 
 ## 附录
