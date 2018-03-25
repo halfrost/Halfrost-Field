@@ -38,17 +38,17 @@
 ## 第六周：Advice for Applying Machine Learning
 
 - 6.1 [Advice for Applying Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Advice_for_Applying_Machine_Learning.ipynb)
-- 6.2 Machine Learning System Design
+- 6.2 [Machine Learning System Design](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Machine_Learning_System_Design.ipynb)
 
 ## 第七周：Support Vector Machines
 
-- 7.1 Support Vector Machines
+- 7.1 [Support Vector Machines](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Support_Vector_Machines.ipynb)
 
 
 ## 第八周：Unsupervised Learning
 
-- 8.1 Unsupervised Learning
-- 8.2 Dimensionality Reduction
+- 8.1 [Unsupervised Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Unsupervised_Learning.ipynb)
+- 8.2 [Dimensionality Reduction](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Dimensionality_Reduction.ipynb)
 
 ## 第九周：Anomaly Detection
 
