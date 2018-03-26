@@ -67,14 +67,7 @@
 
 ## 附录
 
-- A 
-- B 
-- C 
-- D 
-- E 
-- F 
-- G 
-- H 
+![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/certificate.png)
 
 ## 索引
 
