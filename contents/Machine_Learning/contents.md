@@ -52,16 +52,16 @@
 
 ## 第九周：Anomaly Detection
 
-- 9.1 Anomaly Detection
-- 9.2 Recommender Systems
+- 9.1 [Anomaly Detection](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Anomaly_Detection.ipynb)
+- 9.2 [Recommender Systems](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Recommender_Systems.ipynb)
 
 ## 第十周：Large Scale Machine Learning
 
-- 10.1 Large Scale Machine Learning
+- 10.1 [Large Scale Machine Learning](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Large_Scale_Machine_Learning.ipynb)
 
 ## 第十一周：Application Example: Photo OCR
 
-- 11.1 Application Example: Photo OCR
+- 11.1 [Application Example: Photo OCR](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Machine_Learning/Application_Photo_OCR.ipynb)
 
 
 
