@@ -69,7 +69,6 @@
 
 ![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/certificate.png)
 
-## 索引
 
 ------------------------------------------------------
 
