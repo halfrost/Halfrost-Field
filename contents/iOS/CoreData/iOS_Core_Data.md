@@ -4,13 +4,13 @@
 ![](http://upload-images.jianshu.io/upload_images/1194012-4e1295f1f4cd4d75.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-####前言
-Core Data是iOS上一个效率比较高的数据库框架，(但是Core Data并不是一种数据库，它底层还是利用Sqlite3来存储数据的)，它可以把数据当成对象来操作，而且开发者并不需要在乎数据在磁盘上面的存储方式。它会把位于NSManagedObject Context里面的托管对象NSManagedObject类的实例或者某个NSManagedObject子类的实例，通过NSManagedObjectModel托管对象模型，把托管对象保存到持久化存储协调器NSPersistentStoreCoordinator持有的一个或者多个持久化存储区中NSPersistentStore中。使用Core Data进行查询的语句都是经过Apple特别优化过的，所以都是效率很高的查询。  
+## 前言
+Core Data 是 iOS 上一个效率比较高的数据库框架，(但是Core Data并不是一种数据库，它底层还是利用Sqlite3来存储数据的)，它可以把数据当成对象来操作，而且开发者并不需要在乎数据在磁盘上面的存储方式。它会把位于NSManagedObject Context里面的托管对象NSManagedObject类的实例或者某个NSManagedObject子类的实例，通过NSManagedObjectModel托管对象模型，把托管对象保存到持久化存储协调器NSPersistentStoreCoordinator持有的一个或者多个持久化存储区中NSPersistentStore中。使用Core Data进行查询的语句都是经过Apple特别优化过的，所以都是效率很高的查询。  
 
 当你进行简单的设定，比如说设定某个实体的默认值，设定级联删除的操作，设定数据的验证规则，使用数据的请求模板，这些修改Core Data都会自己完成，不用自己进行数据迁移。那那些操作需要我们进行数据迁移呢？凡是会引起NSManagedObjectModel托管对象模型变化的，都最好进行数据迁移，防止用户升级应用之后就闪退。会引起NSManagedObjectModel托管对象模型变化的有以下几个操作，新增了一张表，新增了一张表里面的一个实体，新增一个实体的一个属性，把一个实体的某个属性迁移到另外一个实体的某个属性里面…………大家应该现在都知道哪些操作需要进行数据迁移了吧。
 
 
-####小技巧：
+## 小技巧：
 进入正题之前，我先说3个调试Core Data里面调试可能你会需要的操作。
 
 1.一般打开app沙盒里面的会有三种类型的文件，sqlite，sqlite-shm,sqlite-wal,后面2者是iOS7之后系统会默认开启一个新的“数据库日志记录模式”(database journaling mode)生成的，sqlite-shm是共享内存(Shared Memory)文件，该文件里面会包含一份sqlite-wal文件的索引，系统会自动生成shm文件，所以删除它，下次运行还会生成。sqlite-wal是预写式日志(Write-Ahead Log)文件，这个文件里面会包含尚未提交的数据库事务，所以看见有这个文件了，就代表数据库里面还有还没有处理完的事务需要提交，所以说如果有sqlite-wal文件，再去打开sqlite文件，很可能最近一次数据库操作还没有执行。  
@@ -43,8 +43,10 @@ Core Data是iOS上一个效率比较高的数据库框架，(但是Core Data并�
 好了，调试信息应该都可以完美显示了，可以开始愉快的进入正文了！
 
 
-####一.Core Data自带的轻量级的数据迁移
+## 一.Core Data自带的轻量级的数据迁移
 这种迁移可别小看它，在你新建一张表的时候还必须加上它才行，否则会出现如下的错误，
+
+
 ```
 **Failed to add store. Error: Error Domain=NSCocoaErrorDomain Code=134100 "(null)" UserInfo={metadata={**
 **    NSPersistenceFrameworkVersion = 641;**
@@ -86,6 +88,8 @@ NSMigratePersistentStoresAutomaticallyOption = YES，那么Core Data会试着把
 NSInferMappingModelAutomaticallyOption = YES,这个参数的意义是Core Data会根据自己认为最合理的方式去尝试MappingModel，从源模型实体的某个属性，映射到目标模型实体的某个属性。
 
 接着我们来看看MagicRecord源码是怎么写的，所以大家才能执行一些操作不会出现我上面说的闪退的问题
+
+
 ```
 
 + (NSDictionary *) MR_autoMigrationOptions;
@@ -106,9 +110,11 @@ NSInferMappingModelAutomaticallyOption = YES,这个参数的意义是Core Data�
   
 只要打开上面2个参数，Core Data就会执行自己的轻量级迁移了，当然，在实体属性迁移时候，用该方式不靠谱，之前我觉得它肯定能推断出来，结果后来还是更新后直接闪退报错了，可能是因为表结构太复杂，超过了它简单推断的能力范围了，所以我建议，在进行复杂的实体属性迁移到另一个属性迁移的时候，不要太相信这种方式，还是最好自己Mapping一次。当然，你要是新建一张表的时候，这2个参数是必须要加上的！！！
 
-####二.Core Data手动创建Mapping文件进行迁移
+## 二.Core Data手动创建Mapping文件进行迁移
 这种方式比前一种方式要更加精细一些，Mapping文件会指定哪个实体的某个属性迁移到哪个实体的某个属性，这比第一种交给Core Data自己去推断要靠谱一些，这种方法直接指定映射！   
 先说一下，如果复杂的迁移，不加入这个Mapping文件会出现什么样的错误
+
+
 
 ```
 
@@ -168,10 +174,11 @@ Mapping文件打开对应的就是Source源实体属性，迁移到Target目标�
 
 
 
-####三.通过代码实现数据迁移
+## 三.通过代码实现数据迁移
 这个通过代码进行迁移主要是在数据迁移过程中，如果你还想做一些什么其他事情，比如说你想清理一下垃圾数据，实时展示数据迁移的进度，等等，那就需要在这里来实现了。  
 
 首先，我们需要检查一下该存储区存不存在，再把存储区里面的model metadata进行比较，检查一下是否兼容，如果不能兼容，那么就需要我们进行数据迁移了。
+
 ```
 - (BOOL)isMigrationNecessaryForStore:(NSURL*)storeUrl
 {
@@ -200,6 +207,7 @@ Mapping文件打开对应的就是Source源实体属性，迁移到Target目标�
 ```
 
 当上面函数返回YES，我们就需要合并了，那接下来就是下面的函数了
+
 ```
 - (BOOL)migrateStore:(NSURL*)sourceStore {
     
@@ -273,6 +281,7 @@ Mapping文件打开对应的就是Source源实体属性，迁移到Target目标�
 ```
 
 上面的函数中，如果迁移进度有变化，会通过观察者，observeValueForKeyPath来告诉用户进度，这里可以监听该进度，如果没有完成，可以来禁止用户执行某些操作
+
 ```
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -373,7 +382,7 @@ Mapping文件打开对应的就是Source源实体属性，迁移到Target目标�
 ```
 这样就完成了数据迁移了，并且还能显示出迁移进度，在迁移中还可以自定义一些操作，比如说清理垃圾数据，删除一些不用的表，等等。
 
-####结束
+## 结束
 好了，到此，Core Data 数据迁移的几种方式我就和大家分享完了，如果文中有不对的地方，欢迎大家提出来，我们一起交流进步！
 
 
