@@ -1,7 +1,9 @@
 # iOS Core Data 数据迁移 指南
 
+<p align='center'>
+<img src='http://upload-images.jianshu.io/upload_images/1194012-4e1295f1f4cd4d75.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+</p>
 
-![](http://upload-images.jianshu.io/upload_images/1194012-4e1295f1f4cd4d75.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 ## 前言
