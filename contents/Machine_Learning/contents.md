@@ -5,7 +5,7 @@
 
 
 # 目录
-- [前言](preface.md)
+- 前言
 
 ## 第一周：Welcome
 
