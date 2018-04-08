@@ -69,6 +69,8 @@ Vim党当然是不需要 IDE 的，直接 Vim + Vim-go（或者 Emacs）
 | The Go Blog | [https://blog.golang.org/](https://blog.golang.org/) | Go 的官方博客|
 | The Go Packages | [https://golang.org/pkg/](https://golang.org/pkg/) | Go 的包官方文档|
 | Go 标准库中文文档|[http://cngolib.com/](http://cngolib.com/)| Go 标准库中文文档|
+| Golang 教程集|[https://golangbot.com/learn-golang-series/](https://golangbot.com/learn-golang-series/)| 国外的一个高质量 Go 教程集|
+| 测试驱动学习 Go|[https://quii.gitbook.io/learn-go-with-tests](https://quii.gitbook.io/learn-go-with-tests)| 测试驱动学习 Go 语言|
 
 ---------------------------------
 
