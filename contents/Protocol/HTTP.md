@@ -1,5 +1,5 @@
 <p align='center'>
-<img src='http://upload-images.jianshu.io/upload_images/1194012-0b9a654a1c10804e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240'>
+<img src='../images/HTTP_logo.png'>
 </p>
 
 
@@ -16,6 +16,9 @@
 | 3XX | Redirection（重定向状态码） | 需要进行附加操作以完成请求 |
 | 4XX | Client Error（客户端错误状态码） | 服务器无法处理请求 |
 | 5XX | Server Error（服务器错误状态码） | 服务器处理请求出错 |
+
+
+
 
 ## 1XX 信息
 
@@ -58,6 +61,25 @@
 -  **500 Internal Server Error** ：服务器正在执行请求时发生错误。
 
 -  **503 Service Unavilable** ：服务器暂时处于超负载或正在进行停机维护，现在无法处理请求。
+
+
+
+| 状态码 | 类别 | 原因短语 |含义|
+| :---: | :---: | :---: |:---: |
+| 100 | Informational（信息性状态码） | Continue（继续） |收到了请求的起始部分，客户端应该继续请求。|
+| 101 | Informational（信息性状态码） | Switching Protocols（切换协议）|服务器正根据客户端的指示将协议切换成 Update 首部列出的协议。|
+|||||
+| 200 | Success（成功状态码）| OK |服务器已成功处理请求|
+| 201 | Success（成功状态码）|Created（已创建）| 对那些要服务器创建对象的请求来说，资源已创建完毕|
+| 202 | Success（成功状态码）|Accepted（已接受）| 请求已接受，但服务器尚未处理|
+| 203 | Success（成功状态码）|Non-Authoritative Information（非权威信息）| 服务器已将事务成功处理，只是实体首部包含的信息不是来自原始服务器，而是来自资源的副本|
+| 204 | Success（成功状态码）|No Content（没有内容）| 响应报文包含一些首部和一个状态行，但不包含实体 的主体内容|
+| 205 | Success（成功状态码）|Reset Content（重置内容）| 另一个主要用于浏览器的代码。意思是浏览器应该重置当前页面上所有的 HTML 表单 |
+| 206 | Success（成功状态码） |Partial Content（部分内容）| 部分请求成功|
+|||||
+| 3XX | Redirection（重定向状态码） | 需要进行附加操作以完成请求 ||
+| 4XX | Client Error（客户端错误状态码） | 服务器无法处理请求 ||
+| 5XX | Server Error（服务器错误状态码） | 服务器处理请求出错 ||
 
 
 
