@@ -77,6 +77,9 @@
 | 205 | Success（成功状态码）|Reset Content（重置内容）| 另一个主要用于浏览器的代码。意思是浏览器应该重置当前页面上所有的 HTML 表单 |
 | 206 | Success（成功状态码） |Partial Content（部分内容）| 部分请求成功|
 |||||
+|300| Redirection（重定向状态码） |Multiple Choices（多项选择）| 客户端请求了实际指向多个资源的 URL。这个代码是和一个选项列表一起返回的，然后用户就可以 选择他希望使用的选项了| 
+|301| Redirection（重定向状态码） | Moved Permanently（永久移除）| 请求的 URL 已移走。响应中应该包含一个 Location URL，说明资源现在所处的位置
+
 | 3XX | Redirection（重定向状态码） | 需要进行附加操作以完成请求 ||
 | 4XX | Client Error（客户端错误状态码） | 服务器无法处理请求 ||
 | 5XX | Server Error（服务器错误状态码） | 服务器处理请求出错 ||
