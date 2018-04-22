@@ -28,6 +28,7 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 | OPTIONS | 询问支持的方法 | 1.1 | OPTIONS 用来查询针对请求 URI 指定的资源支持的方法（你支持哪些方法？）|
 | TRACE | 追踪路径 | 1.1 | TRACE 方法是让 Web 服务器将之前的请求通信返回给客户端的方法，TRACE 方法不常用，并且容易引发 XST ( Cross-Site-Tracing ，跨站追踪)攻击，所以通常更不会用到了|
 | CONNECT | 要求用隧道协议连接代理 | 1.1 | CONNECT 方法要求在与代理服务器通信时建立隧道，实现用隧道协议进行 TCP 通信，主要使用 SSL （ Secure Sockets Layers ，安全套接层）和 TLS （ Transport Layer Security ，传输层安全）协议把通信内容加密后经网络隧道传输|
+| PATCH | 更新部分文件内容| 1.1| **当资源存在的时候**，PATCH 用于资源的部分内容的更新，例如更新某一个字段。具体比如说只更新用户信息的电话号码字段，而 PUT 用于更新某个资源较完整的内容，比如说用户要重填完整表单更新所有信息，后台处理更新时可能只是保留内部记录 ID 不变。<br>**当资源不存在的时候**，PATCH 是修改原来的内容，也可能会产生一个新的版本。比如当资源不存在的时候，PATCH 可能会去创建一个新的资源，这个意义上像是 saveOrUpdate 操作。而 PUT 只对已有资源进行更新操作，所以是 update 操作|
 | LINK | 建立和资源之间的联系 | 1.0 | ✖︎最新版中已经废弃✖︎|
 | UNLINK | 断开连接关系 | 1.0 | ✖︎最新版中已经废弃✖︎|
 |  |  |  | |
@@ -38,6 +39,30 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 | MOVE | 移动资源 | 1.1 | WebDAV 移动资源|
 | LOCK | 资源加锁 | 1.1 | WebDAV 资源加锁|
 | UNLOCK | 资源解锁 | 1.1 | WebDAV 资源解锁|
+
+
+在HTTP/1.1规范中幂等性的定义是：
+
+>Methods can also have the property of "idempotence" in that (aside from error or expiration issues) the side-effects of N > 0 identical requests is the same as for a single request.
+
+从定义上看，HTTP 方法的幂等性是指一次和多次请求某一个资源应该具有同样的副作用。幂等性属于语义范畴，正如编译器只能帮助检查语法错误一样，HTTP 规范也没有办法通过消息格式等语法手段来定义它，这可能是它不太受到重视的原因之一。但实际上，幂等性是分布式系统设计中十分重要的概念，而 HTTP 的分布式本质也决定了它在 HTTP 中具有重要地位。
+
+
+HTTP 方法的安全性指的是不会改变服务器状态，也就是说它只是可读的。所以只有 OPTIONS、GET、HEAD 是安全的，其他都是不安全的。
+
+| HTTP 方法 | 幂等性 | 安全性 |
+| :---: | :---: | :---: |
+|OPTIONS|	yes	|yes|
+|GET	|yes	|yes|
+|HEAD	|yes	|yes|
+|PUT	|yes	|no|
+|DELETE	|yes	|no|
+|POST	|no	|no|
+|PATCH	|no	|no|
+
+**POST 和 PATCH 这两个不是幂等性的**。  
+两次相同的POST请求会在服务器端创建两份资源，它们具有不同的URI。  
+对同一URI进行多次PUT的副作用和一次PUT是相同的。  
 
 
 ## HTTP 状态码
@@ -56,11 +81,11 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 
 
 
-## 1XX 信息
+### 1XX 信息
 
 -  **100 Continue** ：表明到目前为止都很正常，客户端可以继续发送请求或者忽略这个响应。
 
-## 2XX 成功
+### 2XX 成功
 
 -  **200 OK** 
 
@@ -68,7 +93,7 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 
 -  **206 Partial Content** ：表示客户端进行了范围请求。响应报文包含由 Content-Range 指定范围的实体内容。
 
-## 3XX 重定向
+### 3XX 重定向
 
 -  **301 Moved Permanently** ：永久性重定向
 
@@ -82,7 +107,7 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 
 -  **307 Temporary Redirect** ：临时重定向，与 302 的含义类似，但是 307 要求浏览器不会把重定向请求的 POST 方法改成 GET 方法。
 
-## 4XX 客户端错误
+### 4XX 客户端错误
 
 -  **400 Bad Request** ：请求报文中存在语法错误。
 
@@ -92,7 +117,7 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 
 -  **404 Not Found** 
 
-## 5XX 服务器错误
+### 5XX 服务器错误
 
 -  **500 Internal Server Error** ：服务器正在执行请求时发生错误。
 
@@ -113,9 +138,9 @@ HTTP/1.1 虽然是无状态协议，但是为了实现期望的保持状态的�
 | 203 | Success（成功状态码）|Non-Authoritative Information（非权威信息）| 服务器已将事务成功处理，只是实体首部包含的信息不是来自原始服务器，而是来自资源的副本|
 | 204 | Success（成功状态码）|No Content（没有内容）| 响应报文包含一些首部和一个状态行，**但不包含实体的主体内容**，**一般在只需要从客户端往服务器发送信息，而对客户端不需要发送新信息内容的情况下使用**|❤|
 | 205 | Success（成功状态码）|Reset Content（重置内容）| 另一个主要用于浏览器的代码。意思是浏览器应该重置当前页面上所有的 HTML 表单 |
-| 206 | Success（成功状态码） |Partial Content（部分内容）| 部分请求成功，<br>**响应报文中包含由 Content-Range 指定范围的实体内容**|❤|
+| 206 | Success（成功状态码） |Partial Content（部分内容）| 成功执行了一个部分或者 Range (范围)请求，客户端可以通过一些特殊的首部来获取部分或某个范围内的文档<br>**响应报文中包含由 Content-Range、Date、以及 ETag 或者 Content-Location 指定范围的实体内容**|❤|
 |||||
-|300| Redirection（重定向状态码） |Multiple Choices（多项选择）| 客户端请求了实际指向多个资源的 URL。这个代码是和一个选项列表一起返回的，然后用户就可以 选择他希望使用的选项了| 
+|300| Redirection（重定向状态码） |Multiple Choices（多项选择）| 客户端请求了实际指向多个资源的 URL。这个代码是和一个选项列表一起返回的，然后用户就可以选择他希望使用的选项了。服务器可以在 Location 首部包含首选 URL| 
 |301| Redirection（重定向状态码） | Moved Permanently（永久移除）| **永久性重定向**，请求的 URL 已移走。响应中应该包含一个 Location URL，说明资源现在所处的位置|❤|
 |302| Redirection（重定向状态码）| Found（已找到）| **临时性重定向**，与状态码 301 类似， 但这里的移除是临时的。客户端应该用 Location 首部给出的 URL 对资源进行临时定位|❤|
 |303| Redirection（重定向状态码）| See Other（参见其他）| 告诉客户端应该用另一个 URL 获取资源。这个新的 URL 位于响应报文的 Location 首部。303 状态码 和 302 状态码有相同的功能，**但是 303 明确表示客户端应采用 GET 方法获取资源**。|❤|
@@ -174,17 +199,364 @@ webDAV 新增状态码
 HTTP 仔细地给每种要通过 Web 传输的对象都打上了名为 MIME 类型（MIME type）的数据格式标签。最初设计 MIME（Multipurpose Internet Mail Extension，多用途因特网邮件扩展）是为了解决在不同的电子邮件系统之间搬移报文时存在的问题。MIME 在电子邮件系统中工作得非常好，因此 HTTP 也采纳了它，用它来描述并标记多媒体内容。
 
 
+RFC2045，“ MIME: Format of Internet Message Bodies”（“ MIME：因特网报文主体的格式”）
+
+
+常见的主 MIME 类型
+
+| 类型| 描述 | 
+| :---: | :---: |
+|application |应用程序特有的内容格式（离散类型）|
+|audio| 音频格式（离散类型） |
+|chemical |化学数据集（离散 IETF 扩展类型）| 
+|image| 图片格式（离散类型） |
+|message |报文格式（复合类型）| 
+|model| 三维模型格式（离散 IETF 扩展类型）| 
+|multipart |多部分对象集合（复合类型）|
+| text |文本格式（离散类型）| 
+|video |视频电影格式（离散类型）|
+
 
 
 
 ## HTTP 报文结构
+
+<p align='center'>
+<img src='../images/HTTP 报文结构.png'>
+</p>
+
+
+<p align='center'>
+<img src='../images/请求报文.png'>
+</p>
+
+
+<p align='center'>
+<img src='../images/响应报文.png'>
+</p>
+
+
+<p align='center'>
+<img src='../images/报文实例.png'>
+</p>
+
+
+举个例子：
+
+
+```
+
+General:
+
+Request URL: https://github.com/halfrost
+Request Method: GET
+Status Code: 200 OK
+Remote Address: 127.0.0.1:6152
+Referrer Policy: no-referrer-when-downgrade
+
+
+```
+
+
+Response Headers:
+
+<p align='center'>
+<img src='../images/HTTP_ResponseMessageExample.png'>
+</p>
+
+
+```
+
+
+HTTP/1.1 200 OK
+Date: Sun, 22 Apr 2018 15:47:27 GMT
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Server: GitHub.com
+Status: 200 OK
+Cache-Control: no-cache
+Vary: X-Requested-With
+Set-Cookie: user_session=GYkmjrs9T6H9r16Gx85; path=/; expires=Sun, 06 May 2018 15:47:27 -0000; secure; HttpOnly
+Set-Cookie: __Host-user_session_same_site=GYkmjre6H9r16Gx85; path=/; expires=Sun, 06 May 2018 15:47:27 -0000; secure; HttpOnly; SameSite=Strict
+Set-Cookie: _gh_sess=OHppNS84T05ubXZFS2swUm9SUlBqdXNpWlA2bHZZ3alUyUGNLZ0pqMD0tLTNLWDI0K1pTUUFlaWJUVU5XUTJaNFE9PQ%3D%3D--74346822d2bf179f6ff73ce52c8b8606c8f78755; path=/; secure; HttpOnly
+X-Request-Id: 855feee9-5be2-482f-911a-b0eb22d55088
+X-Runtime: 0.170448
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+X-Frame-Options: deny
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Expect-CT: max-age=2592000, report-uri="https://api.github.com/_private/browser/errors"
+Content-Security-Policy: default-src 'none'; base-uri 'self'; block-all-mixed-content; child-src render.githubusercontent.com; connect-src 'self' uploads.github.com status.github.com collector.githubapp.com api.github.com www.google-analytics.com github-cloud.s3.amazonaws.com github-production-repository-file-5c1aeb.s3.amazonaws.com github-production-upload-manifest-file-7fdce7.s3.amazonaws.com github-production-user-asset-6210df.s3.amazonaws.com wss://live.github.com; font-src assets-cdn.github.com; form-action 'self' github.com gist.github.com; frame-ancestors 'none'; img-src 'self' data: assets-cdn.github.com identicons.github.com collector.githubapp.com github-cloud.s3.amazonaws.com *.githubusercontent.com; manifest-src 'self'; media-src 'none'; script-src assets-cdn.github.com; style-src 'unsafe-inline' assets-cdn.github.com
+X-Runtime-rack: 0.175479
+Content-Encoding: gzip
+Vary: Accept-Encoding
+X-GitHub-Request-Id: B706:3019:355B8D9:52B9B00:5ADCAE85
+
+
+```
+
+
+Request Headers:
+
+
+<p align='center'>
+<img src='../images/HTTP_RequestMessageExample.png'>
+</p>
+
+
+```
+
+
+GET /halfrost HTTP/1.1
+Host: github.com
+Connection: keep-alive
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.117 Mobile Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+Referer: https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP.md
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+Cookie: _octo=GH1.1.101205900.1486965233; logged_in=yes; dotcom_user=halfrost; _ga=GA1.2.183217117.1486965233; user_session=GYkmjrs9Ts80x85; __Host-user_session_same_site=GYkmjrs9THGx85; tz=Asia%2FShanghai; _gat=1; _gh_sess=S1JyM0tEbTVEcU50OXRERmUwOVlqRVZiQWp5SDlBeWt3RitrbEczRkxjaWVLWWNVc2k4YjhBTDVQT3BZajEwSGRJOEE2bz0tLVNLRHhiTlVDN2xEUXJ1OFM1ME1VeVE9PQ%3D%3D--59dc56a889d38d30125fbee36df9dab97e7a46c0
+
+
+```
+
 
 请求报文是由请求方法，请求 URI，协议版本，可选请求首部字段和内容实体构成的。
 
 响应报文基本上由协议版本，状态码（表示请求成功与失败的数字代码），用以解释状态码的原因短语，可选的响应首部字段以及实体主体构成。
 
 
+### 1. 通用首部
 
+| 首部 | 描述 | 
+| :---: | :---: |
+|Cache-Control|控制缓存的行为，用于随报文传送缓存的指示|
+|Connection| 允许客户端和服务器指定与请求/响应连接有关的选项| 
+|Date| 提供日期和时间标志，说明报文是什么时间创建的 |
+|Pragma|报文指令，另一种随报文传送指示的方式，但并不专用于缓存|
+|MIME-Version |给出了发送端使用的 MIME 版本 |
+|Trailer| 如果报文采用了分块传输编码（chunked transfer encoding）方式，就可以用这个首部列出位于报文拖挂（trailer）部分 的 首部集合 |
+|Transfer- Encoding |告知接收端为了保证报文的可靠传输，对报文采用了什么编码方式 |
+|Update| 给出了发送端可能想要 “升级” 使用的新版本或协议|
+|Via |显示了报文经过的中间节点（代理、网关）|
+|Warning| 错误通知|
+
+
+Cache-Control 首部功能很强大。服务器和客户端都可以用它来说明新鲜度，并且除了使用期或过期时间之外，还有很多指令可用。 
+
+
+| 指令 | 参数 | 报文类型 | 说明 | 
+| :---: | :---: | :---: | :---: |
+|no-cache ||请求| 在重新向服务器验证之前，不要返回文档的缓存副本 |
+|no-store|| 请求| 不要返回文档的缓存副本。不要保存服务器的响应 |
+|max-age = [秒]|必须| 请求 |缓存中的文档不能超过指定的使用期 |
+|max-stale ( = [秒]) |可省略|请求| 文档允许过期（根据服务器提供的过期信息计算），但不能超过指令中指定的过期值 |
+|min-fresh = [秒]|必须|请求| 文档的使用期不能小于这个指定的时间与它的当前存活时间之和。换句话说，响应必须至少在指定的这段时间之内保持新鲜 |
+|no-transform|| 请求| 文档在发送之前不允许被转换 |
+|only-if-cached ||请求| 只有当文档在缓存中才发送，不要联系原始服务器 |
+|cache-extension||请求|新指令标记（token）|
+|||||
+|public ||响应| 响应可以被任何服务器缓存 |
+|private |可省略|响应 |响应可以被缓存，但只能被单个客户端访问 |
+|no-cache |可省略|响应 |如果该指令伴随一个首部列表的话，那么内容可以被缓存并提供给客户端，但必须先删除所列出的首部。如果没有指定首部，缓存中的副本在没有重新向服务器验证之前不能提供给客户端 |
+|no-store ||响应 |响应不允许被缓存 |
+|no-transform ||响应| 响应在提供给客户端之前不能做任何形式的修改 |
+|must-revalidate ||响应| 响应在提供给客户端之前必须重新向服务器验证 |
+|proxy-revalidate ||响应 |共享的缓存在提供给客户端之前必须重新向原始服务器验证。私有的缓存可以忽略这条指令|
+| max-age = [秒]|必须|响应| 指定文档可以被缓存的时间以及新鲜度的最长时间|
+|s-max-age = [秒] |必须|响应 |指定文档作为共享缓存时的最长使用时间（如果有 max-age 指令的话，以本指令为准）。私有的缓存可以忽略本指令|
+|cache-extension||响应|新指令标记（token）|
+
+
+
+> no-cache 和 no-store 的区别：no-cache 代表不缓存过期的资源，缓存会向源服务器进行有效期确认后再处理资源。no-store 才是真正的不缓存。
+
+
+### 2. 请求首部
+
+### 请求信息性首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Client-IP4| 提供了运行客户端的机器的 IP 地址|
+|From| 提供了客户端用户的 E-mail 地址 |
+|Host |给出了接收请求的服务器的主机名和端口号 |
+|Referer |提供了包含当前请求 URI 的文档的 URL |
+|UA-Color |提供了与客户端显示器的显示颜色有关的信息 |
+|UA-CPU |给出了客户端 CPU 的类型或制造商 |
+|UA-Disp |提供了与客户端显示器（屏幕）能力有关的信息| 
+|UA-OS |给出了运行在客户端机器上的操作系统名称及版本 |
+|UA-Pixels |提供了客户端显示器的像素信息 |
+|User-Agent |将发起请求的应用程序名称告知服务器|
+
+### Accept 首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Accept |告诉服务器能够发送哪些媒体类型 |
+|Accept- Charset |告诉服务器能够发送哪些字符集 |
+|Accept- Encoding |告诉服务器能够发送哪些编码方式 |
+|Accept- Language |告诉服务器能够发送哪些语言 |
+|TE | 告诉服务器可以使用哪些扩展传输的编码|
+
+
+
+### 条件请求首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Expect |允许客户端列出某请求所要求的服务器行为 |
+|If-Match| 如果实体标记与文档当前的实体标记相匹配，就获取这份文档 |
+|If-Modified-Since |除非在某个指定的日期之后资源被修改过，否则就限制这个请求 |
+|If-None-Match |如果提供的实体标记与当前文档的实体标记不相符，就获取文档 |
+|If-Range |允许对文档的某个范围进行条件请求 |
+|If-Unmodified-Since| 除非在某个指定日期之后资源没有被修改过，否则就限制这个请求 |
+|Range |如果服务器支持范围请求，就请求资源的指定范围|
+
+### 安全请求首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Authorization |包含了客户端提供给服务器，以便对其自身进行认证的数据 |
+|Cookie |客户端用它向服务器传送一个令牌 —— 它并不是真正的安全首部，但确实隐含了安全功能 |
+| Cookie | 用来说明请求端支持的 cookie 版本|
+
+ 
+### 代理请求首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Max-Forward |在通往源端服务器的路径上，将请求转发给其他代理或网关的最大次数 —— 与 TRACE 方法一同使用 |
+|Proxy-Authorization |与 Authorization 首部相同， 但这个首部是在与代理进行认证时使用的 |
+|Proxy-Connection |与 Connection 首部相同， 但这个首部是在与代理建立连接时使用的|
+
+
+### 3. 响应首部
+
+### 响应信息性首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Age |（从最初创建开始）响应持续时间 |
+|Public | 服务器为其资源支持的请求方法列表 |
+|Retry-After |如果资源不可用的话，在此日期或时间重试 Server 服务器应用程序软件的名称和版本 |
+|Title | 对 HTML 文档来说，就是 HTML 文档 的源端给出的标题 |
+|Warning| 比原因短语中更详细一些的警告报文|
+
+
+### 协商首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Accept-Ranges |对此资源来说，服务器可接受的范围类型 |
+|Vary |服务器查看的其他首部的列表，可能会使响应发生变化；也就是说，这是一个首部列表，服务器会根据这些首部的内容挑选出最适合的资源 版本发送给客户端|
+
+### 安全响应首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Proxy-Authenticate| 来自代理的对客户端的质询列表 |
+|Set-Cookie |不是真正的安全首部，但隐含有安全功能；可以在客户端设置一个令牌，以便服务器对客户端进行标识 |
+|Set-Cookie2 |与 Set-Cookie 类似，RFC 2965 Cookie 定义； |
+|WWW-Authenticate| 来自服务器的对客户端的质询列表|
+
+
+
+### 4. 实体首部
+
+
+### 实体信息性首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Allow |列出了可以对此实体执行的请求方法 |
+|Location |告知客户端实体实际上位于何处；用于将接收端定向到资源的（可能是新的）位置（URL）上去|
+
+
+### 内容首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|Content-Base16 |解析主体中的相对 URL 时使用的基础 URL |
+|Content-Encoding |对主体执行的任意编码方式 |
+|Content-Language| 理解主体时最适宜使用的自然语言 |
+|Content-Length |主体的长度或尺寸|
+| Content-Location |资源实际所处的位置 |
+|Content-MD5 |主体的 MD5 校验和|
+| Content-Range |在整个资源中此实体表示的字节范围 |
+|Content-Type |这个主体的对象类型|
+
+
+### 实体缓存首部
+
+| 首部 | 描述 | 
+| :---: | :---: |
+|ETag |与此实体相关的实体标记 |
+|Expires |实体不再有效，要从原始的源端再次获取此实体的日期和时间 |
+|Last-Modified |这个实体最后一次被修改的日期和时间|
+
+
+
+
+
+
+
+### 5. 扩展首部
+
+
+
+
+
+
+
+
+
+
+HTTP 首部字段将定义成缓存代理和非缓存代理的行为，分为 端到端首部（End-to-end Header）、逐跳首部（Hop-by-hop Header）
+
+- 端到端首部：分在此类别中的首部会转发给请求 / 响应对应的最终接收目标，且必须保存在由缓存生成的相应中，另外规定它必须被转发。
+- 逐跳首部：分在此类别中的首部只对单次转发有效，会因通过缓存或代理而不再转发。HTTP/1.1 和之后版本中，如果要使用 hop-by-hop 首部，需提供 Connection 首部字段。（Connection、Keep-Alive、Proxy-Authenticate、Proxy-Authorization、Trailer、TE、Transfer-Encoding、Upgrade 这 8 个首部字段属于逐跳首部，除此以外的字段都属于端到端首部）
+
+
+## 提高 HTTP 性能
+
+### 1. 并行连接
+
+通过多条 TCP 连接发起并发的 HTTP 请求。
+
+### 2. 持久连接 
+
+重用 TCP 连接，以消除连接及关闭的时延。 持久连接（HTTP Persistent Connections），也称为 HTTP keep-alive 或者 HTTP connection reuse 。
+
+在 HTTP/1.1 中，所有的连接默认都是持久连接。但是服务器端不一定都能够支持持久连接，所以除了服务端，客户端也需要支持持久连接。
+
+
+### 3. 管道化连接 
+
+通过共享的 TCP 连接发起并发的 HTTP 请求。
+
+持久连接使得多数请求以管线化（pipelining）方式发送成为可能。以前发送请求后需要等待并收到响应，才能发送下一个请求。管线化技术出现后，不用等待响应，直接发送下一个请求。
+
+比如当请求一个包含 10 张图片的 HTML Web 页面，与挨个连接相比，用持久连接可以让请求更快结束。而管线化技术则比持久连接还要快。请求数越多，时间差就越明显。
+
+
+### 4. 复用的连接
+
+交替传送请求和响应报文（实验阶段）。
+
+
+
+## 常见内容编码
+
+常用的内容编码有以下几种：
+
+- gzip（GNU zip）
+- compress（UNIX 系统的标准压缩）
+- deflate（zlib）
+- identity（不进行编码）
 
 
 
