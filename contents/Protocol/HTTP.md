@@ -265,8 +265,7 @@ Response Headers:
 </p>
 
 
-```
-
+```  
 
 HTTP/1.1 200 OK
 Date: Sun, 22 Apr 2018 15:47:27 GMT
@@ -307,7 +306,6 @@ Request Headers:
 
 ```
 
-
 GET /halfrost HTTP/1.1
 Host: github.com
 Connection: keep-alive
@@ -336,13 +334,14 @@ Cookie: _octo=GH1.1.101205900.1486965233; logged_in=yes; dotcom_user=halfrost; _
 |Cache-Control|控制缓存的行为，用于随报文传送缓存的指示|
 |Connection| 允许客户端和服务器指定与请求/响应连接有关的选项| 
 |Date| 提供日期和时间标志，说明报文是什么时间创建的 |
-|Pragma|报文指令，另一种随报文传送指示的方式，但并不专用于缓存|
+|Pragma|报文指令，另一种随报文传送指示的方式，但并不专用于缓存。Pragma 是 HTTP/1.1 之前版本的历史遗留字段，仅作为与 HTTP/1.0 的向后兼容而定义。如果想要所有的服务器保持相同的行为，可以考虑发送 Pragma 指令。例如：Pragma: no-cache Cache-Control: no-cache|
 |MIME-Version |给出了发送端使用的 MIME 版本 |
-|Trailer| 如果报文采用了分块传输编码（chunked transfer encoding）方式，就可以用这个首部列出位于报文拖挂（trailer）部分 的 首部集合 |
+|Trailer| 如果报文采用了分块传输编码（chunked transfer encoding）方式，就可以用这个首部列出位于报文拖挂（trailer）部分的首部集合 |
 |Transfer- Encoding |告知接收端为了保证报文的可靠传输，对报文采用了什么编码方式 |
 |Update| 给出了发送端可能想要 “升级” 使用的新版本或协议|
 |Via |显示了报文经过的中间节点（代理、网关）|
 |Warning| 错误通知|
+
 
 
 Cache-Control 首部功能很强大。服务器和客户端都可以用它来说明新鲜度，并且除了使用期或过期时间之外，还有很多指令可用。 
@@ -375,6 +374,45 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 > no-cache 和 no-store 的区别：no-cache 代表不缓存过期的资源，缓存会向源服务器进行有效期确认后再处理资源。no-store 才是真正的不缓存。
 
 
+no-cache 并不代表完全的禁用缓存，而是代表会每次去核对服务端的 Etag，如果相同，那么就不会去服务端下载完整的资源，返回一个 304 Not Modified。（最长缓存 3 年）
+
+no-store 才是真正的禁用缓存，它表示每次服务端都会去下载最新的资源。（当然，通常似乎都用不上）。
+
+public 和 private 的差别主要在于如果是有用户认证环节的页面，设置为private 就只有终端浏览器会缓存，中间 CDN 并不会缓存，而设置为 public，则会在每一个环节缓存。默认不需要设置 public，因为 max-age 已经表明可以由各个环节缓存了（单位为秒）。此刻如果命中缓存，则不会再去请求服务器核对 Etag，而是直接返回 200(from disk)。
+
+当然，由于 public 会在每一个环节缓存，如果对修改更新预览又强需求的网页，那么最好不要使用这一缓存策略，否则还需要刷新 CDN 源，很麻烦。
+
+如果挑选缓存策略，可以见下图：
+
+<p align='center'>
+<img src='../images/cache-control.png'>
+</p>
+
+------------------------------------------------------------------
+
+
+Warning 首部是从 HTTP/1.0 的响应首部（Retry-After）演变过来的。该首部通常会告知用户一些与缓存相关的问题的警告。
+
+Warning 首部的格式如下：
+
+```
+Warning: [警告码][警告的主机：端口号]"[警告内容]"([日期内容])
+
+```
+
+HTTP/1.1 中定义了 7 种警告，警告码具备扩展性，今后可以能追加新的警告码。
+
+| 警告码 | 警告内容 | 说明 |
+| :---: | :---: | :---: |
+|110|Response is stale（响应已过期）| 代理返回已过期的资源|
+|111|Revalidation failed（再验证失败）|代理再验证资源有效性时失败（服务器无法到达等原因）|
+|112|Disconnection operation（断开连接操作）| 代理与互联网连接被故意切断|
+|113|Heuristic expiration（试探性过期）|响应的使用期超过 24 小时（有效缓存的设定时间大于 24 小时的情况下）|
+|199|Miscellaneous warning（杂项警告）|任意的警告内容|
+|214|Transformation applied（使用了转换）|代理对内容编码或媒体类型等执行了某些处理时|
+|299|Miscellaneous persistent warning（持久杂项警告）| 任意的警告内容|
+
+
 ### 2. 请求首部
 
 ### 请求信息性首部
@@ -384,7 +422,7 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 |Client-IP4| 提供了运行客户端的机器的 IP 地址|
 |From| 提供了客户端用户的 E-mail 地址 |
 |Host |给出了接收请求的服务器的主机名和端口号 |
-|Referer |提供了包含当前请求 URI 的文档的 URL |
+|Referer |提供了包含当前请求 URI 的文档的 URL（正确的拼写其实应该是Referrer ，大家一致沿用错误至今） |
 |UA-Color |提供了与客户端显示器的显示颜色有关的信息 |
 |UA-CPU |给出了客户端 CPU 的类型或制造商 |
 |UA-Disp |提供了与客户端显示器（屏幕）能力有关的信息| 
@@ -402,6 +440,19 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 |Accept- Language |告诉服务器能够发送哪些语言 |
 |TE | 告诉服务器可以使用哪些扩展传输的编码|
 
+
+常见内容编码
+
+常用的内容编码有以下几种：
+
+- gzip（GNU zip）  
+  由文件压缩程序 gzip（GNU zip）生成的编码格式（RFC1952），采用 Lempel-Ziv 算法（LZ77）及 32 位循环冗余校验（Cyclic Redundancy Check，统称 CRC）
+- compress（UNIX 系统的标准压缩）  
+  由 UNIX 文件压缩程序 compress 生成的编码格式，采用 Lempel-Ziv-Welch 算法 （LZW）
+- deflate（zlib）  
+  组合使用 zlib 格式（RFC1950）及由 deflate 压缩算法（RFC1951）生成的编码格式
+- identity（不进行编码）  
+  不执行压缩或不会变化的默认编码格式
 
 
 ### 条件请求首部
@@ -452,7 +503,7 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 | 首部 | 描述 | 
 | :---: | :---: |
 |Accept-Ranges |对此资源来说，服务器可接受的范围类型 |
-|Vary |服务器查看的其他首部的列表，可能会使响应发生变化；也就是说，这是一个首部列表，服务器会根据这些首部的内容挑选出最适合的资源 版本发送给客户端|
+|Vary |服务器查看的其他首部的列表，可能会使响应发生变化；也就是说，这是一个首部列表，服务器会根据这些首部的内容挑选出最适合的资源版本发送给客户端。首部字段 Vary 可对缓存进行控制。源服务器会向代理服务器传达关于本地缓存使用方法的命令。从代理服务器接收到源服务器返回包含 Vary 指定项的响应之后，若再进行缓存，仅对请求中含有相同 Vary 指定首部字段的请求返回缓存。即使对相同资源发起请求，但由于 Vary 指定的首部字段不相同，因此必须要从源服务器重新获取资源。|
 
 ### 安全响应首部
 
@@ -461,9 +512,17 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 |Proxy-Authenticate| 来自代理的对客户端的质询列表 |
 |Set-Cookie |不是真正的安全首部，但隐含有安全功能；可以在客户端设置一个令牌，以便服务器对客户端进行标识 |
 |Set-Cookie2 |与 Set-Cookie 类似，RFC 2965 Cookie 定义； |
-|WWW-Authenticate| 来自服务器的对客户端的质询列表|
+|WWW-Authenticate| 来自服务器的对客户端的质询列表。它会告知客户端适用于访问请求 URI 所指定资源的认证方案（Basic 或是 Digest）和带参数提示的质询（challenge）|
 
 
+Cookie 的 HttpOnly 属性是 Cookie 的扩展功能，它使 JavaScript 脚本无法获得 Cookie。其主要目的为了防止跨站脚本攻击（Cross-site scripting，XSS）对 Cookie 的信息窃取。
+
+```
+Set-Cookie: name-value;HttpOnly
+
+```
+
+顺带一提，该扩展并非是为了防止 XSS 而开发的。
 
 ### 4. 实体首部
 
@@ -490,6 +549,8 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 |Content-Type |这个主体的对象类型|
 
 
+由于 HTTP 首部无法记录二进制值，所以要通过 Base-64 编码处理。采用 Content-MD5 这种方法，对内容上的偶发性改变是无从查证的，也无法检测出恶意篡改。原因在于，内容如果被篡改了，那么同时意味着 Content-MD5 也可以被重新计算后更新，被篡改。所以处在接收阶段的客户端是无法意识到报文主体以及首部字段 Content-MD5 是已经被篡改过的。
+
 ### 实体缓存首部
 
 | 首部 | 描述 | 
@@ -499,7 +560,27 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 |Last-Modified |这个实体最后一次被修改的日期和时间|
 
 
+如果两者的 URI 是相同，所以仅凭 URI 指定缓存的资源是很困难的。若下载过程中出现连续中断、再连接的情况，都会依据 ETag 值指定资源。
 
+ETag 也分为强 ETag 值和弱 ETag 值：
+
+强 ETag 值：
+
+强 ETag 值，不论实体发生多少细微的变化都会改变其值。
+
+```  
+ETag: "usagi-1234"
+
+```
+
+弱 ETag 值：
+
+弱 ETag 值只用于提示资源是否相同。只有资源发生了根本改变，产生差异时才会改变 ETag 值。这时，会在字段值最开始处附加 W/
+
+```  
+ETag: W/"usagi-1234"
+
+```
 
 
 
@@ -507,11 +588,23 @@ Cache-Control 首部功能很强大。服务器和客户端都可以用它来说
 ### 5. 扩展首部
 
 
+### （1）X-Frame-Options
 
+首部字段 X-Frame-Options 属于 HTTP 响应首部，用于控制网站内容在其他 Web 网站的 Frame 标签内的显示问题。其主要目的是为了防止点击劫持（clickjacking）攻击。
 
+### （2）X-XSS-Protection
 
+首部字段 X-XSS-Protection 属于 HTTP 响应首部，它是针对跨站脚本攻击（XSS）的一种对策，用于控制浏览器 XSS 防护机制的开关。0：将 XSS 过滤设置成无效状态，1：将 XSS 过滤设置成有效状态。
 
+### （3）DNT
 
+首部字段 DNT 属于 HTTP 请求首部，其中 DNT 是 Do Not Track 的简称，意为拒绝个人信息被收集，是表示拒绝被精准广告追踪的一种方法。0：同意被追踪，1：拒绝被追踪。
+
+### （4）P3P
+
+首部字段 P3P 属于 HTTP 响应首部，通过利用 P3P（The Platform for Privacy Preferences，在线隐私偏好平台）技术，可以让 Web 网站上的个人隐私变成一种仅供程序可理解的形式，以达到保护用户隐私的目的。
+
+>在 HTTP 等多种协议中，通过给非标准参数加上前缀 X- ，来区别于标准参数，并使那些非标准的参数作为扩展变成可能。但是这种简单粗暴的做法有百害而无一益，因此在 “RFC6648 - Deprecating the "X-" Prefix and Similar Constructs in Application Protocols ”中提议停止该做法。然而，对已经在使用中的 X- 前缀来说，不应该要求其变更。
 
 
 
@@ -549,14 +642,7 @@ HTTP 首部字段将定义成缓存代理和非缓存代理的行为，分为 �
 
 
 
-## 常见内容编码
 
-常用的内容编码有以下几种：
-
-- gzip（GNU zip）
-- compress（UNIX 系统的标准压缩）
-- deflate（zlib）
-- identity（不进行编码）
 
 
 
@@ -567,8 +653,8 @@ HTTP 首部字段将定义成缓存代理和非缓存代理的行为，分为 �
 
 Reference：  
 《图解 HTTP》  
-《HTTP 权威指南》
-
+《HTTP 权威指南》  
+RFC2616
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
