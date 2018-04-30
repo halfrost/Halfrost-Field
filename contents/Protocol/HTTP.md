@@ -759,27 +759,275 @@ HTTP/1.1 的解析是基于文本的，而 HTTP/2.0 采用二进制格式。
  
 出于安全原因，浏览器限制从脚本内发起的跨源HTTP请求。 例如，XMLHttpRequest和Fetch API遵循同源策略。 这意味着使用这些API的Web应用程序只能从加载应用程序的同一个域请求HTTP资源，除非使用CORS头文件。
 
-  （译者注：这段描述跨域不准确，跨域并非不一定是浏览器限制了发起跨站请求，而也可能是跨站请求可以正常发起，但是返回结果被浏览器拦截了。最好的例子是 CSRF 跨站攻击原理，请求是发送到了后端服务器无论是否跨域！注意：有些浏览器不允许从 HTTPS 的域跨域访问 HTTP，比如  Chrome 和 Firefox，这些浏览器在请求还未发出的时候就会拦截请求，这是一个特例。）
+（译者注：跨域并不一定是浏览器限制了发起跨站请求，也可能是跨站请求可以正常发起，但是返回结果被浏览器拦截了。最好的例子是 CSRF 跨站攻击原理，请求是发送到了后端服务器无论是否跨域！注意：有些浏览器不允许从 HTTPS 的域跨域访问 HTTP，比如  Chrome 和 Firefox，这些浏览器在请求还未发出的时候就会拦截请求，这是一个特例。）
   
   
+  
+<p align='center'>
+<img src='../images/CORS_principle.png'>
+</p>
 
-CORS和JSONP对比
+隶属于 W3C 的 Web 应用工作组推荐了一种新的机制，即跨源资源共享（Cross-Origin Resource Sharing ) CORS。这种机制让Web应用服务器能支持跨站访问控制，从而使得安全地进行跨站数据传输成为可能。需要特别注意的是，这个规范是针对API容器的（比如说XMLHttpReques 或者 Fetch），以减轻跨域HTTP请求的风险。**CORS 需要客户端和服务器同时支持。目前，所有浏览器都支持该机制。 **
 
-JSONP只能实现GET请求，而CORS支持所有类型的HTTP请求。
+跨域资源共享标准（ cross-origin sharing standard ）允许在下列场景中使用跨域 HTTP 请求：
 
-使用CORS，开发者可以使用普通的XMLHttpRequest发起请求和获得数据，比起JSONP有更好的错误处理。
+- 前文提到的由 XMLHttpRequest 或 Fetch 发起的跨域 HTTP 请求。
+- Web 字体 (CSS 中通过 @font-face 使用跨域字体资源), 因此，网站就可以发布 TrueType 字体资源，并只允许已授权网站进行跨站调用。
+- WebGL 贴图
+- 使用 drawImage 将 Images/video 画面绘制到 canvas
+- 样式表（使用 CSSOM）
+- Scripts (未处理的异常)
 
-JSONP主要被老的浏览器支持，它们往往不支持CORS，而绝大多数现代浏览器都已经支持了CORS）。
+把CORS分为：简单请求、预请求和附带凭证信息的请求。
 
-CORS与JSONP相比，无疑更为先进、方便和可靠。
+
+### 1. 简单请求
+
+某些请求不会触发 CORS 预检请求。本文称这样的请求为“简单请求”，请注意，该术语并不属于 Fetch （其中定义了 CORS）规范。若请求满足所有下述条件，则该请求可视为“简单请求”：
+
+
+(1). 使用下列方法之一：  
+
+- GET
+- HEAD
+- POST
+
+  
+(2). Fetch 规范定义了对 CORS 安全的首部字段集合，不得人为设置该集合之外的其他首部字段。该集合为：
+
+Accept  
+Accept-Language  
+Content-Language  
+Content-Type （需要注意额外的限制）  
+DPR  
+Downlink  
+Save-Data  
+Viewport-Width  
+Width  
+
+(3). Content-Type 的值仅限于下列三者之一：  
+
+- text/plain
+- multipart/form-data
+- application/x-www-form-urlencoded
+
+(4). 请求中的任意XMLHttpRequestUpload 对象均没有注册任何事件监听器；XMLHttpRequestUpload 对象可以使用 XMLHttpRequest.upload 属性访问。
+
+(5). 请求中没有使用 ReadableStream 对象。
+
+
+简单来说，重点需要记住的就是两点：
+
+**（1）只使用 GET, HEAD 或者 POST 请求方法。如果使用 POST 向服务器端传送数据，则数据类型(Content-Type)只能是 application/x-www-form-urlencoded, multipart/form-data 或 text/plain中的一种。  
+（2）不会使用自定义请求头（类似于 X-Modified 这种）。**
+
+
+
+举例：
+
+```javascript
+
+//比如说，假如站点 http://foo.example 的网页应用想要访问 http://bar.other 的资源。以下的 JavaScript 代 
+//码应该会在 foo.example 上执行：    
+var invocation = new XMLHttpRequest();
+var url = 'http://bar.other/resources/public-data/';
+function callOtherDomain() {
+  if(invocation) {    
+    invocation.open('GET', url, true);
+    invocation.onreadystatechange = handler;
+    invocation.send(); 
+  }
+}
+
+```
+
+<p align='center'>
+<img src='../images/example_0.png'>
+</p>
+
+
+```javascript
+
+//让我们看看，在这个场景中，浏览器会发送什么的请求到服务器，而服务器又会返回什么给浏览器：
+GET /resources/public-data/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 
+Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+Referer: http://foo.example/examples/access-control/simpleXSInvocation.html
+Origin: http://foo.example //该请求来自于 http://foo.exmaple。
+//以上是浏览器发送请求
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 00:23:53 GMT
+Server: Apache/2.0.61 
+Access-Control-Allow-Origin: * //这表明服务器接受来自任何站点的跨站请求。如果设置为http://foo.example。其它站点就不能跨站访问 http://bar.other 的资源了。
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Transfer-Encoding: chunked
+Content-Type: application/xml
+//以上是服务器返回信息给浏览器
+
+```
+
+以下情况，请求会返回相关响应信息
+
+- 如果资源是允许公开访问的(就像任何允许GET访问的 HTTP资源),返回Access-Control-Allow-Origin:*头信息就足够了,除非是一些需要Cookies和HTTP身份验证信息的请求。  
+- 如果资源访问被限制基于相同的域名,或者如果要访问的资源需要凭证(或设置凭证),那么就有必要对请求头信息中的ORIGIN进行过滤,或者至少响应请求的来源(例如Access-Control-Allow-Origin:http://arunranga.com)。另外,将发送Access-Control-Allow-Credentials:TRUE头信息，这在后续部分将进行讨论。
+
+### 2. 预请求
+
+与前述简单请求不同，“需预检的请求”要求必须首先使用 OPTIONS   方法发起一个预检请求到服务器，以获知服务器是否允许该实际请求。"预检请求“的使用，可以避免跨域请求对服务器的用户数据产生未预期的影响。
+
+当请求满足下述任一条件时，即应首先发送预检请求：
+
+(1). 使用了下面任一 HTTP 方法：  
+
+PUT  
+DELETE  
+CONNECT  
+OPTIONS  
+TRACE  
+PATCH  
+
+(2). 人为设置了对 CORS 安全的首部字段集合之外的其他首部字段。该集合为：
+
+Accept  
+Accept-Language  
+Content-Language  
+Content-Type (but note the additional requirements below)  
+DPR  
+Downlink  
+Save-Data  
+Viewport-Width  
+Width  
+
+(3). Content-Type 的值不属于下列之一:  
+
+application/x-www-form-urlencoded  
+multipart/form-data  
+text/plain  
+
+(4). 请求中的XMLHttpRequestUpload 对象注册了任意多个事件监听器。  
+(5). 请求中使用了ReadableStream对象。
+
+
+不同于上面讨论的简单请求，“预请求”要求必须先发送一个 OPTIONS 请求给目的站点，来查明这个跨站请求对于目的站点是不是安全可接受的。这样做，是因为跨站请求可能会对目的站点的数据造成破坏。 当请求具备以下条件，就会被当成预请求处理：
+
+**（1）请求以 GET, HEAD 或者 POST 以外的方法发起请求。或者，使用 POST，但请求数据为 application/x-www-form-urlencoded, multipart/form-data 或者 text/plain 以外的数据类型。比如说，用 POST 发送数据类型为 application/xml 或者 text/xml 的 XML 数据的请求。  
+（2）使用自定义请求头（比如添加诸如 X-PINGOTHER）**
+
+
+举个例子：
+
+```javascript
+var invocation = new XMLHttpRequest();
+var url = 'http://bar.other/resources/post-here/';
+var body = '{C}{C}{C}{C}{C}{C}{C}{C}{C}{C}Arun';
+function callOtherDomain(){
+  if(invocation){
+    invocation.open('POST', url, true);
+    invocation.setRequestHeader('X-PINGOTHER', 'pingpong');
+    invocation.setRequestHeader('Content-Type', 'application/xml');
+    invocation.onreadystatechange = handler;
+    invocation.send(body); 
+  }
+}
+
+```
+
+
+
+如上，以 XMLHttpRequest 创建了一个 POST 请求，为该请求添加了一个自定义请求头(X-PINGOTHER: pingpong)，并指定数据类型为 application/xml。所以，该请求是一个“预请求”形式的跨站请求。浏览器使用一个 OPTIONS 发送了一个“预请求”。Firefox 3.1 根据请求参数，决定需要发送一个“预请求”，来探明服务器端是否接受后续真正的请求。 OPTIONS 是 HTTP/1.1 里的方法，用来获取更多服务器端的信息，是一个不应该对服务器数据造成影响的方法。 随同 OPTIONS 请求，以下两个请求头一起被发送：
+
+```javascript
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: X-PINGOTHER
+
+```
+
+假设服务器成功响应返回部分信息如下：
+
+
+```javascript
+Access-Control-Allow-Origin: http://foo.example //表明服务器允许http://foo.example的请求
+Access-Control-Allow-Methods: POST, GET, OPTIONS //表明服务器可以接受POST, GET和 OPTIONS的请求方法
+Access-Control-Allow-Headers: X-PINGOTHER //传递一个可接受的自定义请求头列表。服务器也需要设置一个与浏览器对应。否则会报 Request header field X-Requested-With is not allowed by Access-Control-Allow-Headers in preflight response 的错误
+Access-Control-Max-Age: 1728000 //告诉浏览器，本次“预请求”的响应结果有效时间是多久。在上面的例子里，1728000秒代表着20天内，浏览器在处理针对该服务器的跨站请求，都可以无需再发送“预请求”，只需根据本次结果进行判断处理。
+
+```
+
+
+<p align='center'>
+<img src='../images/prelight.png'>
+</p>
+
+
+
+
+
+### 3. 附带凭证信息的请求
+
+Fetch 与 CORS 的一个有趣的特性是，可以基于  HTTP cookies 和 HTTP 认证信息发送身份凭证。一般而言，对于跨域 XMLHttpRequest 或 Fetch 请求，浏览器不会发送身份凭证信息。如果要发送凭证信息，需要设置 XMLHttpRequest 的某个特殊标志位。
+
+本例中，http://foo.example 的某脚本向 http://bar.other 发起一个GET 请求，并设置 Cookies：
+
+```javascript
+var invocation = new XMLHttpRequest();
+var url = 'http://bar.other/resources/credentialed-content/';
+    
+function callOtherDomain(){
+  if(invocation) {
+    invocation.open('GET', url, true);
+    invocation.withCredentials = true;
+    invocation.onreadystatechange = handler;
+    invocation.send(); 
+  }
+}
+
+```
+
+第 7 行将 XMLHttpRequest 的 withCredentials 标志设置为 true，从而向服务器发送 Cookies。因为这是一个简单 GET 请求，所以浏览器不会对其发起“预检请求”。但是，如果服务器端的响应中未携带 Access-Control-Allow-Credentials: true ，浏览器将不会把响应内容返回给请求的发送者。
+
+
+<p align='center'>
+<img src='../images/cred-req.png'>
+</p>
+
+假设服务器成功响应返回部分信息如下：
+
+```javascript
+Access-Control-Allow-Origin: http://foo.example
+Access-Control-Allow-Credentials: true
+Set-Cookie: pageAccess=3; expires=Wed, 31-Dec-2008 01:34:53 GMT
+```
+
+如果bar.other的响应头里没有Access-Control-Allow-Credentials：true，则响应会被忽略.。特别注意: 给一个带有withCredentials的请求发送响应的时候，服务器端必须指定允许请求的域名,不能使用“\*”。上面这个例子中，如果响应头是这样的 Access-Control-Allow-Origin：\* ，则响应会失败。在这个例子里,因为Access-Control-Allow-Origin的值是 http://foo.example 这个指定的请求域名，所以客户端把带有凭证信息的内容被返回给了客户端。另外注意，更多的cookie信息也被创建了。
+
+
+## 九. CORS 和 JSONP 对比
+
+- JSONP 只能实现 GET 请求，而 CORS 支持所有类型的 HTTP 请求。
+
+- 使用 CORS，开发者可以使用普通的 XMLHttpRequest 发起请求和获得数据，比起 JSONP 有更好的错误处理。
+
+- JSONP 主要被老的浏览器支持，它们往往不支持 CORS，而绝大多数现代浏览器都已经支持了 CORS）。
+
+- CORS 与 JSONP 相比，无疑更为先进、方便和可靠。
 
 
 ------------------------------------------------------
 
 Reference：  
-《图解 HTTP》  
-《HTTP 权威指南》  
-RFC2616
+《图解 HTTP》    
+《HTTP 权威指南》    
+[RFC2616](https://tools.ietf.org/html/rfc2616)  
+[HTTP访问控制（CORS）](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Access_control_CORS)  
+[跨域资源共享 CORS 详解](http://www.ruanyifeng.com/blog/2016/04/cors.html)
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
