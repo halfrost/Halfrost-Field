@@ -877,7 +877,8 @@ Content-Type: application/xml
 以下情况，请求会返回相关响应信息
 
 - 如果资源是允许公开访问的(就像任何允许GET访问的 HTTP资源),返回Access-Control-Allow-Origin:*头信息就足够了,除非是一些需要Cookies和HTTP身份验证信息的请求。  
-- 如果资源访问被限制基于相同的域名,或者如果要访问的资源需要凭证(或设置凭证),那么就有必要对请求头信息中的ORIGIN进行过滤,或者至少响应请求的来源(例如Access\-Control\-Allow\-Origin:http://arunranga.com)。另外,将发送Access\-Control\-Allow\-Credentials:TRUE头信息，这在后续部分将进行讨论。
+- 如果资源访问被限制基于相同的域名,或者如果要访问的资源需要凭证(或设置凭证),那么就有必要对请求头信息中的ORIGIN进行过滤,或者至少响应请求的来源(例如Access\-Control\-Allow\-Origin:http://arunranga.com)。  
+另外,将发送Access\-Control\-Allow\-Credentials:TRUE头信息，这在后续部分将进行讨论。
 
 ### 2. 预请求
 
