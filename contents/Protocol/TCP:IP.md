@@ -752,14 +752,14 @@ UDP 代表的知名端口：
 
 常用的函数有：
 
-socket()
-bind()
-listen()
-connect()
-accept()
-write()
-read()
-close()
+socket()  
+bind()  
+listen()  
+connect()  
+accept()  
+write()  
+read()  
+close()  
 
 ### Socket 的交互流程
 
