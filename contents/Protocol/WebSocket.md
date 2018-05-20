@@ -100,7 +100,10 @@ Google 的天才们使用一个称为 “htmlfile” 的 ActiveX 解决了在 IE
 
 ### 4. Server-Sent Events
 
-SSE 就是利用服务器向客户端申明，接下来要发送的是流信息（streaming），会连续不断地发送过来。这时，客户端不会关闭连接，会一直等着服务器发过来的新的数据流，可以类比视频流。SSE 就是利用这种机制，使用流信息向浏览器推送信息。它基于 HTTP 协议，目前除了 IE/Edge，其他浏览器都支持。
+服务器发送事件（SSE）也是 HTML5 公布的一种服务器向浏览器客户端发起数据传输的技术。一旦创建了初始连接，事件流将保持打开状态，直到客户端关闭。该技术通过传统的 HTTP 发送，并具有 WebSockets 缺乏的各种功能，例如自动重新连接、事件 ID 以及发送任意事件的能力。
+
+
+SSE 就是利用服务器向客户端声明，接下来要发送的是流信息（streaming），会连续不断地发送过来。这时，客户端不会关闭连接，会一直等着服务器发过来的新的数据流，可以类比视频流。SSE 就是利用这种机制，使用流信息向浏览器推送信息。它基于 HTTP 协议，目前除了 IE/Edge，其他浏览器都支持。
 
 SSE 是单向通道，只能服务器向浏览器发送，因为流信息本质上就是下载。
 
@@ -110,7 +113,6 @@ SSE 是单向通道，只能服务器向浏览器发送，因为流信息本质�
 Content-Type: text/event-stream
 Cache-Control: no-cache
 Connection: keep-alive
-
 ```
 
 上面三行之中，第一行的Content-Type必须指定 MIME 类型为event-steam
@@ -126,6 +128,10 @@ Connection: keep-alive
 <p align='center'>
 <img src='../images/SSE_use.png'>
 </p>
+
+
+
+
 
 以上是常见的四种基于流的做法，Iframe Streaming、XHR Streaming、Flash Streaming、Server-Sent Events。
 
@@ -174,7 +180,12 @@ Connection: keep-alive
 WebSocket 是 HTML5 开始提供的一种**独立**在单个 **TCP** 连接上进行**全双工通讯**的**有状态**的协议(它不同于无状态的 HTTP)，并且还能支持二进制帧、扩展协议、部分自定义的子协议、压缩等特性。
 
 
+**目前看来，WebSocket 是可以完美替代 AJAX 轮询和 Comet 。但是某些场景还是不能替代 SSE，WebSocket 和 SSE 各有所长！**
+
 ## 三. WebSocket 数据帧
+
+
+
 
 
 ------------------------------------------------------
