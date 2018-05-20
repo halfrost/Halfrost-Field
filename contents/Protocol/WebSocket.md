@@ -15,7 +15,7 @@
 
 WebSocket 是一种网络通信协议。在 2009 年诞生，于 2011 年被 IETF 定为标准 RFC 6455 通信标准。并由  RFC7936 补充规范。WebSocket API 也被 W3C 定为标准。
 
-WebSocket 是 HTML5 开始提供的一种在单个 TCP 连接上进行**全双工通讯的协议**。没有了  Request 和 Response 的概念，两者地位完全平等，连接一旦建立，就建立了真•持久性连接，双方可以随时向对方发送数据。
+WebSocket 是 HTML5 开始提供的一种在单个 TCP 连接上进行**全双工(full-duplex)通讯的协议**。没有了  Request 和 Response 的概念，两者地位完全平等，连接一旦建立，就建立了真•持久性连接，双方可以随时向对方发送数据。
 
 
 (HTML5 是 HTML 最新版本，包含一些新的标签和全新的 API。HTTP 是一种协议，目前最新版本是 HTTP/2 ，所以 WebSocket 和 HTTP 有一些交集，两者相异的地方还是很多。两者交集的地方在 HTTP 握手阶段，握手成功后，数据就直接从 TCP 通道传输。)
@@ -187,7 +187,514 @@ WebSocket 是 HTML5 开始提供的一种**独立**在单个 **TCP** 连接上�
 
 **目前看来，WebSocket 是可以完美替代 AJAX 轮询和 Comet 。但是某些场景还是不能替代 SSE，WebSocket 和 SSE 各有所长！**
 
-## 三. WebSocket 数据帧
+
+## 三. WebSocket 握手
+
+WebSocket 的 RFC6455 标准中制定了 2 个高级组件，一个是开放性 HTTP 握手用于协商连接参数，另一个是二进制消息分帧机制用于支持低开销的基于消息的文本和二进制数据传输。接下来就好好谈谈这两个高级组件，这一章节详细的谈谈握手的细节，下一个章节再谈谈二进制消息分帧机制。
+
+首先，在 RFC6455 中写了这样一段话：
+
+>WebSocket 协议尝试在既有 HTTP 基础设施中实现双向 HTTP 通信，因此 也使用 HTTP 的 80 和 443 端口......不过，这个设计不限于通过 HTTP 实现 WebSocket 通信，未来的实现可以在某个专用端口上使用更简单的握手，而 不必重新定义么一个协议。
+>										
+>——WebSocket Protocol RFC 6455
+
+
+从这段话中我们可看出制定 WebSocket 协议的人的“野心”或者说对未来的规划有多远，WebSocket 制定之初就已经支持了可以在任意端口上进行握手，而不仅仅是要依靠 HTTP 握手。
+
+不过目前用的对多的还是依靠 HTTP 进行握手。因为 HTTP 的基础设施已经相当完善了。
+
+
+### 标准的握手流程
+
+接下来看一个具体的 WebSocket 握手的例子。以笔者自己的网站 [https://threes.halfrost.com/](https://threes.halfrost.com/) 为例。
+
+打开这个网站，网页一渲染就会开启一个 wss 的握手请求。握手请求如下：
+
+```
+GET wss://threes.halfrost.com/sockjs/689/8x5nnke6/websocket HTTP/1.1
+// 请求的方法必须是GET，HTTP版本必须至少是1.1
+
+Host: threes.halfrost.com
+Connection: Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket
+// 请求升级到 WebSocket 协议
+
+Origin: https://threes.halfrost.com
+Sec-WebSocket-Version: 13
+// 客户端使用的 WebSocket 协议版本
+
+User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Mobile Safari/537.36
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+Cookie: _ga=GA1.2.00000006.14111111496; _gid=GA1.2.23232376.14343448247; Hm_lvt_d60c126319=1524898423,1525574369,1526206975,1526784803; Hm_lpvt_d606319=1526784803; _gat_53806_2=1
+Sec-WebSocket-Key: wZgx0uTOgNUsHGpdWc0T+w==
+// 自动生成的键，以验证服务器对协议的支持，其值必须是 nonce 组成的随机选择的 16 字节的被 base64 编码后的值
+
+Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+// 可选的客户端支持的协议扩展列表，指示了客户端希望使用的协议级别的扩展
+
+```
+
+这里和普通的 HTTP 协议相比，不同的地方有以下几处：
+
+请求的 URL 是 ws:// 或者 wss:// 开头的，而不是 HTTP:// 或者 HTTPS://。由于 websocket 可能会被用在浏览器以外的场景，所以这里就使用了自定义的 URI。类比 HTTP，ws协议：普通请求，占用与 HTTP 相同的 80 端口；wss协议：基于 SSL 的安全传输，占用与 TLS 相同的 443 端口。
+
+```
+Connection: Upgrade
+Upgrade: websocket
+```
+
+这两处是普通的 HTTP 报文一般没有的，这里利用 Upgrade 进行了协议升级，指明升级到 websocket 协议。
+
+```
+Sec-WebSocket-Version: 13
+Sec-WebSocket-Key: wZgx0uTOgNUsHGpdWc0T+w==
+Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+```
+
+Sec-WebSocket-Version 表示 WebSocket 的版本，最初 WebSocket 协议太多，不同厂商都有自己的协议版本，不过现在已经定下来了。如果服务端不支持该版本，需要返回一个 Sec-WebSocket-Version，里面包含服务端支持的版本号。（详情见下面的[多版本的 websocket 握手]一节）
+
+最新版本就是 13，当然有可能存在非常早期的版本 7 ，8（目前基本不会不存在 7，8 的版本了）
+
+**注意**：尽管本文档的草案版本（-09、-10、-11、和-12）发布了（它们多不是编辑上的修改和澄清而不是改变电报协议[wire protocol]），值 9、10、11、和 12 不被用作有效的Sec-WebSocket-Version。这些值被保留在IANA注册中心，但并将不会被使用。
+
+```
++--------+-----------------------------------------+----------+
+|Version |                Reference                |  Status  |
+| Number |                                         |          |
++--------+-----------------------------------------+----------+
+| 0      + draft-ietf-hybi-thewebsocketprotocol-00 | Interim  |
++--------+-----------------------------------------+----------+
+| 1      + draft-ietf-hybi-thewebsocketprotocol-01 | Interim  |
++--------+-----------------------------------------+----------+
+| 2      + draft-ietf-hybi-thewebsocketprotocol-02 | Interim  |
++--------+-----------------------------------------+----------+
+| 3      + draft-ietf-hybi-thewebsocketprotocol-03 | Interim  |
++--------+-----------------------------------------+----------+
+| 4      + draft-ietf-hybi-thewebsocketprotocol-04 | Interim  |
++--------+-----------------------------------------+----------+
+| 5      + draft-ietf-hybi-thewebsocketprotocol-05 | Interim  |
++--------+-----------------------------------------+----------+
+| 6      + draft-ietf-hybi-thewebsocketprotocol-06 | Interim  |
++--------+-----------------------------------------+----------+
+| 7      + draft-ietf-hybi-thewebsocketprotocol-07 | Interim  |
++--------+-----------------------------------------+----------+
+| 8      + draft-ietf-hybi-thewebsocketprotocol-08 | Interim  |
++--------+-----------------------------------------+----------+
+| 9      +                Reserved                 |          |
++--------+-----------------------------------------+----------+
+| 10     +                Reserved                 |          |
++--------+-----------------------------------------+----------+
+| 11     +                Reserved                 |          |
++--------+-----------------------------------------+----------+
+| 12     +                Reserved                 |          |
++--------+-----------------------------------------+----------+
+| 13     +                RFC 6455                 | Standard |
++--------+-----------------------------------------+----------+
+```
+
+
+
+>[RFC 6455]
+>
+>The |Sec-WebSocket-Key| header field is used in the WebSocket opening handshake.  It is sent from the client to the server to provide part of the information used by the server to prove that it received a valid WebSocket opening handshake.  This helps ensure that the server does not accept connections from non-WebSocket clients (e.g., HTTP clients) that are being abused to send data to unsuspecting WebSocket servers.
+>
+>Sec-WebSocket-Key 字段用于握手阶段。它从客户端发送到服务器以提供部分内容，服务器用来证明它收到的信息，并且能有效的完成 WebSocket 握手。这有助于确保服务器不会接受来自非 WebSocket 客户端的连接（例如 HTTP 客户端）被滥用发送数据到毫无防备的 WebSocket 服务器。
+
+Sec-WebSocket-Key 是由浏览器随机生成的，提供基本的防护，防止恶意或者无意的连接。
+
+Sec-WebSocket-Extensions 是属于升级协商的部分，这里放在下一章节进行详细讲解。
+
+接着来看看 Response：
+
+```
+HTTP/1.1 101 Switching Protocols
+// 101 HTTP 响应码确认升级到 WebSocket 协议
+Server: nginx/1.12.1
+Date: Sun, 20 May 2018 09:06:28 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: 375guuMrnCICpulKbj7+JGkOhok=
+// 签名的键值验证协议支持
+Sec-WebSocket-Extensions: permessage-deflate
+// 服务器选择的WebSocket 扩展
+
+```
+
+在 Response 中，用 HTTP 101 响应码回应，确认升级到 WebSocket 协议。
+
+同样也有两个 WebSocket 的 header：
+
+```
+Sec-WebSocket-Accept: 375guuMrnCICpulKbj7+JGkOhok=
+// 签名的键值验证协议支持
+Sec-WebSocket-Extensions: permessage-deflate
+// 服务器选择的 WebSocket 扩展
+```
+
+Sec-WebSocket-Accept 是经过服务器确认后，并且加密之后的 Sec-WebSocket-Key。
+
+Sec-WebSocket-Accept 的计算方法如下：
+
+1. 先将客户端请求头里面的 Sec-WebSocket-Key 取出来跟 258EAFA5-E914-47DA-95CA-C5AB0DC85B11 拼接；（258EAFA5-E914-47DA-95CA-C5AB0DC85B11 这个 Globally Unique Identifier (GUID, [RFC4122]) 是唯一固定不变的）
+2. 然后进行 SHA-1 哈希，最后进行 base64-encoded 得到的结果就是 Sec-WebSocket-Accept。
+
+伪代码：
+
+```
+> toBase64(sha1( Sec-WebSocket-Key + 258EAFA5-E914-47DA-95CA-C5AB0DC85B11 ))
+```
+
+同样，Sec-WebSocket-Key/Sec-WebSocket-Accept 只是在握手的时候保证握手成功，但是对数据安全并不保证，用 wss:// 会稍微安全一点。
+
+### 握手中的子协议
+
+WebSocket 握手有可能会涉及到子协议的问题。
+
+先来看看 WebSocket 的对象初始化函数：
+
+```
+WebSocket WebSocket(
+in DOMString url, 
+// 表示要连接的URL。这个URL应该为响应WebSocket的地址。
+in optional DOMString protocols 
+// 可以是一个单个的协议名字字符串或者包含多个协议名字字符串的数组。默认设为一个空字符串。
+);
+```
+
+这里有一个 optional ，是一个可以协商协议的数组。
+
+```
+var ws = new WebSocket('wss://example.com/socket', ['appProtocol', 'appProtocol-v2']);
+
+ws.onopen = function () {
+if (ws.protocol == 'appProtocol-v2') { 
+	...
+	} else {
+	... 
+	}
+}
+```
+
+在创建 WebSocket 对象的时候，可以传递一个可选的子协议数组，告诉服务器，客户端可以理解哪些协议或者希望服务器接收哪些协议。服务器可以从数据里面选择几个支持的协议进行返回，如果一个都不支持，那么会直接导致握手失败。触发 onerror 回调，并断开连接。
+
+这里的子协议可以是自定义的协议。
+
+### 多版本的 websocket 握手
+
+使用 WebSocket 版本通知能力（ Sec-WebSocket-Version 头字段），客户端可以初始请求它选择的 WebSocket 协议的版本（这并不一定必须是客户端支持的最新的）。如果服务器支持请求的版本且握手消息是本来有效的，服务器将接受该版本。如果服务器不支持请求的版本，它必须以一个包含所有它将使用的版本的 Sec-WebSocket-Version 头字段（或多个 Sec-WebSocket-Version 头字段）来响应。 此时，如果客户端支持一个通知的版本，它可以使用新的版本值重做 WebSocket 握手。
+
+举个例子：
+
+```
+GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket
+Connection: Upgrade
+...
+Sec-WebSocket-Version: 25
+```
+
+服务器不支持 25 的版本，则会返回：
+
+```
+HTTP/1.1 400 Bad Request
+...
+Sec-WebSocket-Version: 13, 8, 7
+```
+
+客户端支持 13 版本的，则需要重新握手：
+
+```
+GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket
+Connection: Upgrade
+...
+Sec-WebSocket-Version: 13
+```
+
+
+## 四. WebSocket 升级协商
+
+在 WebSocket 握手阶段，会 5 个带 WebSocket 的 header。这 5 个 header 都是和升级协商相关的。
+
+- Sec-WebSocket-Version  
+客户端表明自己想要使用的版本号（一般都是 13 号版本），如果服务器不支持这个版本，则需要返回自己支持的版本。客户端拿到 Response 以后，需要对自己支持的版本号重新握手。这个 header 客户端必须要发送。
+
+- Sec-WebSocket-Key  
+客户端请求自动生成的一个 key。这个 header 客户端必须要发送。
+
+- Sec-WebSocket-Accept  
+服务器针对客户端的 Sec-WebSocket-Key 计算的响应值。这个 header 服务端必须要发送。
+
+- Sec-WebSocket-Protocol  
+用于协商应用子协议:客户端发送支持的协议列表，服务器必须只回应一个协议名。如果服务器一个协议都不能支持，直接握手失败。客户端可以不发送子协议，但是一旦发送，服务器无法支持其中任意一个都会导致握手失败。这个 header 客户端可选发送。
+
+- Sec-WebSocket-Extensions  
+用于协商本次连接要使用的 WebSocket 扩展:客户端发送支持的扩展，服务器通过返回相同的首部确认自己支持一或多个扩展。这个 header 客户端可选发送。服务端如果都不支持，不会导致握手失败，但是此次连接不能使用任何扩展。
+
+协商是在握手阶段，握手完成以后，HTTP 通信结束，接下来的全双工全部都交给 WebSocket 协议管理（TCP 通信）。
+
+
+## 五. WebSocket 协议扩展
+
+负责制定 WebSocket 规范的 HyBi Working Group 就进行了两项扩展 Sec-WebSocket-Extensions：
+
+- 多路复用扩展(A Multiplexing Extension for WebSockets)  
+  这个扩展可以将 WebSocket 的逻辑连接独立出来，实现共享底层的 TCP 连接。
+
+- 压缩扩展(Compression Extensions for WebSocket)   
+  给 WebSocket 协议增加了压缩功能。（例如 x-webkit-deflate-frame 扩展）
+
+如果不进行多路复用扩展，每个 WebSocket 连接都只能独享专门的一个 TCP 连接，而且当遇到一个巨大的消息分成多个帧的时候，容易产生队首阻塞的情况。队首阻塞会导致延迟，所以分成多个帧的时候能尽量的小是关键。不过在进行了多路复用扩展以后，多个连接复用一个 TCP 连接，每个信道依旧会存在队首阻塞的问题。出了多路复用，还要进行多路并行发送消息。
+
+如果通过 HTTP2 进行 WebSocket 传输，性能会更好一点，毕竟 HTTP2 原生就支持了流的多路复用。利用 HTTP2 的分帧机制进行 WebSocket 的分帧，多个 WebSocket 可以在同一个会话中传输。
+
+
+## 六. WebSocket 数据帧
+
+WebSocket 另一个高级组件是：二进制消息分帧机制。WebSocket 会把应用的消息分割成一个或多个帧，接收方接到到多个帧会进行组装，等到接收到完整消息之后再通知接收端。
+
+### WebSocket 数据帧结构
+
+WebSocket 数据帧格式如下：
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-------+-+-------------+-------------------------------+
+ |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+ |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+ |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+ | |1|2|3|       |K|             |                               |
+ +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+ |     Extended payload length continued, if payload len == 127  |
+ + - - - - - - - - - - - - - - - +-------------------------------+
+ |                               |Masking-key, if MASK set to 1  |
+ +-------------------------------+-------------------------------+
+ | Masking-key (continued)       |          Payload Data         |
+ +-------------------------------- - - - - - - - - - - - - - - - +
+ :                     Payload Data continued ...                :
+ + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+ |                     Payload Data continued ...                |
+ +---------------------------------------------------------------+
+```
+
+- FIN:0表示不是最后一个分片，1表示是最后一个分片。
+
+- RSV1, RSV2, RSV3：
+
+一般情况下全为 0。当客户端、服务端协商采用 WebSocket 扩展时，这三个标志位可以非
+0，且值的含义由扩展进行定义。如果出现非零的值，且并没有采用 WebSocket 扩展，连接出错。
+
+- Opcode：
+
+%x0：表示一个延续帧。当 Opcode 为 0 时，表示本次数据传输采用了数据分片，当前收到的数据帧为其中一个数据分片；  
+%x1：表示这是一个文本帧（text frame）；  
+%x2：表示这是一个二进制帧（binary frame）；  
+%x3-7：保留的操作代码，用于后续定义的非控制帧；  
+%x8：表示连接断开；  
+%x9：表示这是一个心跳请求（ping）；  
+%xA：表示这是一个心跳响应（pong）；  
+%xB-F：保留的操作代码，用于后续定义的控制帧。  
+
+- Mask：
+
+表示是否要对数据载荷进行**掩码异或**操作。1表示需要，0表示不需要。（只适用于客户端发给服务器的消息）
+
+- Payload len：
+
+表示数据载荷的长度，这里有 3 种情况：
+
+如果数据长度在 0 - 125 之间，那么 Payload len 用 7 位表示足以，表示的数也就是净荷长度;    
+如果数据长度等于 126，那么 Payload len 需要用 7 + 16 位表示，接下来 2 字节表示的 16 位无符号整数才是这一帧的长度;    
+如果数据长度等于 127，那么 Payload len 需要用 7 + 64 位表示，接下来 8 字节表示的 64 位无符号整数才是这一帧的长度。    
+
+- Masking-key：
+
+如果 Mask = 0，则没有 Masking-key，如果 Mask = 1，则 Masking-key 长度为 4 位，32字节。
+
+掩码是由客户端随机选择的 32 位值。 当准备一个掩码的帧时，客户端必须从允许的 32 位值集合中选择一个新的掩码键。 掩码键需要是不可预测的；因此，掩码键必须来自一个强大的熵源， 且用于给定帧的掩码键必须不容易被服务器/代理预测用于后续帧的掩码键。 掩码键的不可预测性对防止恶意应用的作者选择出现在报文上的字节是必要的。 RFC 4086 [RFC4086]讨论了什么需要一个用于安全敏感应用的合适的熵源。
+
+掩码不影响“负载数据”的长度。 变换掩码数据到解掩码数据，或反之亦然，以下算法被应用。 相同的算法应用，不管转化的方向，例如，相同的步骤即应用到掩码数据也应用到解掩码数据。
+
+- original-octet-i：为原始数据的第i字节。
+- transformed-octet-i：为转换后的数据的第i字节。
+- j：为i mod 4的结果。
+- masking-key-octet-j：为mask key第j字节。
+
+变换数据的八位位组 i （"transformed-octet-i"）是原始数据的八位位组 i（"original-octet-i"）异或（XOR）i 取模 4 位置的掩码键的八位位组（"masking-key-octet-j"）：
+
+```
+j = i MOD 4
+transformed-octet-i = original-octet-i XOR masking-key-octet-j
+```
+
+
+算法简单描述：按位做循环异或运算，先对该位的索引取模来获得 Masking-key 中对应的值 x，然后对该位与 x 做异或，从而得到真实的 byte 数据。  
+
+注意：掩码的作用并不是为了防止数据泄密，而是为了防止客户端中运行的恶意脚本对不支持 WebSocket 的中间设备进行代理缓存投毒攻击(proxy cache poisoning attack)
+
+>要了解这种攻击的细节，请参考 W2SP 2011 的论文[Talking to Yourself for Fun and Profit](http://www.adambarth.com/papers/2011/huang-chen-barth-rescorla-jackson.pdf)。
+>
+
+攻击主要分2步，
+
+第一步，先进行一次 WebSocket 连接。黑客通过代理服务器向自己的服务器进行 WebSocket 握手，由于 WebSocket 握手是 HTTP 消息，所以代理服务器把黑客自己服务器的 Response 转发回给黑客的时候，会认为本次 HTTP 请求结束。
+
+<p align='center'>
+<img src='../images/proxy cache poisoning attack1.png'>
+</p>
+
+第二步，在代理服务器上面制造“投毒”攻击。由于 WebSocket 握手成功，所以黑客可以向自己的服务器上发送数据了，发送一条精心设置过的 HTTP 格式的文本信息。这条数据的 host 需要伪造成普通用户即将要访问的服务器，请求的资源是普通用户即将要请求的资源。代理服务器会认为这是一条新的请求，于是向黑客自己的服务器请求，这时候也需要黑客自己服务器配合，收到这条“投毒”以后的消息以后，立即返回“毒药”，返回一些恶意的脚本资源等等。至此，“投毒”成功。
+
+
+<p align='center'>
+<img src='../images/proxy cache poisoning attack2.png'>
+</p>
+
+
+当用户通过代理服务器请求要请求的安全资源的时候，由于 host 和 url 之前已经被黑客利用 HTTP 格式的文本信息缓存进了代理服务器，“投毒”的资源也被缓存了，这个时候用户请求相同的 host 和 url 的资源的时候，代理缓存服务器发现已经缓存了，就立即会把“投毒”以后的恶意脚本或资源返回给用户。这时候用户就收到了攻击。
+
+- Payload Data: 
+
+载荷数据分为扩展数据和应用数据两种。
+
+扩展数据：如果没有协商使用扩展的话，扩展数据数据为0字节。扩展数据的长度如果存在，必须在握手阶段就固定下来。载荷数据的长度也要算上扩展数据。
+
+应用数据：如果存在扩展数据，则排在扩展数据之后。
+
+
+### WebSocket 控制帧
+
+控制帧由操作码确定，操作码最高位为 1。 当前定义的用于控制帧的操作码包括 0x8 （Close）、0x9（Ping）、和0xA（Pong）。 操作码 0xB-0xF 保留用于未来尚未定义的控制帧。
+
+控制帧用于传达有关 WebSocket 的状态。 控制帧可以插入到分帧消息的中间。
+
+所有的控制帧必须有一个小于等于125字节的有效载荷长度，控制帧必须不能被分帧。
+
+- 当接收到 0x8 Close 操作码的控制帧以后，可以关闭底层的 TCP 连接了。客户端也可以等待服务器关闭以后，再一段时间没有响应了，再关闭自己的 TCP 连接。
+
+在 RFC6455 中给出了关闭时候建议的状态码，没有规范的定义，只是给了一个预定义的状态码。
+
+| 状态码 | 说明 | 保留✔︎或者不能使用✖︎|
+| :---: | :---: | :---:|
+|0-999 |该范围内的状态码不被使用。|✖︎|
+| 1000 |表示正常关闭，意思是建议的连接已经完成了。 ||
+| 1001 |表示端点“离开”（going away），例如服务器关闭或浏览器导航到其他页面。||
+| 1002 |表示端点因为协议错误而终止连接。 ||
+| 1003 |表示端点由于它收到了不能接收的数据类型（例如，端点仅理解文本数据，但接收到了二进制消息）而终止连接。 ||
+| 1004 |保留。可能在将来定义其具体的含义。 |✔︎|
+| 1005 |是一个保留值，且不能由端点在关闭控制帧中设置此状态码。 它被指定用在期待一个用于表示没有状态码是实际存在的状态码的应用中。 |✔︎|
+| 1006 |是一个保留值，且不能由端点在关闭控制帧中设置此状态码。 它被指定用在期待一个用于表示连接异常关闭的状态码的应用中。 |✔︎|
+| 1007 |表示端点因为消息中接收到的数据是不符合消息类型而终止连接（比如，文本消息中存在非 UTF-8[RFC3629] 数据）。 ||
+| 1008 |表示端点因为接收到的消息违反其策略而终止连接。 这是一个当没有其他合适状态码（例如 1003 或 1009）或如果需要隐藏策略的具体细节时能被返回的通用状态码。||
+| 1009 |表示端点因接收到的消息对它的处理来说太大而终止连接。 ||
+| 1010 |表示端点（客户端）因为它期望服务器协商一个或多个扩展，但服务器没有在 WebSocket 握手响应消息中返回它们而终止连接。 所需要的扩展列表应该出现在关闭帧的 reason 部分。 ||
+| 1011 |表示服务器端因为遇到了一个不期望的情况使它无法满足请求而终止连接。 ||
+| 1012 | ||
+| 1013 | ||
+| 1014 | ||
+| 1015 |是一个保留值，且不能由端点在关闭帧中被设置为状态码。 它被指定用在期待一个用于表示连接由于执行 TLS 握手失败而关闭的状态码的应用中（比如，服务器证书不能验证）。 |✔︎|
+|1000-2999| 该范围内的状态码保留给本协议、其未来的修订和一个永久的和现成的公共规范中指定的扩展的定义。|✔︎|
+|3000-3999 |该范围内的状态码保留给库、框架和应用使用。 这些状态码直接向 IANA 注册。本规范未定义这些状态码的解释。|✔︎|
+|4000-4999 |该范围内的状态码保留用于私有使用且因此不能被注册。 这些状态码可以被在 WebSocket 应用之间的先前的协议使用。 本规范未定义这些状态码的解释。|✔︎|
+
+- 当接收到 0x9 Ping 操作码的控制帧以后，应当立即发送一个包含 pong 操作码的帧响应，除非接收到了一个关闭帧。两端都会在连接建立后、关闭前的任意时间内发送 Ping 帧。Ping 帧可以包含“应用数据”。ping 帧就可以作为 keepalive 心跳包。
+
+- 当接收到 0xA pong 操作码的控制帧以后，知道对方还可响应。Pong 帧必须包含与被响应 Ping 帧的应用程序数据完全相同的数据。如果终端接收到一个 Ping 帧，且还没有对之前的 Ping 帧发送 Pong 响应，终端可能选择发送一个 Pong 帧给最近处理的 Ping 帧。一个 Pong 帧可能被主动发送，这作为单向心跳。尽量不要主动发送 pong 帧。
+
+### WebSocket 分帧规则
+
+分帧规则由 RFC6455 进行定义，应用对如何分帧是无感知的。分帧这一步由客户端和服务器完成。
+
+分帧也可以更好的利用多路复用的协议扩展，多路复用需要可以分割消息为更小的分段来更好的共享输出通道。
+
+RFC 6455规定的分帧规则如下：
+
+- 一个没有分片的消息由单个带有 FIN 位设置（5.2节）和一个非 0 操作码的帧组成。
+- 一个分片的消息由单个带有 FIN 位清零（5.2节）和一个非 0 操作码的帧组成，跟随零个或多个带有 FIN 位清零和操作码设置为 0 的帧，且终止于一个带有FIN位设置且0操作码的帧。 一个分片的消息概念上是等价于单个大的消息，其负载是等价于按顺序串联片段的负载；然而，在存在扩展的情况下，这个可能不适用扩展定义的“扩展数据”存在的解释。 例如，“扩展数据”可能仅在首个片段开始处存在且应用到随后的片段，或 “扩展数据”可以存在于仅用于到特定片段的每个片段。 在没有“扩展数据”的情况下，以下例子展示了分片如何工作。
+
+例子：对于一个作为三个片段发送的文本消息，第一个片段将有一个 0x1 操作码和一个 FIN 位清零，第二个片段将有一个 0x0 操作码和一个 FIN 位清零，且第三个片段将有 0x0 操作码和一个 FIN 位设置。
+
+- 控制帧可能被注入到一个分片消息的中间。 控制帧本身必须不被分割。
+- 消息分片必须按发送者发送顺序交付给收件人。
+- 片段中的一个消息必须不能与片段中的另一个消息交替，除非已协商了一个能解释交替的扩展。
+- 一个端点必须能处理一个分片消息中间的控制帧。
+- 一个发送者可以为非控制消息创建任何大小的片段。
+- 客户端和服务器必须支持接收分片和非分片的消息。
+- 由于控制帧不能被分片，一个中间件必须不尝试改变控制帧的分片。
+- 如果使用了任何保留的位值且这些值的意思对中间件是未知的，一个中间件必须不改变一个消息的分片。
+- 在一个连接上下文中，已经协商了扩展且中间件不知道协商的扩展的语义，一个中间件必须不改变任何消息的分片。同样，没有看见 WebSocket 握手（且没被通知有关它的内容）、导致一个 WebSocket 连接的一个中间件，必须不改变这个链接的任何消息的分片。
+- 由于这些规则，一个消息的所有分片是相同类型，以第一个片段的操作码设置。因为控制帧不能被分片，用于一个消息中的所有分片的类型必须或者是文本、或者二进制、或者一个保留的操作码。
+注意：如果控制帧不能被插入，一个 ping 延迟，例如，如果跟着一个大消息将是非常长的。因此，要求在分片消息的中间处理控制帧。
+
+实现注意：在没有任何扩展时，一个接收者不必按顺序缓冲整个帧来处理它。例如，如果使用了一个流式 API，一个帧的一部分能被交付到应用。但是，请注意这个假设可能不适用所有未来的 WebSocket 扩展。
+
+
+## 七. WebSocket API 及数据格式
+
+### 1. WebSocket API
+
+
+WebSocket API 及其简洁，可以调用的函数只有下面这么几个：
+
+```
+var ws = new WebSocket('wss://example.com/socket');
+ws.onerror = function (error) { ... }
+ws.onclose = function () { ... }
+ws.onopen = function () {
+ws.send("Connection established. Hello server!");
+}
+ws.onmessage = function(msg) {
+	if(msg.data instanceof Blob) {
+   		processBlob(msg.data);
+  	} else {
+       processText(msg.data);
+   }
+}
+```
+
+除去新建 WebSocket 对象和 send() 方法以外，剩下的就是4个回调方法了。
+
+上述的这些方法中，send() 方法需要额外注意一点的是，这个方法是异步的，并不是同步方法。意味着当我们把要发送的内容丢到这个函数中的时候，函数就异步返回了，此时**不要误认为已经发送出去了**。WebSocket 自身有一个排队的机制，数据会先丢到数据缓存区中，然后按照排队的顺序进行发送。
+
+如果是一个巨大的文件排队中，后面又来了一些优先级比这个消息高的消息，比如系统出错，需要立即断开连接。由于排队排在大文件之后，必须等待大文件发送完毕才能发送这个优先级更高的消息。这就造成了队首阻塞的问题了，导致优先级更高的消息延迟。
+
+WebSocket API 制定者考虑到了这个问题，于是给了我们另外 2 个为数不多的可以改变 WebSocket 对象行为的属性，一个是 bufferedAmount，另外一个是 binaryType。
+
+```
+if (ws.bufferedAmount == 0)
+	ws.send(evt.data);
+```
+
+在上述这种情况下就可以使用 bufferedAmount 监听缓存区的数量，从而避免队首阻塞的问题，更进一步也可以和 Priority Queue 结合到一起，实现按照优先级高低来发送消息。
+
+
+### 2. 数据格式
+
+WebSocket 对传输的格式没有任何限制，可以是文本也可以是二进制，都可以。协议中通过 Opcode 类型字段来区分是 UTF-8 还是二进制。WebSocket API 可以接收 UTF-8 编码的 DOMString 对象，也可以接收 ArrayBuffer、 ArrayBufferView 或 Blob 等二进制数据。
+
+浏览器对接收到的数据，如果不手动设置任何其他选项的话，默认处理是，文本是默认转成 DOMString 对象，二进制数据或者 Blob 对象会直接转给给应用，中间不做任何处理。
+
+
+```
+var ws = new WebSocket('wss://example.com/socket'); 
+ws.binaryType = "arraybuffer";
+```
+
+唯一能干涉的地方就是把接收到的二进制数据全部都强制转换成 arraybuffer 类型而不是 Blob 类型。至于为何要转换成 arraybuffer 类型， W3C 的候选人给出的建议如下：
+
+>用户代理可以将这个选项看作一个暗示，以决定如何处理接收到的二进制数据:如果这里设置为 “blob”，那就可以放心地将其转存到磁盘上;而如果设置为 “arraybuffer”，那很可能在内存里处理它更有效。自然地，我们鼓励用户代理使用更细微的线索，以决定是否将到来的数据放到内存里。
+>
+>——The WebSocket API W3C Candidate Recommendation
+
+
+简单的说：如果转换成了 Blob 对象，就代表了一个不可变的文件对象或者原始数据。如果不需要修改或者不需要切分它，保留成 Blob 对象是一个好的选择。如果要处理这段原始数据，放进内存里面处理明显会更加合适，那么就请转换成 arraybuffer 类型。
+
 
 
 
@@ -197,10 +704,15 @@ WebSocket 是 HTML5 开始提供的一种**独立**在单个 **TCP** 连接上�
 
 Reference：  
 
-RFC6455  
-[Server-Sent Events 教程](http://www.ruanyifeng.com/blog/2017/05/server-sent_events.html)  
-[Comet：基于 HTTP 长连接的“服务器推”技术](https://www.ibm.com/developerworks/cn/web/wa-lo-comet/)
-
+[RFC6455](https://tools.ietf.org/html/rfc6455)    
+[Server-Sent Events 教程](http://www.ruanyifeng.com/blog/2017/05/server-sent_events.html)    
+[Comet：基于 HTTP 长连接的“服务器推”技术](https://www.ibm.com/developerworks/cn/web/wa-lo-comet/)    
+[WEB性能权威指南]()  
+[What is Sec-WebSocket-Key for?](https://stackoverflow.com/questions/18265128/what-is-sec-websocket-key-for)     
+[10.3. Attacks On Infrastructure (Masking)](https://tools.ietf.org/html/rfc6455#section-10.3)    
+[Why are WebSockets masked?](https://stackoverflow.com/questions/33250207/why-are-websockets-masked)    
+[How does websocket frame masking protect against cache poisoning?](https://security.stackexchange.com/questions/36930/how-does-websocket-frame-masking-protect-against-cache-poisoning)    
+[What is the mask in a WebSocket frame?](https://stackoverflow.com/questions/14174184/what-is-the-mask-in-a-websocket-frame)     
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
