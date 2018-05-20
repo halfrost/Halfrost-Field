@@ -1,14 +1,19 @@
+# 全双工通信的 WebSocket
+
 <p align='center'>
 <img src='../images/websocket.png'>
 </p>
 
 
-# 全双工通信的 WebSocket
-
 
 ## 一. WebSocket 是什么？
 
-WebSocket 是一种网络通信协议。2011年被 IETF 定为标准 RFC 6455 通信标准。并由  RFC7936 补充规范。WebSocket API 也被 W3C 定为标准。
+<p align='center'>
+<img src='../images/websocket_protocol.png'>
+</p>
+
+
+WebSocket 是一种网络通信协议。在 2009 年诞生，于 2011 年被 IETF 定为标准 RFC 6455 通信标准。并由  RFC7936 补充规范。WebSocket API 也被 W3C 定为标准。
 
 WebSocket 是 HTML5 开始提供的一种在单个 TCP 连接上进行**全双工通讯的协议**。没有了  Request 和 Response 的概念，两者地位完全平等，连接一旦建立，就建立了真•持久性连接，双方可以随时向对方发送数据。
 
