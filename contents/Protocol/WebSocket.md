@@ -114,7 +114,7 @@ SSE 是单向通道，只能服务器向浏览器发送，因为流信息本质�
 
 服务器向浏览器发送的 SSE 数据，必须是 UTF-8 编码的文本，具有如下的 HTTP 头信息。
 
-```
+```http
 Content-Type: text/event-stream
 Cache-Control: no-cache
 Connection: keep-alive
@@ -210,7 +210,7 @@ WebSocket 的 RFC6455 标准中制定了 2 个高级组件，一个是开放性 
 
 打开这个网站，网页一渲染就会开启一个 wss 的握手请求。握手请求如下：
 
-```
+```http
 GET wss://threes.halfrost.com/sockjs/689/8x5nnke6/websocket HTTP/1.1
 // 请求的方法必须是GET，HTTP版本必须至少是1.1
 
@@ -241,14 +241,14 @@ Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
 
 请求的 URL 是 ws:// 或者 wss:// 开头的，而不是 HTTP:// 或者 HTTPS://。由于 websocket 可能会被用在浏览器以外的场景，所以这里就使用了自定义的 URI。类比 HTTP，ws协议：普通请求，占用与 HTTP 相同的 80 端口；wss协议：基于 SSL 的安全传输，占用与 TLS 相同的 443 端口。
 
-```
+```http
 Connection: Upgrade
 Upgrade: websocket
 ```
 
 这两处是普通的 HTTP 报文一般没有的，这里利用 Upgrade 进行了协议升级，指明升级到 websocket 协议。
 
-```
+```http
 Sec-WebSocket-Version: 13
 Sec-WebSocket-Key: wZgx0uTOgNUsHGpdWc0T+w==
 Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
@@ -260,7 +260,7 @@ Sec-WebSocket-Version 表示 WebSocket 的版本，最初 WebSocket 协议太多
 
 **注意**：尽管本文档的草案版本（09、10、11、和 12）发布了（它们多不是编辑上的修改和澄清而不是改变电报协议 [wire protocol]），值 9、10、11、和 12 不被用作有效的 Sec-WebSocket-Version。这些值被保留在 IANA 注册中心，但并将不会被使用。
 
-```
+```http
 +--------+-----------------------------------------+----------+
 |Version |                Reference                |  Status  |
 | Number |                                         |          |
@@ -309,7 +309,7 @@ Sec-WebSocket-Extensions 是属于升级协商的部分，这里放在下一章�
 
 接着来看看 Response：
 
-```
+```http
 HTTP/1.1 101 Switching Protocols
 // 101 HTTP 响应码确认升级到 WebSocket 协议
 Server: nginx/1.12.1
@@ -327,7 +327,7 @@ Sec-WebSocket-Extensions: permessage-deflate
 
 同样也有两个 WebSocket 的 header：
 
-```
+```http
 Sec-WebSocket-Accept: 375guuMrnCICpulKbj7+JGkOhok=
 // 签名的键值验证协议支持
 Sec-WebSocket-Extensions: permessage-deflate
@@ -343,7 +343,7 @@ Sec-WebSocket-Accept 的计算方法如下：
 
 伪代码：
 
-```
+```javascript
 > toBase64(sha1( Sec-WebSocket-Key + 258EAFA5-E914-47DA-95CA-C5AB0DC85B11 ))
 ```
 
@@ -355,7 +355,7 @@ WebSocket 握手有可能会涉及到子协议的问题。
 
 先来看看 WebSocket 的对象初始化函数：
 
-```
+```javascript
 WebSocket WebSocket(
 in DOMString url, 
 // 表示要连接的URL。这个URL应该为响应WebSocket的地址。
@@ -366,7 +366,7 @@ in optional DOMString protocols
 
 这里有一个 optional ，是一个可以协商协议的数组。
 
-```
+```javascript
 var ws = new WebSocket('wss://example.com/socket', ['appProtocol', 'appProtocol-v2']);
 
 ws.onopen = function () {
@@ -388,7 +388,7 @@ if (ws.protocol == 'appProtocol-v2') {
 
 举个例子：
 
-```
+```http
 GET /chat HTTP/1.1
 Host: server.example.com
 Upgrade: websocket
@@ -399,7 +399,7 @@ Sec-WebSocket-Version: 25
 
 服务器不支持 25 的版本，则会返回：
 
-```
+```http
 HTTP/1.1 400 Bad Request
 ...
 Sec-WebSocket-Version: 13, 8, 7
@@ -407,7 +407,7 @@ Sec-WebSocket-Version: 13, 8, 7
 
 客户端支持 13 版本的，则需要重新握手：
 
-```
+```http
 GET /chat HTTP/1.1
 Host: server.example.com
 Upgrade: websocket
@@ -462,7 +462,7 @@ WebSocket 另一个高级组件是：二进制消息分帧机制。WebSocket 会
 
 WebSocket 数据帧格式如下：
 
-```
+```http
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  +-+-+-+-+-------+-+-------------+-------------------------------+
@@ -528,7 +528,7 @@ WebSocket 数据帧格式如下：
 
 变换数据的八位位组 i （"transformed-octet-i"）是原始数据的八位位组 i（"original-octet-i"）异或（XOR）i 取模 4 位置的掩码键的八位位组（"masking-key-octet-j"）：
 
-```
+```c
 j = i MOD 4
 transformed-octet-i = original-octet-i XOR masking-key-octet-j
 ```
@@ -642,7 +642,7 @@ RFC 6455 规定的分帧规则如下：
 
 WebSocket API 及其简洁，可以调用的函数只有下面这么几个：
 
-```
+```javascript
 var ws = new WebSocket('wss://example.com/socket');
 ws.onerror = function (error) { ... }
 ws.onclose = function () { ... }
@@ -666,7 +666,7 @@ ws.onmessage = function(msg) {
 
 WebSocket API 制定者考虑到了这个问题，于是给了我们另外 2 个为数不多的可以改变 WebSocket 对象行为的属性，一个是 bufferedAmount，另外一个是 binaryType。
 
-```
+```javascript
 if (ws.bufferedAmount == 0)
     ws.send(evt.data);
 ```
@@ -681,7 +681,7 @@ WebSocket 对传输的格式没有任何限制，可以是文本也可以是二�
 浏览器对接收到的数据，如果不手动设置任何其他选项的话，默认处理是，文本是默认转成 DOMString 对象，二进制数据或者 Blob 对象会直接转给给应用，中间不做任何处理。
 
 
-```
+```javascript
 var ws = new WebSocket('wss://example.com/socket'); 
 ws.binaryType = "arraybuffer";
 ```
