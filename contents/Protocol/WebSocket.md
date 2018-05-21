@@ -697,8 +697,44 @@ ws.binaryType = "arraybuffer";
 
 
 
+## 八. WebSocket 性能和使用场景
+
+有一张来自 WebSocket.org 网站的测试，用 XHR 轮询和 WebSocket 进行对比：
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/8_5.png'>
+</p>
+
+上图中，我们先看蓝色的柱状图，是 Polling 轮询消耗的流量，这次测试，HTTP 请求和响应头信息开销总共包括 871 字节。当然每次测试不同的请求，头的开销不同。这次测试都以 871 字节的请求来测试。
+
+**Use case A**: 1,000 clients polling every second: Network throughput is (871 x 1,000) = 871,000 bytes = 6,968,000 bits per second (6.6 Mbps)  
+**Use case B**: 10,000 clients polling every second: Network throughput is (871 x 10,000) = 8,710,000 bytes = 69,680,000 bits per second (66 Mbps)  
+**Use case C**: 100,000 clients polling every 1 second: Network throughput is (871 x 100,000) = 87,100,000 bytes = 696,800,000 bits per second (665 Mbps)  
+而 Websocket 的 Frame 是 just two bytes of overhead instead of 871，仅仅用 2 个字节就代替了轮询的 871 字节！
+
+**Use case A**: 1,000 clients receive 1 message per second: Network throughput is (2 x 1,000) = 2,000 bytes = 16,000 bits per second (0.015 Mbps)  
+**Use case B**: 10,000 clients receive 1 message per second: Network throughput is (2 x 10,000) = 20,000 bytes = 160,000 bits per second (0.153 Mbps)  
+**Use case C**: 100,000 clients receive 1 message per second: Network throughput is (2 x 100,000) = 200,000 bytes = 1,600,000 bits per second (1.526 Mbps)  
+
+相同的每秒客户端轮询的次数，当次数高达 10W/s 的高频率次数的时候，Polling 轮询需要消耗 665Mbps，而 Websocket 仅仅只花费了 1.526Mbps，将近 435 倍！！
+
+从结果上看， WebSocket 确实比轮询效率和网速消耗都要好很多。
 
 
+从使用场景来说，XHR、SSE、WebSocket 各有优缺点。
+
+XHR 相对其他两种方式更加简单，依靠 HTTP 完善的基础设施，很容易实现。不过它不支持请求流，对相应流也不是完美支持（需要支持 Streams API 才能支持响应流）。传输数据格式方面，文本和二进制都支持，也支持压缩。HTTP 对它的报文负责分帧。
+
+
+SSE 也同样不支持请求流，在进行一次握手以后，服务端就可以以事件源协议把数据作为响应流发给客户端。SSE 只支持文本数据，不能支持二进制。因为 SSE 不是为传输二进制而设计的，如果有必要，可以把二进制对象编码为 base64 形式，然后再使用 SSE 进行传输。SSE 也支持压缩，事件流负责对它进行分帧。
+
+WebSocket 是目前唯一一个通过同一个 TCP 连接实现的全双工的协议，请求流和响应流都完美支持。支持文本和二进制数据，本身自带二进制分帧。在压缩方面差一些，因为有些不支持，例如 x-webkit-deflate-frame 扩展，在笔者上文中距离的那个 ws 请求中服务器就没有支持压缩。
+
+如果所有的网络环境都可以支持 WebSocket 或者 SSE 当然是最好不过的了。但是这是不现实的，网络环境千变万化，有些网络可能就屏蔽了 WebSocket 通信，或者用户设备就不支持 WebSocket 协议，于是 XHR 也就有了用武之地。
+
+如果客户端不需要给服务端发消息，只需要不断的实时更新，那么考虑用 SSE 也是不错的选择。不过 SSE 目前在 IE 和 Edge 上支持的较差。WebSocket 在这方面比 SSE 强。
+
+所以应该根据不同场景选择不同的协议，各取所长。
 
 ------------------------------------------------------
 
