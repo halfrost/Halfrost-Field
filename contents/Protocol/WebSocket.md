@@ -254,7 +254,7 @@ Sec-WebSocket-Key: wZgx0uTOgNUsHGpdWc0T+w==
 Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
 ```
 
-Sec-WebSocket-Version 表示 WebSocket 的版本，最初 WebSocket 协议太多，不同厂商都有自己的协议版本，不过现在已经定下来了。如果服务端不支持该版本，需要返回一个 Sec-WebSocket-Version，里面包含服务端支持的版本号。（详情见下面的[多版本的 websocket 握手]一节）
+Sec-WebSocket-Version 表示 WebSocket 的版本，最初 WebSocket 协议太多，不同厂商都有自己的协议版本，不过现在已经定下来了。如果服务端不支持该版本，需要返回一个 Sec-WebSocket-Version，里面包含服务端支持的版本号。（详情见下面的[多版本的 websocket 握手](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/WebSocket.md#%E5%A4%9A%E7%89%88%E6%9C%AC%E7%9A%84-websocket-%E6%8F%A1%E6%89%8B)一节）
 
 最新版本就是 13，当然有可能存在非常早期的版本 7 ，8（目前基本不会不存在 7，8 的版本了）
 
