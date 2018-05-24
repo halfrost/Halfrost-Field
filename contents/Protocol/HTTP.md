@@ -246,7 +246,7 @@ RFC2045，“ MIME: Format of Internet Message Bodies”（“ MIME：因特网�
 举个例子：
 
 
-```
+```http
 
 General:
 
@@ -267,7 +267,7 @@ Response Headers:
 </p>
 
 
-```  
+```http  
 
 HTTP/1.1 200 OK
 Date: Sun, 22 Apr 2018 15:47:27 GMT
@@ -306,7 +306,7 @@ Request Headers:
 </p>
 
 
-```
+```http
 
 GET /halfrost HTTP/1.1
 Host: github.com
@@ -390,6 +390,70 @@ public 和 private 的差别主要在于如果是有用户认证环节的页面�
 <img src='../images/cache-control.png'>
 </p>
 
+
+### HTTP 缓存控制
+
+<p align='center'>
+<img src='../images/http_cache.png'>
+</p>
+
+针对“Expires 时间是相对服务器而言，无法保证和客户端时间统一”的问题，http1.1 新增了 Cache-Control 来定义缓存过期时间。注意：若报文中同时出现了 Expires 和 Cache-Control，则以 Cache-Control 为准。
+
+也就是说优先级从高到低分别是 **Pragma -> Cache-Control -> Expires**。
+
+| 头部 | 优势和特点 | 劣势和问题 | 额外说明 | 
+| :---: | :---: | :---: | :---: |
+|Expires|	1、HTTP 1.0 产物，可以在HTTP 1.0和1.1中使用，简单易用。<br>2、以时刻标识失效时间。|1、时间是由服务器发送的(UTC)，如果服务器时间和客户端时间存在不一致，可能会出现问题。<br>2、存在版本问题，到期之前的修改客户端是不可知的。||
+|Cache-Control|1、HTTP 1.1 产物，以时间间隔标识失效时间，解决了Expires服务器和客户端相对时间的问题。<br>2、比Expires多了很多选项设置。|1、HTTP 1.1 才有的内容，不适用于HTTP 1.0 。<br>2、存在版本问题，到期之前的修改客户端是不可知的。||
+|Last-Modified|1、不存在版本问题，每次请求都会去服务器进行校验。服务器对比最后修改时间如果相同则返回304，不同返回200以及资源内容。|1、只要资源修改，无论内容是否发生实质性的变化，都会将该资源返回客户端。例如周期性重写，这种情况下该资源包含的数据实际上一样的。<br>2、以时刻作为标识，无法识别一秒内进行多次修改的情况。<br>3、某些服务器不能精确的得到文件的最后修改时间。||
+|ETag|1、可以更加精确的判断资源是否被修改，可以识别一秒内多次修改的情况。<br>2、不存在版本问题，每次请求都回去服务器进行校验。|1、计算ETag值需要性能损耗。<br>2、分布式服务器存储的情况下，计算ETag的算法如果不一样，会导致浏览器从一台服务器上获得页面内容后到另外一台服务器上进行验证时发现ETag不匹配的情况。||
+
+1、Expires / Cache-Control  
+Expires用时刻来标识失效时间，不免收到时间同步的影响，而Cache-Control使用时间间隔很好的解决了这个问题。 但是 Cache-Control 是 HTTP1.1 才有的，不适用于 HTTP1.0，而 Expires 既适用于 HTTP1.0，也适用于 HTTP1.1，所以说在大多数情况下同时发送这两个头会是一个更好的选择，当客户端两种头都能解析的时候，**会优先使用 Cache-Control**。
+
+2、Last-Modified / ETag  
+二者都是通过某个标识值来请求资源， 如果服务器端的资源没有变化，则自动返回 HTTP 304 （Not Changed）状态码，内容为空，这样就节省了传输数据量。而当资源发生比那话后，返回和第一次请求时类似。从而保证不向客户端重复发出资源，也保证当服务器有变化时，客户端能够得到最新的资源。  
+其中 Last-Modified 使用文件最后修改作为文件标识值，它无法处理文件一秒内多次修改的情况，而且只要文件修改了哪怕文件实质内容没有修改，也会重新返回资源内容；ETag 作为“被请求变量的实体值”，其完全可以解决 Last-Modified 头部的问题，但是其计算过程需要耗费服务器资源。
+
+3、from-cache / 304    
+Expires 和 Cache-Control 都有一个问题就是服务端作为的修改，如果还在缓存时效里，那么客户端是不会去请求服务端资源的（非刷新），这就存在一个资源版本不符的问题，而强制刷新一定会发起 HTTP 请求并返回资源内容，无论该内容在这段时间内是否修改过；**而 Last-Modified 和 Etag 每次请求资源都会发起请求，哪怕是很久都不会有修改的资源，都至少有一次请求响应的消耗**。
+
+对于所有可缓存资源，指定一个 Expires 或 Cache-Control max-age 以及一个 Last-Modified 或 ETag 至关重要。同时使用前者和后者可以很好的相互适应。  
+**前者不需要每次都发起一次请求来校验资源时效性，后者保证当资源未出现修改的时候不需要重新发送该资源**。而在用户的不同刷新页面行为中，二者的结合也能很好的利用 HTTP 缓存控制特性，无论是在地址栏输入 URI 然后输入回车进行访问，还是点击刷新按钮，浏览器都能充分利用缓存内容，避免进行不必要的请求与数据传输。
+
+4、避免 304
+
+做法实际上很简单，**它把服务侧 ETag 的那一套理论搬到了前端来使用**。 页面的静态资源以版本形式发布，常用的方法是在文件名或参数带上一串md5或时间标记符：
+
+```http
+https://hm.baidu.com/hm.js?e23800c454aa573c0ccb16b52665ac26
+http://tb1.bdstatic.com/tb/_/tbean_safe_ajax_94e7ca2.js
+http://img1.gtimg.com/ninja/2/2016/04/ninja145972803357449.jpg
+```
+
+可以看到上面的例子中有不同的做法，有的在URI后面加上了md5参数，有的将md5值作为文件名的一部分，有的将资源放在特性版本的目录中。
+
+那么在文件没有变动的时候，浏览器不用发起请求直接可以使用缓存文件；而在文件有变化的时候，由于文件版本号的变更，导致文件名变化，请求的 url 变了，自然文件就更新了。这样能确保客户端能及时从服务器收取到新修改的文件。通过这样的处理，增长了静态资源，特别是图片资源的缓存时间，避免该资源很快过期，客户端频繁向服务端发起资源请求，服务器再返回 304 响应的情况（有 Last-Modified/Etag）。
+
+
+<p align='center'>
+<img src='../images/HTTP缓存流程.png'>
+</p>
+
+
+| 用户操作 | HTTP 状态码 | 原因 | 额外说明 | 
+| :---: | :---: | :---: | :---: |
+|在URI输入栏中输入然后回车|200(from cache)|由 Expires / Cache-Control 控制，Expires 是绝对时间，Cache-Control 是相对时间，两者都存在的时候，Cache-Control 覆盖 Expires ，只要没有失效，浏览器都只访问自己的缓存||
+|F5/点击工具栏中的刷新按钮/右键菜单重新加载|304|由 Last-Modified/Etag 控制，当用户本地缓存失效，刷新的时候，浏览器会发送请求给服务器，如果服务端没有变化，则返回 304 给浏览器||
+|Ctl+F5|200|当本地浏览器没有缓存或者 304 返回的资源也失效的时候，或者用户强制 Ctl+F5 刷新的时候，浏览器最终才会去下载最新的数据||
+
+总结：
+
+- 需要兼容 HTTP1.0 的时候需要使用 Expires，不然可以考虑直接使用 Cache-Control。
+- 需要处理一秒内多次修改的情况，或者其他 Last-Modified 处理不了的情况，才使用 ETag，否则使用 Last-Modified。
+- 对于所有可缓存资源，需要指定一个 Expires 或 Cache-Control，同时指定 Last-Modified 或者 Etag。
+- 可以通过标识文件版本名、加长缓存时间的方式来减少 304 响应。
+
 ------------------------------------------------------------------
 
 
@@ -397,7 +461,7 @@ Warning 首部是从 HTTP/1.0 的响应首部（Retry-After）演变过来的。
 
 Warning 首部的格式如下：
 
-```
+```http
 Warning: [警告码][警告的主机：端口号]"[警告内容]"([日期内容])
 
 ```
@@ -519,7 +583,7 @@ HTTP/1.1 中定义了 7 种警告，警告码具备扩展性，今后可以能�
 
 Cookie 的 HttpOnly 属性是 Cookie 的扩展功能，它使 JavaScript 脚本无法获得 Cookie。其主要目的为了防止跨站脚本攻击（Cross-site scripting，XSS）对 Cookie 的信息窃取。
 
-```
+```http
 Set-Cookie: name-value;HttpOnly
 
 ```
@@ -562,6 +626,15 @@ Set-Cookie: name-value;HttpOnly
 |Last-Modified |这个实体最后一次被修改的日期和时间|
 
 
+Expires 是 Web 服务器响应消息头字段，在响应 http 请求时告诉浏览器在过期时间前浏览器可以直接从浏览器缓存取数据，而无需再次请求。
+
+Expires 的缺点是：响应报文中 Expires 所定义的缓存时间是相对服务器上的时间而言的，其定义的是资源“失效时刻”，如果客户端上的时间跟服务器上的时间不一致，缓存将失效。  
+
+另外，Expires 主要使用在 HTTP1.0 版本。
+
+
+
+
 如果两者的 URI 是相同，所以仅凭 URI 指定缓存的资源是很困难的。若下载过程中出现连续中断、再连接的情况，都会依据 ETag 值指定资源。
 
 ETag 也分为强 ETag 值和弱 ETag 值：
@@ -570,7 +643,7 @@ ETag 也分为强 ETag 值和弱 ETag 值：
 
 强 ETag 值，不论实体发生多少细微的变化都会改变其值。
 
-```  
+```http  
 ETag: "usagi-1234"
 
 ```
@@ -579,7 +652,7 @@ ETag: "usagi-1234"
 
 弱 ETag 值只用于提示资源是否相同。只有资源发生了根本改变，产生差异时才会改变 ETag 值。这时，会在字段值最开始处附加 W/
 
-```  
+```http  
 ETag: W/"usagi-1234"
 
 ```
@@ -653,11 +726,11 @@ GET 和 POST 的请求都能使用额外的参数，但是 GET 的参数是以�
 
 GET 的传参方式相比于 POST 安全性较差，因为 GET 传的参数在 URL 中是可见的，可能会泄露私密信息。并且 GET 只支持 ASCII 字符，如果参数为中文则可能会出现乱码，而 POST 支持标准字符集。
 
-```
+```http
 GET /test/demo_form.asp?name1=value1&name2=value2 HTTP/1.1
 ```
 
-```
+```http
 POST /test/demo_form.asp HTTP/1.1
 Host: w3schools.com
 name1=value1&name2=value2
@@ -679,7 +752,7 @@ GET 方法是安全的，而 POST 却不是，因为 POST 的目的是传送实�
 
 GET /pageX HTTP/1.1 是幂等的。连续调用多次，客户端接收到的结果都是一样的：
 
-```
+```http
 GET /pageX HTTP/1.1
 GET /pageX HTTP/1.1
 GET /pageX HTTP/1.1
@@ -688,7 +761,7 @@ GET /pageX HTTP/1.1
 
 POST /add_row HTTP/1.1 不是幂等的。如果调用多次，就会增加多行记录：
 
-```
+```http
 POST /add_row HTTP/1.1
 POST /add_row HTTP/1.1   -> Adds a 2nd row
 POST /add_row HTTP/1.1   -> Adds a 3rd row
@@ -696,7 +769,7 @@ POST /add_row HTTP/1.1   -> Adds a 3rd row
 
 DELETE /idX/delete HTTP/1.1 是幂等的，即便是不同请求之间接收到的状态码不一样：
 
-```
+```http
 DELETE /idX/delete HTTP/1.1   -> Returns 200 if idX exists
 DELETE /idX/delete HTTP/1.1   -> Returns 404 as it just got deleted
 DELETE /idX/delete HTTP/1.1   -> Returns 404
@@ -848,7 +921,7 @@ function callOtherDomain() {
 </p>
 
 
-```javascript
+```http
 
 //让我们看看，在这个场景中，浏览器会发送什么的请求到服务器，而服务器又会返回什么给浏览器：
 GET /resources/public-data/ HTTP/1.1
@@ -947,7 +1020,7 @@ function callOtherDomain(){
 
 如上，以 XMLHttpRequest 创建了一个 POST 请求，为该请求添加了一个自定义请求头(X-PINGOTHER: pingpong)，并指定数据类型为 application/xml。所以，该请求是一个“预请求”形式的跨站请求。浏览器使用一个 OPTIONS 发送了一个“预请求”。Firefox 3.1 根据请求参数，决定需要发送一个“预请求”，来探明服务器端是否接受后续真正的请求。 OPTIONS 是 HTTP/1.1 里的方法，用来获取更多服务器端的信息，是一个不应该对服务器数据造成影响的方法。 随同 OPTIONS 请求，以下两个请求头一起被发送：
 
-```javascript
+```http
 Access-Control-Request-Method: POST
 Access-Control-Request-Headers: X-PINGOTHER
 
@@ -956,7 +1029,7 @@ Access-Control-Request-Headers: X-PINGOTHER
 假设服务器成功响应返回部分信息如下：
 
 
-```javascript
+```http
 Access-Control-Allow-Origin: http://foo.example //表明服务器允许http://foo.example的请求
 Access-Control-Allow-Methods: POST, GET, OPTIONS //表明服务器可以接受POST, GET和 OPTIONS的请求方法
 Access-Control-Allow-Headers: X-PINGOTHER //传递一个可接受的自定义请求头列表。服务器也需要设置一个与浏览器对应。否则会报 Request header field X-Requested-With is not allowed by Access-Control-Allow-Headers in preflight response 的错误
@@ -1003,7 +1076,7 @@ function callOtherDomain(){
 
 假设服务器成功响应返回部分信息如下：
 
-```javascript
+```http
 Access-Control-Allow-Origin: http://foo.example
 Access-Control-Allow-Credentials: true
 Set-Cookie: pageAccess=3; expires=Wed, 31-Dec-2008 01:34:53 GMT
@@ -1030,7 +1103,8 @@ Reference：
 《HTTP 权威指南》    
 [RFC2616](https://tools.ietf.org/html/rfc2616)  
 [HTTP访问控制（CORS）](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Access_control_CORS)  
-[跨域资源共享 CORS 详解](http://www.ruanyifeng.com/blog/2016/04/cors.html)
+[跨域资源共享 CORS 详解](http://www.ruanyifeng.com/blog/2016/04/cors.html)  
+[HTTP缓存控制小结](http://imweb.io/topic/5795dcb6fb312541492eda8c)
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
