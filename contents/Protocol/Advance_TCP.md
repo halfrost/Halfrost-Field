@@ -61,7 +61,7 @@ vi /etc/security/limits.conf 添加
 xxx - nofile 8192 
 xxx 是一个用户，如果是想所有用户生效的话换成 * ，设置的数值与硬件配置有关，别设置太大了。 
 
-```
+```http
 #<domain>      <type>     <item>         <value> 
 
 *         soft    nofile    8192 
@@ -78,7 +78,7 @@ session required pam_limits.so
 
 一、 修改方法：（暂时生效，重新启动服务器后，会还原成默认值） 
 
-```
+```http
 sysctl -w net.ipv4.tcp_keepalive_time=600   
 sysctl -w net.ipv4.tcp_keepalive_probes=2 
 sysctl -w net.ipv4.tcp_keepalive_intvl=2 
@@ -91,7 +91,7 @@ vi /etc/sysctl.conf
 
 若配置文件中不存在如下信息，则添加： 
 
-```
+```http
 net.ipv4.tcp_keepalive_time = 1800 
 net.ipv4.tcp_keepalive_probes = 3 
 net.ipv4.tcp_keepalive_intvl = 15 
@@ -129,9 +129,10 @@ INTEGER，默认值为75
 
 在 Linux 上可用以下语句看了一下服务器的 TCP 状态(连接状态数量统计)： 
 
-```
+```http
 netstat -n | awk '/^tcp/ {++S[$NF]} END {for(a in S) print a， S[a]}' 
 ```
+
 返回结果范例如下： 
 
 ESTABLISHED 1423   
@@ -148,7 +149,7 @@ TIME\_WAIT 状态也称为 2MSL 等待状态。在该状态中， TCP 将会等�
 [RFC0793] 将最大段生存期设为 2 分钟。然而在常见实现中，最大段生存期的数值可
 以为 30 秒、 1 分钟或者 2 分钟。在绝大多数情况下，这一数值是可以修改的。在 Linux系统中， `net.ipv4.tcp_fin_timeout` 的数值记录了 2MSL 状态需要等待的超时时间(以秒为单位)。 在 Windows 系统，下面的注册键值也保存了超时时间:
 
-```
+```http
 HKLM\SYSTEM\currentcontrolSet\Services\Tcpip\parameters\TcpTimedWaitDelay
 ```
 
@@ -195,7 +196,7 @@ Nagle 算法要求，当一个 TCP 连接中有在传数据(即那些已发送�
 
 禁用 Nagle 算法有多种方式，主机需求 RFC [RFCl122] 列出了相关方法。若某个应用使 用 Berkeley 套接字 API，可以设置 TCP\_NODELAY 选项。另外，也可以在整个系统中禁用该算法。在 Windows 系统中，使用如下的注册表项:
 
-```
+```http
     HKLM\SOFTWARE\Microsoft\MSMQ\parameters\TCPNoDelay
 ```
 
@@ -250,6 +251,9 @@ IPsec 是一个提供第 3 层安全的协议集合，其中包括 IKE、 AH 以
 HTTP1.0 版本以后，允许 HTTP 设备在事务处理结束之后将 TCP 连接保持在打开状态，以便为未来的 HTTP 请求重用现存的连接。在事务处理结束之后仍然保持在打开状态的 TCP 连接被称为持久连接。
 
 持久连接的时间参数，通常由服务器设定，比如 nginx 的 keepalivetimeout，keepalive timout 时间值意味着：一个 http 产生的 tcp 连接在传送完最后一个响应后，还需要 hold 住 keepalive\_timeout 秒后，才开始关闭这个连接；
+
+
+**在 HTTP 1.1 中 所有的连接默认都是持续连接**，除非特殊声明不支持。HTTP 持久连接不使用独立的 keepalive 信息，而是仅仅允许多个请求使用单个连接。然而，Apache 2.0 httpd 的默认连接过期时间是仅仅 15 秒，对于 Apache 2.2 只有 5 秒。短的过期时间的优点是能够快速的传输多个 web 页组件，而不会绑定多个服务器进程或线程太长时间。
 
 持久连接与并行连接相比，带来的优势如下：
 
