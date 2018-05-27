@@ -864,4 +864,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/protobuf/](https://halfrost.com/protobuf/)
+> Source: [https://halfrost.com/protobuf\_encode/](https://halfrost.com/protobuf_encode/)
