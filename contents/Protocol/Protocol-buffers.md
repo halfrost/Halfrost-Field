@@ -595,7 +595,7 @@ message Test1 {
 如果存在上面这样的一个 message 的结构，如果存入 150，在 Protocol Buffer 中显示的二进制应该为 08 96 01 。
 
 
-额外说一句，type 需要注意的是 type = 2 的情况，tag 里面除了包含 field number 和 wire\_type ，还需要再包含一个 length，决定 value 从那一段取出来。（具体原因见 [Protocol Buffer 字符串]() 这一章节） 
+额外说一句，type 需要注意的是 type = 2 的情况，tag 里面除了包含 field number 和 wire\_type ，还需要再包含一个 length，决定 value 从那一段取出来。（具体原因见 [Protocol Buffer 字符串](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#4-%E5%AD%97%E7%AC%A6%E4%B8%B2) 这一章节） 
 
 
 ### 2. Signed Integers 编码
@@ -685,7 +685,7 @@ length 为 3，代表后面有 3 个字节，即 08 96 01 。
 
 ### 6. Optional 和 Repeated 的编码
 
-在 proto2 中定义成 repeated 的字段，（没有加上 [packed=true] option ），编码后的 message 有一个或者多个包含相同 tag 数字的 key-value 对。这些重复的 value 不需要连续的出现；他们可能与其他的字段间隔的出现。尽管他们是无序的，但是在解析时，他们是需要有序的。在 proto3 中 repeated 字段默认采用 packed 编码（具体原因见 [Packed Repeated Fields]() 这一章节） 
+在 proto2 中定义成 repeated 的字段，（没有加上 [packed=true] option ），编码后的 message 有一个或者多个包含相同 tag 数字的 key-value 对。这些重复的 value 不需要连续的出现；他们可能与其他的字段间隔的出现。尽管他们是无序的，但是在解析时，他们是需要有序的。在 proto3 中 repeated 字段默认采用 packed 编码（具体原因见 [Packed Repeated Fields](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#7-packed-repeated-fields) 这一章节） 
 
 对于 proto3 中的任何非重复字段或 proto2 中的可选字段，编码的 message 可能有也可能没有包含该字段号的键值对。
 
