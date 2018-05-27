@@ -685,16 +685,70 @@ length 为 3，代表后面有 3 个字节，即 08 96 01 。
 
 ### 6. Optional 和 Repeated 的编码
 
-```c
+在 proto2 中定义成 repeated 的字段，（没有加上 [packed=true] option ），编码后的 message 有一个或者多个包含相同 tag 数字的 key-value 对。这些重复的 value 不需要连续的出现；他们可能与其他的字段间隔的出现。尽管他们是无序的，但是在解析时，他们是需要有序的。在 proto3 中 repeated 字段默认采用 packed 编码（具体原因见 [Packed Repeated Fields]() 这一章节） 
 
+对于 proto3 中的任何非重复字段或 proto2 中的可选字段，编码的 message 可能有也可能没有包含该字段号的键值对。
+
+
+通常，编码后的 message，其 required 字段和 optional 字段最多只有一个实例。但是解析器却需要处理多对一的情况。对于数字类型和 string 类型，如果同一值出现多次，解析器接受最后一个它收到的值。对于内嵌字段，解析器合并(merge)它接收到的同一字段的多个实例。就如 MergeFrom 方法一样，所有单数的字段，后来的会替换先前的，所有单数的内嵌 message 都会被合并(merge)，所有的 repeated 字段，都会串联起来。这样的规则的结果是，**解析两个串联的编码后的 message，与分别解析两个 message 然后 merge，结果是一样的**。例如：
+
+
+```c
+MyMessage message;
+message.ParseFromString(str1 + str2);
 ```
 
-### 7. Field Order
-
+等价于
 
 ```c
-
+MyMessage message, message2;
+message.ParseFromString(str1);
+message2.ParseFromString(str2);
+message.MergeFrom(message2);
 ```
+
+这种方法有时是非常有用的。比如，即使不知道 message 的类型，也能够将其合并。
+
+
+### 7. Packed Repeated Fields
+
+在 2.1.0 版本以后，protocol buffers 引入了该种类型，其与 repeated 字段一样，只是在末尾声明了 [packed=true]。类似 repeated 字段却又不同。在 proto3 中 Repeated 字段默认就是以这种方式处理。对于 packed repeated 字段，如果 message 中没有赋值，则不会出现在编码后的数据中。否则的话，该字段所有的元素会被打包到单一一个 key-value 对中，且它的 wire\_type=2，长度确定。每个元素正常编码，只不过其前没有标签 tag。例如有如下 message 类型：
+
+```proto
+message Test4 {
+  repeated int32 d = 4 [packed=true];
+}
+```
+
+构造一个 Test4 字段，并且设置 repeated 字段 d 3个值：3，270和86942，编码后：
+
+```c
+22 // tag 0010 0010(field number 010 0 = 4, wire type 010 = 2)
+
+06 // payload size (设置的length = 6 bytes)
+ 
+03 // first element (varint 3)
+ 
+8E 02 // second element (varint 270)
+ 
+9E A7 05 // third element (varint 86942)
+```
+
+只有原始数字类型（使用varint，32位或64位）的重复字段才可以声明为“packed”。
+
+
+有一点需要注意，对于 packed 的 repeated 字段，尽管通常没有理由将其编码为多个 key-value 对，编码器必须有接收多个 key-pair 对的准备。这种情况下，payload 必须是串联的，每个 pair 必须包含完整的元素。
+
+
+Protocol Buffer 解析器必须能够解析被重新编译为 packed 的字段，就像它们未被 packed 一样，反之亦然。这允许以正向和反向兼容的方式将[packed = true]添加到现有字段。
+
+
+### 8. Field Order
+
+编码/解码与字段顺序无关，这一点由 key-value 机制保证。
+
+如果消息具有未知字段，则当前的 Java 和 C++ 实现在按顺序排序的已知字段之后以任意顺序写入它们。当前的 Python 实现不会跟踪未知字段。
+
 
 小结：
 
