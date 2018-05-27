@@ -75,9 +75,15 @@ The name originates from the early days of the format, before we had the protoco
 
 ## 三. proto3 定义 message
 
+
+<p align='center'>
+<img src='../images/intro_protobuf.png'>
+</p>
+
+
 目前 protocol buffers 最新版本是 proto3，与老的版本 proto2 还是有些区别的。这两个版本的 API 不完全兼容。
 
-> proto2 和 proto3 的名字看起来有点扑朔迷离，那是因为当我们最初开源的 protocol buffers 时，它实际上是 Google 的第二个版本了，所以被称为proto2，这也是我们的开源版本号从 v2 开始的原因。初始版名为 proto1，从2001年初开始在谷歌开发的。
+> proto2 和 proto3 的名字看起来有点扑朔迷离，那是因为当我们最初开源的 protocol buffers 时，它实际上是 Google 的第二个版本了，所以被称为 proto2，这也是我们的开源版本号从 v2 开始的原因。初始版名为 proto1，从 2001 年初开始在谷歌开发的。
 
 
 在 proto 中，所有结构化的数据都被称为 message。
@@ -632,6 +638,12 @@ Non-varint 数字比较简单，double 、fixed64 的 wire\_type 为 1，在解�
 
 ### 4. 字符串
 
+
+<p align='center'>
+<img src='../images/protobuf_example.png'>
+</p>
+
+
 wire\_type 类型为 2 的数据，是一种指定长度的编码方式：key + length + content，key 的编码方式是统一的，length 采用 varints 编码方式，content 就是由 length 指定长度的 Bytes。
 
 举例，假设定义如下的 message 格式：
@@ -750,15 +762,13 @@ Protocol Buffer 解析器必须能够解析被重新编译为 packed 的字段�
 如果消息具有未知字段，则当前的 Java 和 C++ 实现在按顺序排序的已知字段之后以任意顺序写入它们。当前的 Python 实现不会跟踪未知字段。
 
 
-小结：
-
-
-Protocol Buffer 高性能的原因有两个：
-
-1. Protocol Buffer 序列化以后的二进制数据非常紧凑，所以体积更小，如果选用它作为网络数据传输，势必相同数据，消耗的网络流量更少。
-2. 由于采用了 ，所以导致了反序列化解包特别快！
-
 ## 七. protocol buffers 的优缺点
+
+
+<p align='center'>
+<img src='../images/serializerxgames.jpg'>
+</p>
+
 
 protocol buffers 在序列化方面，与 XML 相比，有诸多优点：
 
@@ -825,6 +835,22 @@ protocol buffers 最后一个非常棒的特性是，即“向后”兼容性好
 当然 protocol buffers 也并不是完美的，在使用上存在一些局限性。
 
 由于文本并不适合用来描述数据结构，所以 Protobuf 也不适合用来对基于文本的标记文档（如 HTML）建模。另外，由于 XML 具有某种程度上的自解释性，它可以被人直接读取编辑，在这一点上 Protobuf 不行，它以二进制的方式存储，除非你有 `.proto` 定义，否则你没法直接读出 Protobuf 的任何内容。
+
+
+## 八. 最后 
+
+
+读完本篇 Protocol Buffer 编码原理以后，读者应该能明白以下几点：
+
+1. Protocol Buffer 利用 varint 原理压缩数据以后，二进制数据非常紧凑，option 也算是压缩体积的一个举措。所以 pb 体积更小，如果选用它作为网络数据传输，势必相同数据，消耗的网络流量更少。但是并没有压缩到极限，float、double 浮点型都没有压缩。
+2. Protocol Buffer 比 JSON 和 XML 少了 {、}、: 这些符号，体积也减少一些。再加上 varint 压缩，gzip 压缩以后体积更小！
+3. Protocol Buffer 是 Tag - Value (Tag - Length - Value)的编码方式的实现。
+4. Protocol Buffer 另外一个核心价值在于提供了一套工具，一个编译工具，自动化生成 get/set 代码。简化了多语言交互的复杂度，使得编码解码工作有了生产力。
+5. Protocol Buffer 不是自我描述的，离开了数据描述 `.proto` 文件，就无法理解二进制数据流。这点即是优点，使数据具有一定的“加密性”，也是缺点，数据可读性极差。
+6. Protocol Buffer 具有向后兼容的特性，更新数据结构以后，老版本依旧可以兼容，这也是 Protocol Buffer 诞生之初被寄予解决的问题。因为编译器对不识别的新增字段会跳过不处理。
+
+Protocol Buffer 编码原理篇到此结束，下篇来讲讲 Protocol Buffer 反序列化解包性能快的原因。
+
 
 ------------------------------------------------------
 
