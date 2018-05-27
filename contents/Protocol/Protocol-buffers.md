@@ -1,4 +1,4 @@
-# 高效的数据序列化格式 Protobuf
+# 高效的数据压缩编码方式 Protobuf
 
 <p align='center'>
 <img src='../images/protobuf_title.png'>
@@ -545,18 +545,156 @@ Varint 确实是一种紧凑的表示数字的方法。它用一个或多个字�
 
 ### 1. Message Structure 编码
 
+protocol buffer 中 message 是一系列键值对。message 的二进制版本只是使用字段号(field's number 和 wire_type)作为 key。每个字段的名称和声明类型只能在解码端通过引用消息类型的定义（即 `.proto` 文件）来确定。这一点也是人们常常说的 protocol buffer 比 JSON，XML 安全一点的原因，如果没有数据结构描述 `.proto` 文件，拿到数据以后是无法解释成正常的数据的。
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/84_7.png'>
+</p>
+
+由于采用了 tag-value 的形式，所以 option 的 field 如果有，就存在在这个 message buffer 中，如果没有，就不会在这里，这一点也算是压缩了 message 的大小了。
+
+
+当消息编码时，键和值被连接成一个字节流。当消息被解码时，解析器需要能够跳过它无法识别的字段。这样，可以将新字段添加到消息中，而不会破坏不知道它们的旧程序。这就是所谓的 “向后”兼容性。
+
+
+为此，线性的格式消息中每对的“key”实际上是两个值，其中一个是来自`.proto`文件的字段编号，加上提供正好足够的信息来查找下一个值的长度。在大多数语言实现中，这个 key 被称为 tag。
+
+
+<p align='center'>
+<img src='../images/pb_wire_type.png'>
+</p>
+
+
+key 的计算方法是 `(field_number << 3) | wire_type`，换句话说，key 的最后 3 位表示的就是 `wire_type`。
+
+举例，一般 message 的字段号都是 1 开始的，所以对应的 tag 可能是这样的：
+
+```c
+000 1000
+```
+
+末尾 3 位表示的是 value 的类型，这里是 000，即 0 ，代表的是 varint 值。右移 3 位，即 0001，这代表的就是字段号(field number)。tag 的例子就举这么多，接下来举一个 value 的例子，还是用 varint 来举例：
+
+```c
+96 01 = 1001 0110  0000 0001
+       → 000 0001  ++  001 0110 (drop the msb and reverse the groups of 7 bits)
+       → 10010110
+       → 128 + 16 + 4 + 2 = 150
+```
+
+可以 96 01 代表的数据就是 150 。
+
+
+```proto
+message Test1 {
+  required int32 a = 1;
+}
+```
+
+
+如果存在上面这样的一个 message 的结构，如果存入 150，在 Protocol Buffer 中显示的二进制应该为 08 96 01 。
+
+
+额外说一句，type 需要注意的是 type = 2 的情况，tag 里面除了包含 field number 和 wire\_type ，还需要再包含一个 length，决定 value 从那一段取出来。（具体原因见 [Protocol Buffer 字符串]() 这一章节） 
+
+
 ### 2. Signed Integers 编码
+
+从上面的表格里面可以看到 wire\_type = 0 中包含了无符号的 varints，但是如果是一个无符号数呢？
+
+一个负数一般会被表示为一个很大的整数，因为计算机定义负数的符号位为数字的最高位。如果采用 Varint 表示一个负数，那么一定需要 10 个 byte 长度。为此 Google Protocol Buffer 定义了 sint32 这种类型，采用 zigzag 编码。将所有整数映射成无符号整数，然后再采用 varint 编码方式编码，这样，绝对值小的整数，编码后也会有一个较小的 varint 编码值。
+
+Zigzag 映射函数为：
+
+```c
+Zigzag(n) = (n << 1) ^ (n >> 31), n 为 sint32 时
+
+Zigzag(n) = (n << 1) ^ (n >> 63), n 为 sint64 时
+
+```
+
+按照这种方法，-1 将会被编码成 1，1 将会被编码成 2，-2 会被编码成 3，如下表所示：
+
+
+<p align='center'>
+<img src='../images/pb_zigzag.png'>
+</p>
+
+需要注意的是，第二个转换 `（n >> 31）` 部分，是一个算术转换。所以，换句话说，移位的结果要么是一个全为0（如果n是正数），要么是全部1（如果n是负数）。 
+
+当 sint32 或 sint64 被解析时，它的值被解码回原始的带符号的版本。
 
 ### 3. Non-varint Numbers 
 
+Non-varint 数字比较简单，double 、fixed64 的 wire\_type 为 1，在解析时告诉解析器，该类型的数据需要一个 64 位大小的数据块即可。同理，float 和 fixed32 的 wire\_type 为5，给其 32 位数据块即可。两种情况下，都是高位在后，低位在前。
+
+**说 Protocol Buffer 压缩数据没有到极限，原因就在这里，因为并没有压缩 float、double 这些浮点类型**。
+
 ### 4. 字符串
+
+wire\_type 类型为 2 的数据，是一种指定长度的编码方式：key + length + content，key 的编码方式是统一的，length 采用 varints 编码方式，content 就是由 length 指定长度的 Bytes。
+
+举例，假设定义如下的 message 格式：
+
+```proto
+message Test2 {
+  optional string b = 2;
+}
+```
+
+设置该值为"testing"，二进制格式查看：
+
+```c
+12 07 74 65 73 74 69 6e 67
+```
+
+<span style="color: red;">74 65 73 74 69 6e 67 </span> 是“testing”的 UTF8 代码。
+
+此处，key 是16进制表示的，所以展开是：
+
+12 -> 0001 0010，后三位 010 为 wire type = 2，0001 0010 右移三位为 0000 0010，即 tag = 2。
+
+length 此处为 7，后边跟着 7 个bytes，即我们的字符串"testing"。
+
+**所以 wire\_type 类型为 2 的数据，编码的时候会默认转换为 T-L-V (Tag - Length - Value)的形式**。
 
 ### 5. 嵌入式 message
 
+假设，定义如下嵌套消息：
+
+```proto
+message Test3 {
+  optional Test1 c = 3;
+}
+```
+
+设置字段为整数150，编码后的字节为：
+
+```c
+1a 03 08 96 01
+```
+
+<span style="color: red;">08 96 01</span> 这三个代表的是 150，上面讲解过，这里就不再赘述了。
+
+1a -> 0001 1010，后三位 010 为 wire type = 2，0001 1010 右移三位为 0000 0011，即 tag = 3。
+
+length 为 3，代表后面有 3 个字节，即 08 96 01 。
+
+需要转变为 T - L - V 形式的还有 string, bytes, embedded messages, packed repeated fields （即 wire\_type 为 2 的形式都会转变成 T - L - V 形式）
+
+
 ### 6. Optional 和 Repeated 的编码
+
+```c
+
+```
 
 ### 7. Field Order
 
+
+```c
+
+```
 
 小结：
 
@@ -638,8 +776,9 @@ protocol buffers 最后一个非常棒的特性是，即“向后”兼容性好
 
 Reference：  
 
-[google 官方文档](https://developers.google.com/protocol-buffers/docs/overview)    
-    
+[google 官方文档](https://developers.google.com/protocol-buffers/docs/overview)      
+[thrift-protobuf-compare - Benchmarking.wiki](https://code.google.com/archive/p/thrift-protobuf-compare/wikis/Benchmarking.wiki)    
+[jvm-serializers](https://github.com/eishay/jvm-serializers/wiki)
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
