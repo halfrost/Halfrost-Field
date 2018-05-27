@@ -120,7 +120,7 @@ Cache-Control: no-cache
 Connection: keep-alive
 ```
 
-上面三行之中，第一行的Content-Type必须指定 MIME 类型为event-steam
+上面三行之中，第一行的 Content-Type 必须指定 MIME 类型为event-steam
 
 <p align='center'>
 <img src='../images/SSE.png'>
