@@ -377,8 +377,194 @@ service FooService {
 
 ## 六. Protocol Buffer 编码原理
 
+在讨论 Protocol Buffer 编码原理之前，必须先谈谈 Varints 编码。
+
+### Base 128 Varints 编码
 
 
+Varint 是一种紧凑的表示数字的方法。它用一个或多个字节来表示一个数字，值越小的数字使用越少的字节数。这能减少用来表示数字的字节数。
+
+Varint 中的每个字节（最后一个字节除外）都设置了最高有效位（msb），这一位表示还会有更多字节出现。每个字节的低 7 位用于以 7 位组的形式存储数字的二进制补码表示，最低有效组首位。
+
+如果用不到 1 个字节，那么最高有效位设为 0 ，如下面这个例子，1 用一个字节就可以表示，所以 msb 为 0.
+
+```c
+0000 0001
+```
+
+如果需要多个字节表示，msb 就应该设置为 1 。例如 300，如果用 Varint 表示的话：
+
+
+```c
+1010 1100 0000 0010
+```
+
+如果按照正常的二进制计算的话，这个表示的是 88068(65536 + 16384 + 4096 + 2048 + 4)。
+
+那 Varint 是怎么编码的呢？
+
+下面代码是 Varint int 32 的编码计算方法。
+
+```c
+char* EncodeVarint32(char* dst, uint32_t v) {
+  // Operate on characters as unsigneds
+  unsigned char* ptr = reinterpret_cast<unsigned char*>(dst);
+  static const int B = 128;
+  if (v < (1<<7)) {
+    *(ptr++) = v;
+  } else if (v < (1<<14)) {
+    *(ptr++) = v | B;
+    *(ptr++) = v>>7;
+  } else if (v < (1<<21)) {
+    *(ptr++) = v | B;
+    *(ptr++) = (v>>7) | B;
+    *(ptr++) = v>>14;
+  } else if (v < (1<<28)) {
+    *(ptr++) = v | B;
+    *(ptr++) = (v>>7) | B;
+    *(ptr++) = (v>>14) | B;
+    *(ptr++) = v>>21;
+  } else {
+    *(ptr++) = v | B;
+    *(ptr++) = (v>>7) | B;
+    *(ptr++) = (v>>14) | B;
+    *(ptr++) = (v>>21) | B;
+    *(ptr++) = v>>28;
+  }
+  return reinterpret_cast<char*>(ptr);
+}
+```
+
+```c
+300 = 100101100
+```
+
+由于 300 超过了 7 位（Varint 一个字节只有 7 位能用来表示数字，最高位 msb 用来表示后面是否有更多字节），所以 300 需要用 2 个字节来表示。
+
+Varint 的编码，以 300 举例：
+
+```c
+1. 100101100 | 10000000 = 1 1010 1100
+2. 110101100 >> 7 = 1010 1100
+3. 100101100 >> 7 = 10 = 0000 0010
+4. 1010 1100 0000 0010 (最终 Varint 结果)
+```
+
+
+Varint 的解码算法应该是这样的：（实际就是编码的逆过程）
+
+1. 如果是多个字节，先去掉每个字节的 msb（通过逻辑或运算），每个字节只留下 7 位。
+2. 逆序整个结果，最多是 5 个字节，排序是 1-2-3-4-5，逆序之后就是 5-4-3-2-1，字节内部的二进制位的顺序不变，变的是字节的相对位置。
+
+解码过程调用 GetVarint32Ptr 函数，如果是大于一个字节的情况，会调用 GetVarint32PtrFallback 来处理。
+
+```c
+inline const char* GetVarint32Ptr(const char* p,
+                                  const char* limit,
+                                  uint32_t* value) {
+  if (p < limit) {
+    uint32_t result = *(reinterpret_cast<const unsigned char*>(p));
+    if ((result & 128) == 0) {
+      *value = result;
+      return p + 1;
+    }
+  }
+  return GetVarint32PtrFallback(p, limit, value);
+}
+
+const char* GetVarint32PtrFallback(const char* p,
+                                   const char* limit,
+                                   uint32_t* value) {
+  uint32_t result = 0;
+  for (uint32_t shift = 0; shift <= 28 && p < limit; shift += 7) {
+    uint32_t byte = *(reinterpret_cast<const unsigned char*>(p));
+    p++;
+    if (byte & 128) {
+      // More bytes are present
+      result |= ((byte & 127) << shift);
+    } else {
+      result |= (byte << shift);
+      *value = result;
+      return reinterpret_cast<const char*>(p);
+    }
+  }
+  return NULL;
+}
+
+```
+
+
+至此，Varint 处理过程读者应该都熟悉了。上面列举出了 Varint 32 的算法，64 位的同理，只不过不再用 10 个分支来写代码了，太丑了。（32位 是 5 个 字节，64位 是 10 个字节）
+
+64 位 Varint 编码实现：
+
+```c
+char* EncodeVarint64(char* dst, uint64_t v) {
+  static const int B = 128;
+  unsigned char* ptr = reinterpret_cast<unsigned char*>(dst);
+  while (v >= B) {
+    *(ptr++) = (v & (B-1)) | B;
+    v >>= 7;
+  }
+  *(ptr++) = static_cast<unsigned char>(v);
+  return reinterpret_cast<char*>(ptr);
+}
+```
+
+原理不变，只不过用循环来解决了。
+
+64 位 Varint 解码实现：
+
+```c
+const char* GetVarint64Ptr(const char* p, const char* limit, uint64_t* value) {
+  uint64_t result = 0;
+  for (uint32_t shift = 0; shift <= 63 && p < limit; shift += 7) {
+    uint64_t byte = *(reinterpret_cast<const unsigned char*>(p));
+    p++;
+    if (byte & 128) {
+      // More bytes are present
+      result |= ((byte & 127) << shift);
+    } else {
+      result |= (byte << shift);
+      *value = result;
+      return reinterpret_cast<const char*>(p);
+    }
+  }
+  return NULL;
+}
+```
+
+读到这里可能有读者会问了，Varint 不是为了紧凑 int 的么？那 300 本来可以用一个字节表示，现在变成 2 个字节了，哪里紧凑了，花费的空间反而变多了？！
+
+Varint 确实是一种紧凑的表示数字的方法。它用一个或多个字节来表示一个数字，值越小的数字使用越少的字节数。这能减少用来表示数字的字节数。比如对于 int32 类型的数字，一般需要 4 个 byte 来表示。但是采用 Varint，对于很小的 int32 类型的数字，则可以用 1 个 byte 来表示。当然凡事都有好的也有不好的一面，采用 Varint 表示法，大的数字则需要 5 个 byte 来表示。从统计的角度来说，一般不会所有的消息中的数字都是大数，因此大多数情况下，采用 Varint 后，可以用更少的字节数来表示数字信息。
+
+300 如果用 int32 表示，需要 4 个字节，现在用 Varint 表示，只需要 2 个字节了。缩小了一半！
+
+
+
+
+### 1. Message Structure 编码
+
+### 2. Signed Integers 编码
+
+### 3. Non-varint Numbers 
+
+### 4. 字符串
+
+### 5. 嵌入式 message
+
+### 6. Optional 和 Repeated 的编码
+
+### 7. Field Order
+
+
+小结：
+
+
+Protocol Buffer 高性能的原因有两个：
+
+1. Protocol Buffer 序列化以后的二进制数据非常紧凑，所以体积更小，如果选用它作为网络数据传输，势必相同数据，消耗的网络流量更少。
+2. 由于采用了 ，所以导致了反序列化解包特别快！
 
 ## 七. protocol buffers 的优缺点
 
@@ -440,9 +626,13 @@ Protobuf 语义更清晰，无需类似 XML 解析器的东西（因为 Protobuf
 
 protocol buffers 最后一个非常棒的特性是，即“向后”兼容性好，人们不必破坏已部署的、依靠“老”数据格式的程序就可以对数据结构进行升级。这样您的程序就可以不必担心因为消息结构的改变而造成的大规模的代码重构或者迁移的问题。因为添加新的消息中的 field 并不会引起已经发布的程序的任何改变(因为存储方式本来就是无序的，k-v 形式)。
 
+
+
+
+
 当然 protocol buffers 也并不是完美的，在使用上存在一些局限性。
 
-由于文本并不适合用来描述数据结构，所以 Protobuf 也不适合用来对基于文本的标记文档（如 HTML）建模。另外，由于 XML 具有某种程度上的自解释性，它可以被人直接读取编辑，在这一点上 Protobuf 不行，它以二进制的方式存储，除非你有 .proto 定义，否则你没法直接读出 Protobuf 的任何内容。
+由于文本并不适合用来描述数据结构，所以 Protobuf 也不适合用来对基于文本的标记文档（如 HTML）建模。另外，由于 XML 具有某种程度上的自解释性，它可以被人直接读取编辑，在这一点上 Protobuf 不行，它以二进制的方式存储，除非你有 `.proto` 定义，否则你没法直接读出 Protobuf 的任何内容。
 
 ------------------------------------------------------
 
