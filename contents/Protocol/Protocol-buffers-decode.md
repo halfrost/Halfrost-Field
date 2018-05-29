@@ -1365,7 +1365,7 @@ Protocol Buffer 一直被人们认为是高性能的存在。也有很多人做�
 
 至此，关于 protocol buffers 的所有，读者应该了然于胸了。
 
-protocol buffers 诞生之初也并不是为了传输数据存在的，只是为了解决服务器多版本协议兼容的问题。实质其实是发明了一个新的跨语言无歧义的 IDL 。只不过人们后来发现用它来传输数据也不错，才开始用 protocol buffers 。
+protocol buffers 诞生之初也并不是为了传输数据存在的，只是为了解决服务器多版本协议兼容的问题。实质其实是发明了一个新的跨语言无歧义的 IDL (Interface description language)。只不过人们后来发现用它来传输数据也不错，才开始用 protocol buffers 。
 
 想用 protocol buffers 替换 JSON，可能是考虑到：
 
