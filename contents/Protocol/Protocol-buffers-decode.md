@@ -311,41 +311,9 @@ encoder 和 decoder 函数初始化是在 Properties 中：
 ```go
 // Initialize the fields for encoding and decoding.
 func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lockGetProp bool) {
-	p.enc = nil
-	p.dec = nil
-	p.size = nil
-	isMap := typ.Kind() == reflect.Map
-	if len(p.CustomType) > 0 && !isMap {
-		p.setCustomEncAndDec(typ)
-		p.setTag(lockGetProp)
-		return
-	}
-	if p.StdTime && !isMap {
-		p.setTimeEncAndDec(typ)
-		p.setTag(lockGetProp)
-		return
-	}
-	if p.StdDuration && !isMap {
-		p.setDurationEncAndDec(typ)
-		p.setTag(lockGetProp)
-		return
-	}
-	switch t1 := typ; t1.Kind() {
-	default:
-		fmt.Fprintf(os.Stderr, "proto: no coders for %v\n", t1)
-
+	// 下面代码有删减，类似的部分省略了
 	// proto3 scalar types
-
-	case reflect.Bool:
-		if p.proto3 {
-			p.enc = (*Buffer).enc_proto3_bool
-			p.dec = (*Buffer).dec_proto3_bool
-			p.size = size_proto3_bool
-		} else {
-			p.enc = (*Buffer).enc_ref_bool
-			p.dec = (*Buffer).dec_proto3_bool
-			p.size = size_ref_bool
-		}
+	
 	case reflect.Int32:
 		if p.proto3 {
 			p.enc = (*Buffer).enc_proto3_int32
@@ -366,16 +334,6 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 			p.dec = (*Buffer).dec_proto3_int32 // can reuse
 			p.size = size_ref_uint32
 		}
-	case reflect.Int64, reflect.Uint64:
-		if p.proto3 {
-			p.enc = (*Buffer).enc_proto3_int64
-			p.dec = (*Buffer).dec_proto3_int64
-			p.size = size_proto3_int64
-		} else {
-			p.enc = (*Buffer).enc_ref_int64
-			p.dec = (*Buffer).dec_proto3_int64
-			p.size = size_ref_int64
-		}
 	case reflect.Float32:
 		if p.proto3 {
 			p.enc = (*Buffer).enc_proto3_uint32 // can just treat them as bits
@@ -385,16 +343,6 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 			p.enc = (*Buffer).enc_ref_uint32 // can just treat them as bits
 			p.dec = (*Buffer).dec_proto3_int32
 			p.size = size_ref_uint32
-		}
-	case reflect.Float64:
-		if p.proto3 {
-			p.enc = (*Buffer).enc_proto3_int64 // can just treat them as bits
-			p.dec = (*Buffer).dec_proto3_int64
-			p.size = size_proto3_int64
-		} else {
-			p.enc = (*Buffer).enc_ref_int64 // can just treat them as bits
-			p.dec = (*Buffer).dec_proto3_int64
-			p.size = size_ref_int64
 		}
 	case reflect.String:
 		if p.proto3 {
@@ -406,81 +354,13 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 			p.dec = (*Buffer).dec_proto3_string
 			p.size = size_ref_string
 		}
-	case reflect.Struct:
-		p.stype = typ
-		p.isMarshaler = isMarshaler(typ)
-		p.isUnmarshaler = isUnmarshaler(typ)
-		if p.Wire == "bytes" {
-			p.enc = (*Buffer).enc_ref_struct_message
-			p.dec = (*Buffer).dec_ref_struct_message
-			p.size = size_ref_struct_message
-		} else {
-			fmt.Fprintf(os.Stderr, "proto: no coders for struct %T\n", typ)
-		}
-
-	case reflect.Ptr:
-		switch t2 := t1.Elem(); t2.Kind() {
-		default:
-			fmt.Fprintf(os.Stderr, "proto: no encoder function for %v -> %v\n", t1, t2)
-			break
-		case reflect.Bool:
-			p.enc = (*Buffer).enc_bool
-			p.dec = (*Buffer).dec_bool
-			p.size = size_bool
-		case reflect.Int32:
-			p.enc = (*Buffer).enc_int32
-			p.dec = (*Buffer).dec_int32
-			p.size = size_int32
-		case reflect.Uint32:
-			p.enc = (*Buffer).enc_uint32
-			p.dec = (*Buffer).dec_int32 // can reuse
-			p.size = size_uint32
-		case reflect.Int64, reflect.Uint64:
-			p.enc = (*Buffer).enc_int64
-			p.dec = (*Buffer).dec_int64
-			p.size = size_int64
-		case reflect.Float32:
-			p.enc = (*Buffer).enc_uint32 // can just treat them as bits
-			p.dec = (*Buffer).dec_int32
-			p.size = size_uint32
-		case reflect.Float64:
-			p.enc = (*Buffer).enc_int64 // can just treat them as bits
-			p.dec = (*Buffer).dec_int64
-			p.size = size_int64
-		case reflect.String:
-			p.enc = (*Buffer).enc_string
-			p.dec = (*Buffer).dec_string
-			p.size = size_string
-		case reflect.Struct:
-			p.stype = t1.Elem()
-			p.isMarshaler = isMarshaler(t1)
-			p.isUnmarshaler = isUnmarshaler(t1)
-			if p.Wire == "bytes" {
-				p.enc = (*Buffer).enc_struct_message
-				p.dec = (*Buffer).dec_struct_message
-				p.size = size_struct_message
-			} else {
-				p.enc = (*Buffer).enc_struct_group
-				p.dec = (*Buffer).dec_struct_group
-				p.size = size_struct_group
-			}
-		}
 
 	case reflect.Slice:
 		switch t2 := t1.Elem(); t2.Kind() {
 		default:
 			logNoSliceEnc(t1, t2)
 			break
-		case reflect.Bool:
-			if p.Packed {
-				p.enc = (*Buffer).enc_slice_packed_bool
-				p.size = size_slice_packed_bool
-			} else {
-				p.enc = (*Buffer).enc_slice_bool
-				p.size = size_slice_bool
-			}
-			p.dec = (*Buffer).dec_slice_bool
-			p.packedDec = (*Buffer).dec_slice_packed_bool
+
 		case reflect.Int32:
 			if p.Packed {
 				p.enc = (*Buffer).enc_slice_packed_int32
@@ -491,98 +371,11 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 			}
 			p.dec = (*Buffer).dec_slice_int32
 			p.packedDec = (*Buffer).dec_slice_packed_int32
-		case reflect.Uint32:
-			if p.Packed {
-				p.enc = (*Buffer).enc_slice_packed_uint32
-				p.size = size_slice_packed_uint32
-			} else {
-				p.enc = (*Buffer).enc_slice_uint32
-				p.size = size_slice_uint32
-			}
-			p.dec = (*Buffer).dec_slice_int32
-			p.packedDec = (*Buffer).dec_slice_packed_int32
-		case reflect.Int64, reflect.Uint64:
-			if p.Packed {
-				p.enc = (*Buffer).enc_slice_packed_int64
-				p.size = size_slice_packed_int64
-			} else {
-				p.enc = (*Buffer).enc_slice_int64
-				p.size = size_slice_int64
-			}
-			p.dec = (*Buffer).dec_slice_int64
-			p.packedDec = (*Buffer).dec_slice_packed_int64
-		case reflect.Uint8:
-			p.dec = (*Buffer).dec_slice_byte
-			if p.proto3 {
-				p.enc = (*Buffer).enc_proto3_slice_byte
-				p.size = size_proto3_slice_byte
-			} else {
-				p.enc = (*Buffer).enc_slice_byte
-				p.size = size_slice_byte
-			}
-		case reflect.Float32, reflect.Float64:
-			switch t2.Bits() {
-			case 32:
-				// can just treat them as bits
-				if p.Packed {
-					p.enc = (*Buffer).enc_slice_packed_uint32
-					p.size = size_slice_packed_uint32
-				} else {
-					p.enc = (*Buffer).enc_slice_uint32
-					p.size = size_slice_uint32
-				}
-				p.dec = (*Buffer).dec_slice_int32
-				p.packedDec = (*Buffer).dec_slice_packed_int32
-			case 64:
-				// can just treat them as bits
-				if p.Packed {
-					p.enc = (*Buffer).enc_slice_packed_int64
-					p.size = size_slice_packed_int64
-				} else {
-					p.enc = (*Buffer).enc_slice_int64
-					p.size = size_slice_int64
-				}
-				p.dec = (*Buffer).dec_slice_int64
-				p.packedDec = (*Buffer).dec_slice_packed_int64
+		
 			default:
 				logNoSliceEnc(t1, t2)
 				break
 			}
-		case reflect.String:
-			p.enc = (*Buffer).enc_slice_string
-			p.dec = (*Buffer).dec_slice_string
-			p.size = size_slice_string
-		case reflect.Ptr:
-			switch t3 := t2.Elem(); t3.Kind() {
-			default:
-				fmt.Fprintf(os.Stderr, "proto: no ptr oenc for %T -> %T -> %T\n", t1, t2, t3)
-				break
-			case reflect.Struct:
-				p.stype = t2.Elem()
-				p.isMarshaler = isMarshaler(t2)
-				p.isUnmarshaler = isUnmarshaler(t2)
-				if p.Wire == "bytes" {
-					p.enc = (*Buffer).enc_slice_struct_message
-					p.dec = (*Buffer).dec_slice_struct_message
-					p.size = size_slice_struct_message
-				} else {
-					p.enc = (*Buffer).enc_slice_struct_group
-					p.dec = (*Buffer).dec_slice_struct_group
-					p.size = size_slice_struct_group
-				}
-			}
-		case reflect.Slice:
-			switch t2.Elem().Kind() {
-			default:
-				fmt.Fprintf(os.Stderr, "proto: no slice elem oenc for %T -> %T -> %T\n", t1, t2, t2.Elem())
-				break
-			case reflect.Uint8:
-				p.enc = (*Buffer).enc_slice_slice_byte
-				p.dec = (*Buffer).dec_slice_slice_byte
-				p.size = size_slice_slice_byte
-			}
-		case reflect.Struct:
-			p.setSliceOfNonPointerStructs(t1)
 		}
 
 	case reflect.Map:
@@ -932,76 +725,13 @@ func (o *Buffer) unmarshalType(st reflect.Type, prop *StructProperties, is_group
 			break
 		}
 		wire := int(u & 0x7)
-		if wire == WireEndGroup {
-			if is_group {
-				if required > 0 {
-					// Not enough information to determine the exact field.
-					// (See below.)
-					return &RequiredNotSetError{"{Unknown}"}
-				}
-				return nil // input is satisfied
-			}
-			return fmt.Errorf("proto: %s: wiretype end group for non-group", st)
-		}
-		tag := int(u >> 3)
-		if tag <= 0 {
-			return fmt.Errorf("proto: %s: illegal tag %d (wire type %d)", st, tag, wire)
-		}
-		fieldnum, ok := prop.decoderTags.get(tag)
-		if !ok {
-			// Maybe it's an extension?
-			if prop.extendable {
-				if e, eok := structPointer_Interface(base, st).(extensionsBytes); eok {
-					if isExtensionField(e, int32(tag)) {
-						if err = o.skip(st, tag, wire); err == nil {
-							ext := e.GetExtensions()
-							*ext = append(*ext, o.buf[oi:o.index]...)
-						}
-						continue
-					}
-				} else if e, _ := extendable(structPointer_Interface(base, st)); isExtensionField(e, int32(tag)) {
-					if err = o.skip(st, tag, wire); err == nil {
-						extmap := e.extensionsWrite()
-						ext := extmap[int32(tag)] // may be missing
-						ext.enc = append(ext.enc, o.buf[oi:o.index]...)
-						extmap[int32(tag)] = ext
-					}
-					continue
-				}
-			}
-			// Maybe it's a oneof?
-			if prop.oneofUnmarshaler != nil {
-				m := structPointer_Interface(base, st).(Message)
-				// First return value indicates whether tag is a oneof field.
-				ok, err = prop.oneofUnmarshaler(m, tag, wire, o)
-				if err == ErrInternalBadWireType {
-					// Map the error to something more descriptive.
-					// Do the formatting here to save generated code space.
-					err = fmt.Errorf("bad wiretype for oneof field in %T", m)
-				}
-				if ok {
-					continue
-				}
-			}
-			err = o.skipAndSave(st, tag, wire, base, prop.unrecField)
-			continue
-		}
-		p := prop.Prop[fieldnum]
-
-		if p.dec == nil {
-			fmt.Fprintf(os.Stderr, "proto: no protobuf decoder for %s.%s\n", st, st.Field(fieldnum).Name)
-			continue
-		}
+		
+		// 下面代码有省略
+		
 		dec := p.dec
-		if wire != WireStartGroup && wire != p.WireType {
-			if wire == WireBytes && p.packedDec != nil {
-				// a packable field
-				dec = p.packedDec
-			} else {
-				err = fmt.Errorf("proto: bad wiretype for field %s.%s: got wiretype %d, want %d", st, st.Field(fieldnum).Name, wire, p.WireType)
-				continue
-			}
-		}
+		
+		// 中间代码有省略
+		
 		decErr := dec(o, p, base)
 		if decErr != nil && !state.shouldContinue(decErr, p) {
 			err = decErr
