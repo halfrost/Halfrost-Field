@@ -665,7 +665,7 @@ SYN 攻击是一种典型的 DoS/DDoS 攻击。
 
 检测 SYN 攻击非常的方便，当你在服务器上看到大量的半连接状态时，特别是源IP地址是随机的，基本上可以断定这是一次SYN攻击。在 Linux/Unix 上可以使用系统自带的 netstats 命令来检测 SYN 攻击。
 
-```
+```http
 # netstat -na TCP | grep SYN_RECV | more，
 ```
 
