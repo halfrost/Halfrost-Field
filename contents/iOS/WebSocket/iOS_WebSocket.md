@@ -73,9 +73,12 @@
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-b88b2623a2e4a8ea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+
 上图就是Websocket和Polling的区别，从图中可以看到Polling里面客户端发送了好多Request，而下图，只有一个Upgrade，非常简洁高效。至于消耗方面的比较就要看下图了
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-f1f91e25b9635701.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
 上图中，我们先看蓝色的柱状图，是Polling轮询消耗的流量，这次测试，HTTP请求和响应头信息开销总共包括871字节。当然每次测试不同的请求，头的开销不同。这次测试都以871字节的请求来测试。
 
 **Use case A: **1,000 clients polling every second: Network throughput is (871 x 1,000) = 871,000 bytes = 6,968,000 bits per second (6.6 Mbps)  
@@ -135,8 +138,8 @@ Websocket的数据传输是frame形式传输的，比如会将一条消息分为
 具体的规范，还请看官网的[RFC 6455](https://tools.ietf.org/html/rfc6455)文档给出的详细定义。这里还有一个[翻译版本](https://www.gitbook.com/book/chenjianlong/rfc-6455-websocket-protocol-in-chinese/details)
 
 ## 四.WebSocket 和 Socket的区别与联系
-首先，  
-[Socket](http://en.wikipedia.org/wiki/Network_socket) 其实并不是一个协议。它工作在 OSI 模型会话层（第5层），是为了方便大家直接使用更底层协议（一般是 [TCP](http://en.wikipedia.org/wiki/Transmission_Control_Protocol) 或 [UDP](http://en.wikipedia.org/wiki/User_Datagram_Protocol) ）而存在的一个抽象层。Socket是对TCP/IP协议的封装，Socket本身并不是协议，而是一个调用接口(API)。
+
+首先，[Socket](http://en.wikipedia.org/wiki/Network_socket) 其实并不是一个协议。它工作在 OSI 模型会话层（第5层），是为了方便大家直接使用更底层协议（一般是 [TCP](http://en.wikipedia.org/wiki/Transmission_Control_Protocol) 或 [UDP](http://en.wikipedia.org/wiki/User_Datagram_Protocol) ）而存在的一个抽象层。Socket是对TCP/IP协议的封装，Socket本身并不是协议，而是一个调用接口(API)。
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-d35653654be833ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
