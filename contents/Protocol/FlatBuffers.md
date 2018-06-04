@@ -25,7 +25,7 @@ JSON 是一种独立于语言存在的数据格式，但是它解析数据并将
 
 FlatBuffers 与 Protocol Buffers 确实比较相似，主要的区别在于 FlatBuffers 在访问数据之前不需要解析/解包。两者代码也是一个数量级的。但是 Protocol Buffers既没有可选的文本导入/导出功能，也没有 union 这个语言特性，这两点 FlatBuffers 都有。
 
-FlatBuffers 专注于移动硬件（内存大小和内存带宽比桌面硬件更受限制），以及具有最高性能需求的应用程序：游戏。
+FlatBuffers 专注于移动硬件（内存大小和内存带宽比桌面端硬件更受限制），以及具有最高性能需求的应用程序：游戏。
 
 ## 三. FlatBuffers 使用量
 
@@ -45,6 +45,38 @@ Cocos2d-X，第一开源移动游戏引擎，使用 FlatBuffers 来序列化所�
 ## 四. 定义 .fbs
 
 编写一个 schema 文件，允许您定义您想要序列化的数据结构。字段可以有标量类型（所有大小的整数/浮点数），也可以是字符串，任何类型的数组，引用另一个对象，或者一组可能的对象（Union）。字段可以是可选 optional 的也可以有默认值，所以它们不需要存在于每个对象实例中。
+
+```schema
+// example IDL file
+
+namespace MyGame;
+
+attribute "priority";
+
+enum Color : byte { Red = 1, Green, Blue }
+
+union Any { Monster, Weapon, Pickup }
+
+struct Vec3 {
+  x:float;
+  y:float;
+  z:float;
+}
+
+table Monster {
+  pos:Vec3;
+  mana:short = 150;
+  hp:short = 100;
+  name:string;
+  friendly:bool = false (deprecated, priority: 1);
+  inventory:[ubyte];
+  color:Color = Blue;
+  test:Any;
+}
+
+root_type Monster;
+```
+
 
 
 ## 五. FlatBuffers 命名规范
