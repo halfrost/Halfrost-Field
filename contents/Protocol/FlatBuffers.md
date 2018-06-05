@@ -106,7 +106,7 @@ table { a:int; b:int; }
 
 ### 添加字段
 
-只能在表定义的末尾添加新的字段。旧数据仍会正确读取，并在读取时为您提供默认值。旧代码将简单地忽略新字段。如果希望灵活地使用 schema 中字段的任何顺序，您可以手动分配 ids（很像 Protocol Buffers），请参阅下面的 id 属性。
+只能在表定义的末尾添加新的字段。旧数据仍会正确读取，并在读取时为您提供默认值。旧代码将简单地忽略新字段。如果希望灵活地使用 schema 中字段的任何顺序，您可以手动分配 ids（很像 Protocol Buffers），请参阅下面的 [id 属性]()。
 
 
 举例：
@@ -176,6 +176,94 @@ table { aa:int; bb:int; }
 修改原来的变量名以后，可能会出现问题。由于已经重命名了字段，这将破坏所有使用此版本 schema 的代码（和 JSON 文件），这与实际的二进制缓冲区不兼容。
 
 
+### 2. Structs
+
+Structs 和 table 非常相似，只有 Structs 没有任何字段是可选的（所以也没有默认值），字段可能不会被添加或被弃用。结构可能只包含标量或其他结构。如果确定以后不会进行任何更改（如 Vec3 示例中非常明显），请将其用于简单对象。Structs 使用的内存少于 table，并且访问速度更快（它们总是以串联方式存储在其父对象中，并且不使用虚拟表）。
+
+### 3. Types
+
+FlatBuffers 支持的 标量 类型有以下几种：
+
+- 8 bit: byte (int8), ubyte (uint8), bool  
+- 16 bit: short (int16), ushort (uint16)  
+- 32 bit: int (int32), uint (uint32), float (float32)  
+- 64 bit: long (int64), ulong (uint64), double (float64)  
+
+括号里面的名字对应的是类型的别名。
+
+FlatBuffers 支持的 非标量 类型有以下几种：
+
+- 任何类型的数组。不过不支持嵌套数组，可以用 table 内定义数组的方式来取代嵌套数组。
+- UTF-8 和 7-bit ASCII 的字符串。其他格式的编码字符串或者二进制数据，需要用 [byte] 或者 [ubyte] 来替代。
+- table、structs、enums、unions
+
+标量类型的字段有默认值，非标量的字段(string/vector/table)如果没有值的话，默认值为 NULL。
+
+一旦一个类型声明了，**尽量不要改变它的类型，一旦改变了，很可能就会出现错误**。上面也提到过了，如果把 int 改成 uint，数据如果有负数，那么就会出错。
+
+### 4. Enums
+
+
+定义一系列命名常量，每个命名常量可以分别给一个定值，也可以默认的从前一个值增加一。默认的第一个值是 0。正如在上面例子中看到的枚举声明，使用:(上面例子中是 byte 字节）指定枚举的基本整型，然后确定用这个枚举类型声明的每个字段的类型。
+
+通常，只应添加枚举值，不要去删除枚举值（对枚举不存在弃用一说）。这需要开发者代码通过处理未知的枚举值来自行处理向前兼容性的问题。
+
+### 5. Unions
+
+**这个是 Protocol buffers 中还不支持的类型**。
+
+union 是 C 语言中的概念，一个 union 中可以放置多种类型，共同使用一个内存区域。
+
+但是在 FlatBuffers 中，Unions 可以像 Enums 一样共享许多属性，但不是常量的新名称，而是使用表的名称。可以声明一个 Unions 字段，该字段可以包含对这些类型中的任何一个的引用，**即这块内存区域只能由其中一种类型使用**。另外还会生成一个带有后缀 `_type` 的隐藏字段，该字段包含相应的枚举值，从而可以在运行时知道要将哪些类型转换为类型。
+
+**union 跟 enum 比较类似，但是 union 包含的是 table，enum 包含的是 scalar或者 struct。**
+
+Unions 是一种能够在一个 FlatBuffer 中发送多种消息类型的好方法。请注意，因为union 字段实际上是两个字段(有一个隐藏字段)，所以它必须始终是表的一部分，它本身不能作为 FlatBuffer 的 root。
+
+如果需要以更开放的方式区分不同的 FlatBuffers，例如文件，请参阅下面的[文件标识功能]()。
+
+最后还有一个实验功能，只在 C++ 的版本实现中提供支持，如上面例子中，把 [Any] \(联合体数组) 作为一个类型添加到了 Monster 的 table 定义中。
+
+
+### 6. Root type
+
+这声明了您认为是序列化数据的根表（或结构）。这对于解析不包含对象类型信息的JSON数据尤为重要。
+
+
+### 7. File identification and extension
+
+通常情况下，FlatBuffer 二进制缓冲区不是自描述的，即它需要您了解其 schema 才能正确解析数据。但是如果你想使用一个 FlatBuffer 作为文件格式，那么能够在那里有一个“魔术数字”是很方便的，就像大多数文件格式一样，能够做一个完整的检查来看看你是否阅读你期望的文件类型。
+
+FlatBuffer 虽然允许开发者可以在 FlatBuffer 前加上自己的文件头，但 FlatBuffers 有一种内置方法，可以让标识符占用最少空间，并且还能使 FlatBuffer 与不具有此类标识符的 FlatBuffer 相互兼容。
+
+声明文件格式的方法类似于 root\_type：
+
+```schema
+file_identifier "MYFI";
+```
+
+**标识符必须正好 4 个字符。这 4 个字符将作为 buffer 末尾的 [4,7] 字节**。
+
+对于具有这种标识符的任何 schema，flatc 会自动将标识符添加到它生成的任何二进制文件中（带-b），并且生成的调用如 FinishMonsterBuffer 也会添加标识符。如果你已经指定了一个标识符并希望生成一个没有标识符的缓冲区，你可以通过直接显示调用FlatBufferBuilder :: Finish 来完成这一目的。
+
+
+加载缓冲区数据以后，可以使用像 MonsterBufferHasIdentifier 这样的调用来检查标识符是否存在。
+
+
+给文件添加标识符是最佳实践。如果只是简单的想通过网络发送一组可能的消息中的一个，那么最好用 Union。
+
+默认情况下，flatc 会将二进制文件输出为 `.bin`。schema 中的这个声明会将其改变为任何你想要的：
+
+```schema
+file_extension "ext";
+```
+
+### 8. RPC interface declarations
+
+
+
+
+
 ## 五. FlatBuffers 命名规范
 
 
@@ -208,6 +296,8 @@ flatBuffers 和 protocol buffers 组织数据的形式都使用的二进制数�
 
 
 读完本篇 FlatBuffers 编码原理以后，读者应该能明白以下几点：
+
+与 protocol buffers 相比，FlatBuffers 可以随机访问任何数据，而 protocol buffers 只能反序列化所有数据以后，才能读取其中的任何数据。 并且  protocol buffers 在反序列化过程中还需要 copy 操作，需要用到额外的内存。FlatBuffers 不需要额外的内存消耗。
 
 
 
