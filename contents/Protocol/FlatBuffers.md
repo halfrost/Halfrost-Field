@@ -260,19 +260,113 @@ file_extension "ext";
 
 ### 8. RPC interface declarations
 
+RPC 声明了一组函数，它将 FlatBuffer 作为入参（request）并返回一个 FlatBuffer 作为 response（它们都必须是 table 类型）：
+
+```schema
+rpc_service MonsterStorage {
+  Store(Monster):StoreResponse;
+  Retrieve(MonsterId):Monster;
+}
+```
+
+这些产生的代码以及它的使用方式取决于使用的语言和 RPC 系统，可以通过增加 `--grpc` 编译参数，代码生成器会对 GRPC 有初步的支持。
+
+
+### 9. Attributes
+
+
+Attributes 可以附加到字段声明，放在字段后面或者 table/struct/enum/union 的名称之后。这些字段可能有值也有可能没有值。
+
+一些 Attributes 只能被编译器识别，比如 deprecated。用户也可以定义一些 Attributes，但是需要提前进行 Attributes 声明。声明以后可以在运行时解析 schema 的时候进行查询。这个对于开发一个属于自己的代码编译/生成器来说是非常有用的。或者是想添加一些特殊信息(一些帮助信息等等)到自己的 FlatBuffers 工具之中。
+
+目前最新版能识别到的 Attributes 有 11 种。
+
+- `id:n` (on a table field)  
+id 代表设置某个字段的标识符为 n 。一旦启用了这个 id 标识符，那么所有字段都必须使用 id 标识，并且 id 必须是从 0 开始的连续数字。需要特殊注意的是 Union，由于 Union 是由 2 个字段构成的，并且隐藏字段是排在 union 字段的前面。（假设在 union 前面字段的 id 排到了6，那么 union 将会占据 7 和 8 这两个 id 编号，7 是隐藏字段，8 是 union 字段）添加了 id 标识符以后，字段在 schema 内部的相互顺序就不重要了。新字段用的 id 必须是紧接着的下一个可用的 id(id 不能跳，必须是连续的)。
+- `deprecated` (on a field)  
+deprecated 代表不再为此字段生成访问器，代码应停止使用此数据。旧数据可能仍包含此字段，但不能再通过新的代码去访问这个字段。请注意，如果您弃用先前所需的字段，旧代码可能无法验证新数据（使用可选验证器时）。
+- `required` (on a non-scalar table field)  
+required 代表该字段不能被省略。默认情况下，所有字段都是可选的，即可以省略。这是可取的，因为它有助于向前/向后兼容性以及数据结构的灵活性。这也是阅读代码的负担，因为对于非标量字段，它要求您检查 NULL 并采取适当的操作。通过指定 required 字段，可以强制构建 FlatBuffers 的代码确保此字段已初始化，因此读取的代码可以直接访问它，而不检查 NULL。如果构造代码没有初始化这个字段，他们将得到一个断言，并提示缺少必要的字段。请注意，如果将此属性添加到现有字段，则只有在现有数据始终包含此字段/现有代码始终写入此字段，这两种情况下才有效。
+- `force_align: size` (on a struct)  
+force\_align 代表强制这个结构的对齐比它自然对齐的要高。如果 buffer 创建的时候是以 force\_align 声明创建的，那么里面的所有 structs 都会被强制对齐。（对于在 FlatBufferBuilder 中直接访问的缓冲区，这种情况并不是一定的）  
+- `bit_flags` (on an enum)  
+bit\_flags 这个字段的值表示比特，这意味着在 schema 中指定的任何值 N 最终将代表1 << N，或者默认不指定值的情况下，将默认得到序列1,2,4,8 ，...
+- `nested_flatbuffer: "table_name"` (on a field)  
+nested\_flatbuffer 代表该字段（必须是 ubyte 的数组）嵌套包含 flatbuffer 数据，其根类型由 table\_name 给出。生成的代码将为嵌套的 FlatBuffer 生成一个方便的访问器。
+- `flexbuffer` (on a field)  
+flexbuffer 表示该字段（必须是 ubyte 的数组）包含 flexbuffer 数据。生成的代码将为 FlexBuffer 的 root 创建一个方便的访问器。
+- `key` (on a field)  
+key 字段用于当前 table 中，对其所在类型的数组进行排序时用作关键字。可用于就地查找二进制搜索。
+- `hash` (on a field)  
+这是一个不带符号的 32/64 位整数字段，因为在 JSON 解析过程中它的值允许为字符串，然后将其存储为其哈希。属性的值是要使用的散列算法，即使用 fnv1\_32、fnv1\_64、fnv1a\_32、fnv1a\_64 其中之一。  
+- `original_order` (on a table)  
+由于表中的元素不需要以任何特定的顺序存储，因此通常为了优化空间，而对它们大小进行排序。而 original\_order 阻止了这种情况发生。通常应该没有任何理由使用这个标志。
+- 'native_*'  
+已经添加了几个属性来支持基于 [C++ 对象的 API](https://google.github.io/flatbuffers/flatbuffers_guide_use_cpp.html#flatbuffers_cpp_object_based_api)，所有这些属性都以 “native\_” 作为前缀。具体可以点[链接](https://google.github.io/flatbuffers/flatbuffers_guide_use_cpp.html#flatbuffers_cpp_object_based_api)查看支持的说明，`native_inline`、`native_default`、`native_custom_alloc`、`native_type`、`native_include: "path"`。
+
+### 10. 设计建议
+
+FlatBuffers 是一个高效的数据格式，但要实现效率，您需要一个高效的 schema。如何表示具有完全不同 size 大小特征的数据通常有多种选择。
+
+由于 FlatBuffers 的灵活性和可扩展性，将任何类型的数据表示为字典（如在 JSON 中）是非常普遍的做法。尽管可以在 FlatBuffers（作为具有键和值的表的数组）中模拟这一点，但这对于像 FlatBuffers 这样的强类型系统来说，这样做是一种低效的方式，会导致生成相对较大的二进制文件。在大多数系统中，FlatBuffer table 比 classes/structs 更灵活，因为 table 在处理 field 数量非常多，但是实际使用只有其中少数几个 field 这种情况，效率依旧非常高。因此，组织数据应该尽可能的组织成 table 的形式。
+
+同样，如果可能的话，尽量使用枚举的形式代替字符串。
+
+FlatBuffers 中没有继承的该鸟，所以想表示一组相关数据结构的方式是 union。但是，union 确实有成本，另外一种高效的做法就是建立一个 table 。如果这些数据结构有很多相似或者可以共享的 field ，那么建议一个 table 是非常高效的。在这个 table 中包含所有数据结构的所有字段即可。高效的原因就是 optional 字段是非常廉价的，消耗少。
+
+FlatBuffers 默认可以支持存放的下所有整数，因此尽量选择所需的最小大小，而不是默认为 int/long。
+
+可以考虑用 buffer 中一个字符串或者 table 来共享一些公共的数据，这样做会提高效率，因此将重复的数据拆成共享数据结构 + 私有数据结构，这样做是非常值得的。
+
+
+## 五. FlatBuffers 的 JSON 解析
+
+FlatBuffers 是支持解析 JSON 成自己的格式的。即解析 schema 的解析器同样可以解析符合 schema 规则的 JSON 对象。所以和其他的 JSON 解析器不同，这个解析器是强类型的，并且解析结果也只是 FlatBuffers。具体做法请参照 flatc 文档和 C++ 对应的 FlatBuffers 文档，查看如何在运行时解析 JSON 成 FlatBuffers。
+
+为了解析 JSON，除了需要定义一个 schema 以外，FlatBuffers 的解析器还有以下这些改变：
+
+- 它接受带和不带引号的字段名称，就像许多 JSON 解析器已经做的那样。它也可以不用引号输出它们，但可以使用 `strict_json` 标志输出它们。
+- 如果一个字段具有枚举类型，解析器会将枚举识别符号枚举值（带或不带引号）而不是数字，例如 field：EnumVal。如果一个字段是整数类型的，你仍然可以使用符号名称，但是这些值需要以它们的类型作为前缀，并且需要用引号引起来。field：“Enum.EnumVal”。对于代表标志的枚举，可以在多个字符串中插入空格或者利用点语法，例如。field：“EnumVal1 EnumVal2” 或 field：“Enum.EnumVal1 Enum.EnumVal2”。
+- 对于 union，这些需要用两个 field 来指定，就像在从代码序列化时一样。例如。对于 field foo，您必须在 foo 字段之前添加一个 `foo_type：FooOne`，FooOne 就是可以在 union 之外使用的 table。
+- 如果一个 field 的值是 null（例如，field：null）意味着这个字段是有默认值的（与完全未指定该字段，这两种情况具有相同的效果）。
+- 解析器内置了一些转换函数，所以你可以用 rad(180) 函数替代写 3.14159 的地方。目前支持以下这些函数：rad，deg，cos，sin，tan，acos，asin，atan。
+
+解析JSON时，解析器识别字符串中的以下转义码：
+
+`\n` - 换行。   
+`\t` - 标签。   
+`\r` - 回车。   
+`\b` - 退格。   
+`\f` - 换页。   
+`\“` - 双引号。   
+`\\` - 反斜杠。   
+`\/` - 正斜杠。  
+`\uXXXX` - 16位 unicode，转换为等效的 UTF-8 表示。
+`\xXX` - 8 位二进制十六进制数字 XX。这是唯一一个不属于 JSON 规范的地方（请参阅[http://json.org/](http://json.org/)），但是需要能够将字符串中的任意二进制编码为文本并返回而不丢失信息（例如字节 0xFF 就不可以表示为标准的 JSON）。
+
+当从二进制再反向表示生成 JSON 时，它还会再次生成这些转义代码。
 
 
 
+## 六. FlatBuffers 命名规范
 
-## 五. FlatBuffers 命名规范
+schema 中的标识符是为了翻译成许多不同的编程语言，所以把 schema 的编码风格改成和当前项目语言使用的风格，是一种错误的做法。应该让 schema 的代码风格更加通用。
+
+- Table, struct, enum and rpc names (types) 采用大写驼峰命名法。
+- Table and struct field names 采用下划线命名法。这样做方法自动生成小写驼峰命名的代码。
+- Enum values 采用大写驼峰命名法。
+- namespaces 采用大写驼峰命名法。
+
+还有 2 条关于书写格式的建议：
+
+- 大括号：与声明的开头位于同一行。
+- 间距：缩进2个空格。`:`两边没有空格，`=`两边各一个空格。
+
+## 七. FlatBuffers 编码原理
 
 
 
-## 六. FlatBuffers 编码原理
-
-
-
-## 七. FlatBuffers 的优缺点
+## 八. FlatBuffers 的优缺点
 
 FlatBuffers 优点：
 
