@@ -1,4 +1,4 @@
-# 深入浅出 FlatBuffers
+# 深入浅出 FlatBuffers 之 Schema
 
 <p align='center'>
 <img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/86_0.png'>
