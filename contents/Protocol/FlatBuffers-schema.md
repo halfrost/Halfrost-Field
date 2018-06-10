@@ -392,6 +392,10 @@ schema 中的标识符是为了翻译成许多不同的编程语言，所以把 
 ## 七. FlatBuffers 一些"坑"
 
 <p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/86_3.gif'>
+</p>
+
+<p align='center'>
 <img src='../images/flatbuffer_attention.gif'>
 </p>
 
