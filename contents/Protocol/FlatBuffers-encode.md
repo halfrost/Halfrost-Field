@@ -429,9 +429,14 @@ func (b *Builder) Pad(n int) {
 
 那么 500 最终在二进制流中表示的结果为 ：
 
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_10.png'>
+</p>
+
+
 ```c
 500 = 1111 0100 0000 0001 0000 0000
-	= 244 1 0
+= 244 1 0
 ```
 
 最后还要提一下标量的默认值的问题，我们知道在 flatbuffer 中，默认值是不会存储在二进制流中，那它存储在哪里呢？它实际上会被 flatc 文件直接编译到代码文件中。我们还是以这里的 hp 为例，它的默认值为 100 。
@@ -558,6 +563,10 @@ PlaceUOffsetT() 方法主要是设置 builder 的 UOffset，SizeUOffsetT = 4 字
 
 上面例子中，偏移到 InventoryVector 的 offset 是 60，添加 10 个 1 字节的标量元素以后，就到 70 字节了，由于 alignment = 1，小于 SizeUint32 = 4，所以按照 4 字节对齐，距离 70 最近的，且是 4 字节倍数的就是 72，所以对齐需要额外添加 2 字节的 0 。最终在二进制流里面的表现是 ：
 
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_11.png'>
+</p>
+
 ```c
 10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0
 ```
@@ -600,6 +609,10 @@ weaponOne := builder.CreateString("Sword")
 最开始我们就序列化了 Sword 字符串。这个字符串对应的 ASCII 码是，83 119 111 114 100。由于字符串末尾还要在填一个 0，所以整个字符串在二进制流中应该是 83 119 111 114 100 0 。考虑一下对齐，由于是 SizeUOffsetT = 4 字节，字符串当前的 offset 是 0，加上字符串长度 6 以后，距离 6 最近的 4 的倍数是 8，所以末尾要再添加 2 个字节的 0 。最后再加上字符串长度 5 (注意这里算长度不要包含字符串末尾的 0)
 
 所以最终 Sword 字符串在二进制流中如下排列：
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_12.png'>
+</p>
 
 ```c
 5 0 0 0 83 119 111 114 100 0 0 0
