@@ -425,7 +425,217 @@ func (b *Builder) Pad(n int) {
 }
 ```
 
-在上面的例子中，hp = 500，500 的二进制是 111110100，由于当前 buffer 中是 2 个字节，所以逆序存储 500，为 1111 0100 0000 0001
+在上面的例子中，hp = 500，500 的二进制是 111110100，由于当前 buffer 中是 2 个字节，所以逆序存储 500，为 1111 0100 0000 0001。根据上面提到的对齐规则，500 的类型是 Sizeint16，字节数为 2，当前偏移了 133 个字节(为何是 133 个字节，在下面会提到，这里先暂时接受这个数字)，133 + 2 = 135 个字节，不是 Sizeint16 的倍数了，所以需要字节对齐，对齐的效果就是添加 0 ，对齐到 Sizeint16 的整数倍，根据上面的规则，alignSize 算出来为 1 ，也就是要额外添加 1 个字节的 0 。
+
+那么 500 最终在二进制流中表示的结果为 ：
+
+```c
+500 = 1111 0100 0000 0001 0000 0000
+	= 244 1 0
+```
+
+最后还要提一下标量的默认值的问题，我们知道在 flatbuffer 中，默认值是不会存储在二进制流中，那它存储在哪里呢？它实际上会被 flatc 文件直接编译到代码文件中。我们还是以这里的 hp 为例，它的默认值为 100 。
+
+我们在给 Monster 序列化 hp 的时候，会调用 MonsterAddHp() 方法：
+
+```go
+func MonsterAddHp(builder *flatbuffers.Builder, hp int16) {
+	builder.PrependInt16Slot(2, hp, 100)
+}
+```
+
+具体实现就能一眼看到，默认值就直接写好了，默认值 100 会被当做入参传到 builder 中。
+
+```go
+func (b *Builder) PrependInt16Slot(o int, x, d int16) {
+	if x != d {
+		b.PrependInt16(x)
+		b.Slot(o)
+	}
+}
+```
+
+在准备插槽 Slot 的时候，如果序列化的值和默认值相当的话，是不会继续往下存入到二进制流中，对应代码就是上面这个 if 判断。只有不等于默认值，才会继续 PrependInt16() 操作。
+
+所有标量序列化的最后一步是把 offset 记录到 vtable 中：
+
+```go
+func (b *Builder) Slot(slotnum int) {
+	b.vtable[slotnum] = UOffsetT(b.Offset())
+}
+```
+
+slotnum 是调用者会传递进来，这个值也不需要我们开发者关心，因为这个值是 flatc 自动按照 schema 生成的 num。
+
+```schema
+table Monster {
+  pos:Vec3; // Struct.
+  mana:short = 150;
+  hp:short = 100;
+  name:string;
+  friendly:bool = false (deprecated);
+  inventory:[ubyte];  // Vector of scalars.
+  color:Color = Blue; // Enum.
+  weapons:[Weapon];   // Vector of tables.
+  equipped:Equipment; // Union.
+  path:[Vec3];        // Vector of structs.
+}
+```
+
+在 Monster 的定义中，hp 从 pos 往下数，从 0 开始，数到 hp 就是第 2 个，所以 hp 在 builder 的 vtable 中，排在第二个插槽的位置，vtable[2] 中存储的值就是它对应的 offset。
+
+
+### 3. 序列化数组
+
+在上面的例子中，数组其实分为 3 类，标量数组，table 数组，struct 数组。其实序列化数组的时候，不用考虑里面具体装的是什么。这三种数组的序列化方法都是一样的，都是调用的下面这个方法：
+
+```go
+func (b *Builder) StartVector(elemSize, numElems, alignment int) UOffsetT {
+	b.assertNotNested()
+	b.nested = true
+	b.Prep(SizeUint32, elemSize*numElems)
+	b.Prep(alignment, elemSize*numElems) // Just in case alignment > int.
+	return b.Offset()
+}
+```
+
+这个方法的入参有 3 个参数，元素的大小，元素个数，对齐字节。
+
+在上面的例子中，标量数组 InventoryVector 里面装的都是 SizeInt8 ，也就是一个字节，所以对齐也是 1 个字节(选数组里面最大的占用字节数)；table 数组 WeaponsVector 里面装的都是 Weapons 类型的 table，table 的元素大小是 string + short = 4 字节，对齐也是 4 字节；struct 数组 PathVector，里面装的都是 Path 类型的 struct，struct 的元素大小是 SizeFloat32 * 3 = 4 * 3 = 12 字节，但是对齐大小只是 4 字节。
+
+StartVector() 方法会先判断一下当前构建是否存在嵌套的情况：
+
+```go
+func (b *Builder) assertNotNested() {
+	if b.nested {
+		panic("Incorrect creation order: object must not be nested.")
+	}
+}
+```
+
+Table/Vector/String 这三者是不能嵌套创建的，builder 中的 nested 也标记了当前是否是嵌套的状态。如果嵌套循环创建，这里就会报 panic。
+
+接着就是两个 Prep() 操作，这里会先进行 SizeUint32 再进行 alignment 的 Prep，原因是 alignment 有可能会大于 SizeUint32。
+
+准备好对齐空间和计算好 offset 了以后，就是往数组里面序列化放元素的过程，调用各种 PrependXXXX() 方法，（上面举例提到了 PrependInt16() 方法，其他类型都类似，这里就不再赘述了）。
+
+
+数组中装载完数据以后，最后一步需要调用一次 EndVector() 方法，结束数组的序列化：
+
+```go
+func (b *Builder) EndVector(vectorNumElems int) UOffsetT {
+	b.assertNested()
+
+	// we already made space for this, so write without PrependUint32
+	b.PlaceUOffsetT(UOffsetT(vectorNumElems))
+
+	b.nested = false
+	return b.Offset()
+}
+```
+
+EndVector() 内部会调用 PlaceUOffsetT() 方法：
+
+```go
+func (b *Builder) PlaceUOffsetT(x UOffsetT) {
+	b.head -= UOffsetT(SizeUOffsetT)
+	WriteUOffsetT(b.Bytes[b.head:], x)
+}
+
+func WriteUOffsetT(buf []byte, n UOffsetT) {
+	WriteUint32(buf, uint32(n))
+}
+
+func WriteUint32(buf []byte, n uint32) {
+	buf[0] = byte(n)
+	buf[1] = byte(n >> 8)
+	buf[2] = byte(n >> 16)
+	buf[3] = byte(n >> 24)
+}
+```
+
+PlaceUOffsetT() 方法主要是设置 builder 的 UOffset，SizeUOffsetT = 4 字节。把数组的长度序列化到二进制流中。数组的长度是 4 字节。
+
+上面例子中，偏移到 InventoryVector 的 offset 是 60，添加 10 个 1 字节的标量元素以后，就到 70 字节了，由于 alignment = 1，小于 SizeUint32 = 4，所以按照 4 字节对齐，距离 70 最近的，且是 4 字节倍数的就是 72，所以对齐需要额外添加 2 字节的 0 。最终在二进制流里面的表现是 ：
+
+```c
+10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0
+```
+
+
+### 4. 序列化 string
+
+序列化 string 和序列化数组是差不多的，这里可以把 string 当做字节数组来看。
+
+```go
+func (b *Builder) CreateString(s string) UOffsetT {
+	b.assertNotNested()
+	b.nested = true
+
+	b.Prep(int(SizeUOffsetT), (len(s)+1)*SizeByte)
+	b.PlaceByte(0)
+
+	l := UOffsetT(len(s))
+
+	b.head -= l
+	copy(b.Bytes[b.head:b.head+l], s)
+
+	return b.EndVector(len(s))
+}
+```
+
+具体实现代码和序列化数组的流程基本一致，多的几步接下来一一解释。同样是先 Prep()，对齐，和数组不同的是，string 的末尾是 null 结束符，所以数组的最后一个字节要加一个字节的 0 。所以多了一句 `b.PlaceByte(0)` 。
+
+`copy(b.Bytes[b.head:b.head+l], s)` 就是把字符串复制到相应的 offset 中。
+
+最后 `b.EndVector()` 同样是把长度再放到二进制流中。注意 2 处处理长度的地方，Prep() 中是考虑了末尾的 0，所以 Prep() 的时候 len(s) + 1，最后 EndVector() 是不考虑末尾 0 的，所以用的是 len(s)。
+
+
+还是拿上面例子中具体的例子来说明。
+
+```go
+weaponOne := builder.CreateString("Sword")
+```
+
+最开始我们就序列化了 Sword 字符串。这个字符串对应的 ASCII 码是，83 119 111 114 100。由于字符串末尾还要在填一个 0，所以整个字符串在二进制流中应该是 83 119 111 114 100 0 。考虑一下对齐，由于是 SizeUOffsetT = 4 字节，字符串当前的 offset 是 0，加上字符串长度 6 以后，距离 6 最近的 4 的倍数是 8，所以末尾要再添加 2 个字节的 0 。最后再加上字符串长度 5 (注意这里算长度不要包含字符串末尾的 0)
+
+所以最终 Sword 字符串在二进制流中如下排列：
+
+```c
+5 0 0 0 83 119 111 114 100 0 0 0
+```
+
+
+
+
+weaponOne offset = 12  
+weaponTwo offset = 20  
+sword offset = 32  
+axe offset = 52  
+name offset = 60  
+inv offset = 76  
+weapons offset = 88  
+path offset = 116  
+vec3 offset = 128  
+Pos offset = 128  
+Name offset = 132  
+Color offset = 133  
+Hp offset = 136  
+Inv offset = 140  
+Weapons offset = 144  
+EquippedType offset = 145  
+Equipped offset = 152  
+Path offset = 156  
+Monster offset = 186  
+Finish offset = 192  
+最终的 buffer = [32 0 0 0 0 0 26 0 44 0 32 0 0 0 24 0 28 0 0 0 20 0 27 0 16 0 15 0 8 0 4 0 26 0 0 0 40 0 0 0 100 0 0 0 0 0 0 1 56 0 0 0 64 0 0 0 244 1 0 0 72 0 0 0 0 0 128 63 0 0 0 64 0 0 64 64 2 0 0 0 0 0 128 64 0 0 160 64 0 0 192 64 0 0 128 63 0 0 0 64 0 0 64 64 2 0 0 0 52 0 0 0 28 0 0 0 10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0 3 0 0 0 79 114 99 0 244 255 255 255 0 0 5 0 24 0 0 0 8 0 12 0 8 0 6 0 8 0 0 0 0 0 3 0 12 0 0 0 3 0 0 0 65 120 101 0 5 0 0 0 83 119 111 114 100 0 0 0]  
+
+
+
+
+|32 0 0 0 0 0 | 26 0 44 0 32 0 0 0 24 0 28 0 0 0 20 0 27 0 16 0 15 0 8 0 4 0 26 0 0 0 | 40 0 0 0 | 100 0 0 0 0 0 0 | 1 | 56 0 0 0 | 64 0 0 0 | 244 1 0 | 0 | 72 0 0 0 | 0 0 128 63 0 0 0 64 0 0 64 64 | 2 0 0 0 0 0 128 64 0 0 160 64 0 0 192 64 0 0 128 63 0 0 0 64 0 0 64 64 | 2 0 0 0 52 0 0 0 28 0 0 0 | 10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0 | 3 0 0 0 79 114 99 0 | 244 255 255 255 0 0 5 0 24 0 0 0 | 8 0 12 0 8 0 6 0  | 8 0 0 0 0 0 3 0 12 0 0 0 | 3 0 0 0 65 120 101 0  |5 0 0 0 83 119 111 114 100 0 0 0 |
+
+
 
 ## 五. FlatBuffers 解码原理
 
