@@ -492,6 +492,8 @@ table Monster {
 
 ### 3. 序列化数组
 
+数组中存储了连续的标量，并且还会存储一个 SizeUint32 代表数组的大小。数组不是内联存储在它的父类中，而是通过引用偏移 offset 的方式。
+
 在上面的例子中，数组其实分为 3 类，标量数组，table 数组，struct 数组。其实序列化数组的时候，不用考虑里面具体装的是什么。这三种数组的序列化方法都是一样的，都是调用的下面这个方法：
 
 ```go
@@ -574,7 +576,9 @@ PlaceUOffsetT() 方法主要是设置 builder 的 UOffset，SizeUOffsetT = 4 字
 
 ### 4. 序列化 string
 
-序列化 string 和序列化数组是差不多的，这里可以把 string 当做字节数组来看。
+字符串可以看成字节数组，只不过在字符串结尾处有一个空字符串标识符。字符串也不能内联存储在它的父类中，也是通过引用偏移 offset 的方式。
+
+所以序列化 string 和序列化数组是差不多的。
 
 ```go
 func (b *Builder) CreateString(s string) UOffsetT {
@@ -619,6 +623,9 @@ weaponOne := builder.CreateString("Sword")
 ```
 
 ### 5. 序列化 struct
+
+
+struct 总是以内联 inline 方式存储在它们的父级（struct，table 或 vector）中，以实现最大程度的紧凑性。struct 定义了一个一致的内存布局，其中所有字段都与其大小对齐，并且 struct 与其最大标量成员对齐。这种做法完成独立于底层编译器的对齐规则，以保证跨平台兼容的布局。这个布局在生成的代码中构建。接下来看看如何构建的。
 
 序列化 struct 十分简单，直接序列化成二进制，插入插槽即可：
 
@@ -670,7 +677,10 @@ func CreateVec3(builder *flatbuffers.Builder, x float32, y float32, z float32) f
 0 0 128 63 0 0 0 64 0 0 64 64
 ```
 
+
 ### 6. 序列化 table
+
+与 struct 不同，table 不是以内联 inline 的方式存储在它们的父项中，而是通过引用偏移 offset。在 table 中有一个 SOffsetT，这个是 UOffsetT 的带符号的版本，它代表的偏移量是有方向的。由于 vtable 可以存储在任何位置，所以它的 offset 应该是从存储 object 开始，减去 vtable 开始，即计算 object 和 vtable 之间的 offset。
 
 序列化 table 要分为 3 步，第一步 StartObject ：
 
@@ -796,6 +806,12 @@ func (b *Builder) EndObject() UOffsetT {
 ```go
 
 ```
+
+
+vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtable 的大小（以字节为单位），包括自身。第二个是对象的大小，以字节为单位（包括 vtable 偏移量）。这个大小可以用于流式传输，知道要读取多少字节才能访问对象的所有内联 inline 字段。第三个是 N 个偏移量，其中 N 是编译构建此 buffer 的代码编译时（因此，表的大小为 N  + 2）时在schema 中声明的字段数量(包括 deprecated 字段)。每个以 SizeVOffsetT 字节为宽度。
+
+一个 object 的第一个元素是 SOffsetT，object 和 vtable 之间的偏移量，可正可负。第二个元素就是 object 的数据 data。在读取 object 的时候，会先比较一下 SOffsetT，防止新代码读取旧数据的情况。如果要读取的字段在 offset 中超出了数组的范围，或者 vtable 的条目为 0，则表示此对象中不存在该字段，并且返回该字段的默认值。如果没有超出范围，则读取该字段的 offset。
+
 
 
 weaponOne offset = 12  
