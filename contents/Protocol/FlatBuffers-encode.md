@@ -618,7 +618,184 @@ weaponOne := builder.CreateString("Sword")
 5 0 0 0 83 119 111 114 100 0 0 0
 ```
 
+### 5. 序列化 struct
 
+序列化 struct 十分简单，直接序列化成二进制，插入插槽即可：
+
+```go
+func (b *Builder) PrependStructSlot(voffset int, x, d UOffsetT) {
+	if x != d {
+		b.assertNested()
+		if x != b.Offset() {
+			panic("inline data write outside of object")
+		}
+		b.Slot(voffset)
+	}
+}
+```
+
+具体实现中也会先检查一下入参里面 2 个 UOffsetT 是否相等，其次再看看当前是否有嵌套，没有嵌套还要再检查一下 UOffsetT 是否和实际序列化以后的 offset 匹配，如果以上判断都通过了，就生成插槽 —— 在 vtable 中记录 offset。
+
+```go
+builder.PrependStructSlot(0, flatbuffers.UOffsetT(pos), 0)
+```
+
+调用的时候会计算一次 struct 的 UOffsetT (32位，4字节)
+
+```go
+func CreateVec3(builder *flatbuffers.Builder, x float32, y float32, z float32) flatbuffers.UOffsetT {
+	builder.Prep(4, 12)
+	builder.PrependFloat32(z)
+	builder.PrependFloat32(y)
+	builder.PrependFloat32(x)
+	return builder.Offset()
+}
+```
+
+由于是 float32 类型，所以 size 是 4 字节，struct 中有 3 个变量，所以总大小是 12 字节。可以看出 struct 的值是直接放入内存中的，没有进行任何处理，而且也不涉及嵌套创建的问题，因此可以内联（inline）在其他结构中。并且存储的顺序和字段的顺序一样。
+
+
+```c
+1.0 浮点类型转成二进制为：00111111100000000000000000000000
+2.0 浮点类型转成二进制为：01000000000000000000000000000000
+3.0 浮点类型转成二进制为：01000000010000000000000000000000
+
+```
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_13.png'>
+</p>
+
+
+```c
+0 0 128 63 0 0 0 64 0 0 64 64
+```
+
+### 6. 序列化 table
+
+序列化 table 要分为 3 步，第一步 StartObject ：
+
+```go
+func (b *Builder) StartObject(numfields int) {
+	b.assertNotNested()
+	b.nested = true
+
+	// use 32-bit offsets so that arithmetic doesn't overflow.
+	if cap(b.vtable) < numfields || b.vtable == nil {
+		b.vtable = make([]UOffsetT, numfields)
+	} else {
+		b.vtable = b.vtable[:numfields]
+		for i := 0; i < len(b.vtable); i++ {
+			b.vtable[i] = 0
+		}
+	}
+
+	b.objectEnd = b.Offset()
+	b.minalign = 1
+}
+```
+
+序列化 table 第一步是初始化 vtable。初始化之前先做异常判断，判断是否嵌套。接着就是初始化 vtable 空间，这里初始化用 UOffsetT = UOffsetT uint32 防止溢出。StartObject() 入参是字段的个数，注意 union 是 2 个字段。
+
+每个 table 都会有自己的 vtable，其中存储着每个字段的 offset，这个就是上面 slot 函数的作用，产出的插槽都记录到 vtable 中。vtable 相同的会共享同一份 vtable。
+
+第二步就是添加每个字段。添加字段的顺序可以是无序的，因为 flatc 编译以后把每个字段在插槽里面的顺序以后排列好了，不会因为我们调用序列化方法的顺序而改变，举个例子：
+
+```go
+func MonsterAddPos(builder *flatbuffers.Builder, pos flatbuffers.UOffsetT) {
+	builder.PrependStructSlot(0, flatbuffers.UOffsetT(pos), 0)
+}
+func MonsterAddMana(builder *flatbuffers.Builder, mana int16) {
+	builder.PrependInt16Slot(1, mana, 150)
+}
+func MonsterAddHp(builder *flatbuffers.Builder, hp int16) {
+	builder.PrependInt16Slot(2, hp, 100)
+}
+func MonsterAddName(builder *flatbuffers.Builder, name flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(name), 0)
+}
+func MonsterAddInventory(builder *flatbuffers.Builder, inventory flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(inventory), 0)
+}
+func MonsterStartInventoryVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+	return builder.StartVector(1, numElems, 1)
+}
+func MonsterAddColor(builder *flatbuffers.Builder, color int8) {
+	builder.PrependInt8Slot(6, color, 2)
+}
+func MonsterAddWeapons(builder *flatbuffers.Builder, weapons flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(weapons), 0)
+}
+func MonsterStartWeaponsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+	return builder.StartVector(4, numElems, 4)
+}
+func MonsterAddEquippedType(builder *flatbuffers.Builder, equippedType byte) {
+	builder.PrependByteSlot(8, equippedType, 0)
+}
+func MonsterAddEquipped(builder *flatbuffers.Builder, equipped flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(9, flatbuffers.UOffsetT(equipped), 0)
+}
+func MonsterAddPath(builder *flatbuffers.Builder, path flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(10, flatbuffers.UOffsetT(path), 0)
+}
+func MonsterStartPathVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+	return builder.StartVector(12, numElems, 4)
+```
+
+上面是 Monster table 中所有字段的序列化实现，我们可以看每个函数的第一个参数，对应的是在 vtable 中插槽的位置。0 - pos，1 - mana，2 - hp，3 - name，(没有 4 - friendly，因为被 deprecated 了)，5 - inventory，6 - color，7 - weapons，8 - equippedType，9 - equipped，10 - path。Monster 中总共有 11 个字段(其中有一个废弃字段，union 算 2 个字段)，最终序列化需要序列化 10 个字段。**这也是为什么 id 只能往后递增，不能往前加，也不能删除废弃字段的原因，因为插槽的位置一旦定下来了，就不能改变**。有了 id，字段名变更就不影响了。
+
+另外，**从序列化列表中也能看出序列化 table 中是不能嵌套序列化 table / string / vector 类型的，它们不能 inline，必须在 root 对象创建之前先创建好**。inventory 是标量数组，先序列化好了以后，在 Monster 中引用 offset 的。weapons 是 table 数组，同样也是先序列化好了，再引用 offset 的。path 是 struct 同样是引用。pos 是 struct ，直接 inline 在 table 中。equipped 是 union 也是直接 inline 在 table 中。
+
+
+```go
+func WeaponAddName(builder *flatbuffers.Builder, name flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(name), 0)
+}
+```
+
+序列化 weapon table 中的 name，计算 offset 是计算相对位置，不是相对于 buffer 末尾的 offset，而是相对于当前写入位置的 offset：
+
+```go
+// PrependSOffsetT prepends an SOffsetT, relative to where it will be written.
+func (b *Builder) PrependSOffsetT(off SOffsetT) {
+	b.Prep(SizeSOffsetT, 0) // Ensure alignment is already done.
+	if !(UOffsetT(off) <= b.Offset()) {
+		panic("unreachable: off <= b.Offset()")
+	}
+	// 注意这里要计算的是相当于当前写入位置的 offset
+	off2 := SOffsetT(b.Offset()) - off + SOffsetT(SizeSOffsetT)
+	b.PlaceSOffsetT(off2)
+}
+
+// PrependUOffsetT prepends an UOffsetT, relative to where it will be written.
+func (b *Builder) PrependUOffsetT(off UOffsetT) {
+	b.Prep(SizeUOffsetT, 0) // Ensure alignment is already done.
+	if !(off <= b.Offset()) {
+		panic("unreachable: off <= b.Offset()")
+	}
+	// 注意这里要计算的是相当于当前写入位置的 offset
+	off2 := b.Offset() - off + UOffsetT(SizeUOffsetT)
+	b.PlaceUOffsetT(off2)
+}
+```
+
+对于其他标量类型，直接计算 offset 即可，唯独需要注意 UOffsetT、SOffsetT 这两个。
+
+序列化 table 的最后一步就是 EndObject()：
+
+```go
+func (b *Builder) EndObject() UOffsetT {
+	b.assertNested()
+	n := b.WriteVtable()
+	b.nested = false
+	return n
+}
+```
+
+最后结束序列化的时候，也需先判断是否嵌套。重要的是需要 WriteVtable()。
+
+```go
+
+```
 
 
 weaponOne offset = 12  
