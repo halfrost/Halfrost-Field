@@ -804,10 +804,22 @@ func (b *Builder) EndObject() UOffsetT {
 最后结束序列化的时候，也需先判断是否嵌套。重要的是需要 WriteVtable()。在看 WriteVtable() 具体实现的时候，需要先介绍一下 vtable 的数据结构。
 
 
-vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtable 的大小（以字节为单位），包括自身。第二个是对象的大小，以字节为单位（包括 vtable 偏移量）。这个大小可以用于流式传输，知道要读取多少字节才能访问对象的所有内联 inline 字段。第三个是 N 个偏移量，其中 N 是编译构建此 buffer 的代码编译时（因此，表的大小为 N  + 2）时在schema 中声明的字段数量(包括 deprecated 字段)。每个以 SizeVOffsetT 字节为宽度。
+vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtable 的大小（以字节为单位），包括自身。第二个是对象的大小，以字节为单位（包括 vtable 偏移量）。这个大小可以用于流式传输，知道要读取多少字节才能访问对象的所有内联 inline 字段。第三个是 N 个偏移量，其中 N 是编译构建此 buffer 的代码编译时（因此，表的大小为 N  + 2）时在 schema 中声明的字段数量(包括 deprecated 字段)。每个以 SizeVOffsetT 字节为宽度。见下图：
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_14_0.png'>
+</p>
+
+
 
 一个 object 的第一个元素是 SOffsetT，object 和 vtable 之间的偏移量，可正可负。第二个元素就是 object 的数据 data。在读取 object 的时候，会先比较一下 SOffsetT，防止新代码读取旧数据的情况。如果要读取的字段在 offset 中超出了数组的范围，或者 vtable 的条目为 0，则表示此对象中不存在该字段，并且返回该字段的默认值。如果没有超出范围，则读取该字段的 offset。
 
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_15.png'>
+</p>
+
+
+接下来详细看看 WriteVtable() 的具体实现：
 
 ```go
 func (b *Builder) WriteVtable() (n UOffsetT) {
