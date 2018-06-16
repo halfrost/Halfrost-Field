@@ -801,11 +801,7 @@ func (b *Builder) EndObject() UOffsetT {
 }
 ```
 
-最后结束序列化的时候，也需先判断是否嵌套。重要的是需要 WriteVtable()。
-
-```go
-
-```
+最后结束序列化的时候，也需先判断是否嵌套。重要的是需要 WriteVtable()。在看 WriteVtable() 具体实现的时候，需要先介绍一下 vtable 的数据结构。
 
 
 vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtable 的大小（以字节为单位），包括自身。第二个是对象的大小，以字节为单位（包括 vtable 偏移量）。这个大小可以用于流式传输，知道要读取多少字节才能访问对象的所有内联 inline 字段。第三个是 N 个偏移量，其中 N 是编译构建此 buffer 的代码编译时（因此，表的大小为 N  + 2）时在schema 中声明的字段数量(包括 deprecated 字段)。每个以 SizeVOffsetT 字节为宽度。
@@ -813,6 +809,82 @@ vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtab
 一个 object 的第一个元素是 SOffsetT，object 和 vtable 之间的偏移量，可正可负。第二个元素就是 object 的数据 data。在读取 object 的时候，会先比较一下 SOffsetT，防止新代码读取旧数据的情况。如果要读取的字段在 offset 中超出了数组的范围，或者 vtable 的条目为 0，则表示此对象中不存在该字段，并且返回该字段的默认值。如果没有超出范围，则读取该字段的 offset。
 
 
+```go
+func (b *Builder) WriteVtable() (n UOffsetT) {
+	// 1. 添加 0 对齐标量，对齐以后写入 offset，之后这一位会被距离 vtable 的 offset 重写覆盖掉
+	b.PrependSOffsetT(0)
+
+	objectOffset := b.Offset()
+	existingVtable := UOffsetT(0)
+
+	// 2. 去掉末尾 0
+	i := len(b.vtable) - 1
+	for ; i >= 0 && b.vtable[i] == 0; i-- {
+	}
+	b.vtable = b.vtable[:i+1]
+
+	// 3. 从 vtables 中逆向搜索已经存储过的 vtable，如果存在相同的且已经存储过的 vtable，直接找到它，索引指向它即可
+	//    可以查看 BenchmarkVtableDeduplication 的测试结果，通过索引指向相同的 vtable，而不是新建一个，这种做法可以提高 30% 性能
+	for i := len(b.vtables) - 1; i >= 0; i-- {
+		// 从 vtables 筛选出一个 vtable
+		vt2Offset := b.vtables[i]
+		vt2Start := len(b.Bytes) - int(vt2Offset)
+		vt2Len := GetVOffsetT(b.Bytes[vt2Start:])
+
+		metadata := VtableMetadataFields * SizeVOffsetT
+		vt2End := vt2Start + int(vt2Len)
+		vt2 := b.Bytes[vt2Start+metadata : vt2End]
+
+		// 4. 比较循环到当前的 b.vtable 和 vt2，如果相同，offset 就记录到 existingVtable 中，只要找到一个就可以 break 了
+		if vtableEqual(b.vtable, objectOffset, vt2) {
+			existingVtable = vt2Offset
+			break
+		}
+	}
+
+	if existingVtable == 0 {
+		// 5. 如果找不到一个相同的 vtable，只能创建一个新的写入到 buffer 中
+		//    写入的方式也是逆向写入，因为序列化的方向是尾优先。
+		for i := len(b.vtable) - 1; i >= 0; i-- {
+			var off UOffsetT
+			if b.vtable[i] != 0 {
+				// 6. 从对象的头开始，计算后面属性的偏移量
+				off = objectOffset - b.vtable[i]
+			}
+			b.PrependVOffsetT(VOffsetT(off))
+		}
+
+		// 7. 最后写入两个 metadata 元数据字段
+		//    第一步，先写 object 的 size 大小，包含 vtable 偏移量
+		objectSize := objectOffset - b.objectEnd
+		b.PrependVOffsetT(VOffsetT(objectSize))
+
+		// 8. 第二步，存储 vtable 的大小
+		vBytes := (len(b.vtable) + VtableMetadataFields) * SizeVOffsetT
+		b.PrependVOffsetT(VOffsetT(vBytes))
+
+		// 9. 最后一步，修改 object 中头部的距离 vtable 的 offset 值，值是 SOffsetT，4字节
+		objectStart := SOffsetT(len(b.Bytes)) - SOffsetT(objectOffset)
+		WriteSOffsetT(b.Bytes[objectStart:],
+			SOffsetT(b.Offset())-SOffsetT(objectOffset))
+
+		// 10. 最后，把 vtable 存储在内存中，以便以后“去重”(相同的 vtable 不创建，修改索引即可)
+		b.vtables = append(b.vtables, b.Offset())
+	} else {
+		// 11. 如果找到了一个相同的 vtable
+		objectStart := SOffsetT(len(b.Bytes)) - SOffsetT(objectOffset)
+		b.head = UOffsetT(objectStart)
+
+		// 12. 修改 object 中头部的距离 vtable 的 offset 值，值是 SOffsetT，4字节
+		WriteSOffsetT(b.Bytes[b.head:],
+			SOffsetT(existingVtable)-SOffsetT(objectOffset))
+	}
+
+	// 13. 最后销毁 b.vtable
+	b.vtable = b.vtable[:0]
+	return objectOffset
+}
+```
 
 weaponOne offset = 12  
 weaponTwo offset = 20  
