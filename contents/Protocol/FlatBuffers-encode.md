@@ -615,7 +615,7 @@ weaponOne := builder.CreateString("Sword")
 所以最终 Sword 字符串在二进制流中如下排列：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_12.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_12_.png'>
 </p>
 
 ```c
@@ -915,7 +915,7 @@ table Weapon {
 }
 ```
 
-Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，需要在 table 创建之前创建，并且在 table 中只能引用它的 offset。我们这里先创建好了 “sword” 的 string，offset 为 12，所以在 sword 对象中，需要引用 12 这个 offset。damage 是一个 short，直接内嵌在 sword 对象中即可。加上 4 字节对齐的 2 个 0，开头还要再加上 4 字节的当前 offset 偏移量。**注意，这个时候的偏移量是针对 buffer 尾来说的，还不是针对 vtable 而言的偏移量**。当前 b.offset() 为 32，所以填充 4 字节的 32 。
+Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，需要在 table 创建之前创建，并且在 table 中只能引用它的 offset。我们这里先创建好了 “sword” 的 string，offset 为 12，所以在 sword 对象中，需要引用 12 这个 offset，当前 offset 为 24，减去 12，等于 12，所以这里填上 12，表示的意义是往前偏移 12 存储的数据才是这里的 name。damage 是一个 short，直接内嵌在 sword 对象中即可。加上 4 字节对齐的 2 个 0，开头还要再加上 4 字节的当前 offset 偏移量。**注意，这个时候的偏移量是针对 buffer 尾来说的，还不是针对 vtable 而言的偏移量**。当前 b.offset() 为 32，所以填充 4 字节的 32 。
 
 第 3 步，从 vtables 中逆向搜索已经存储过的 vtable，如果存在相同的且已经存储过的 vtable，直接找到它，索引指向它即可。可以查看 BenchmarkVtableDeduplication 的测试结果，通过索引指向相同的 vtable，而不是新建一个，这种做法可以提高 30% 性能。
 
@@ -939,7 +939,7 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_18.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_18_.png'>
 </p>
 
 最后一步需要修正 sword 对象头部的 offset，修改成距离 vtable 的 offset。由于当前 vtable 在低地址，所以 sword 对象在它的右边，offset 为正数，offset = vtable size = 8 字节。对应代码实现见第 10 步。
@@ -948,32 +948,51 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 如果之前在 vtables 中找到了一样的 vtable，那么就在对象的头部的 offset 改成距离 vtable 的 offset 即可，对应代码第 12 步。
 
 
-weaponOne offset = 12  
-weaponTwo offset = 20  
-sword offset = 32  
-axe offset = 52  
-name offset = 60  
-inv offset = 76  
-weapons offset = 88  
-path offset = 116  
-vec3 offset = 128  
-Pos offset = 128  
-Name offset = 132  
-Color offset = 133  
-Hp offset = 136  
-Inv offset = 140  
-Weapons offset = 144  
-EquippedType offset = 145  
-Equipped offset = 152  
-Path offset = 156  
-Monster offset = 186  
-Finish offset = 192  
-最终的 buffer = [32 0 0 0 0 0 26 0 44 0 32 0 0 0 24 0 28 0 0 0 20 0 27 0 16 0 15 0 8 0 4 0 26 0 0 0 40 0 0 0 100 0 0 0 0 0 0 1 56 0 0 0 64 0 0 0 244 1 0 0 72 0 0 0 0 0 128 63 0 0 0 64 0 0 64 64 2 0 0 0 0 0 128 64 0 0 160 64 0 0 192 64 0 0 128 63 0 0 0 64 0 0 64 64 2 0 0 0 52 0 0 0 28 0 0 0 10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0 3 0 0 0 79 114 99 0 244 255 255 255 0 0 5 0 24 0 0 0 8 0 12 0 8 0 6 0 8 0 0 0 0 0 3 0 12 0 0 0 3 0 0 0 65 120 101 0 5 0 0 0 83 119 111 114 100 0 0 0]  
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_19.png'>
+</p>
+
+这里可以用 axe 对象的例子来说明找到相同 vtable 的情况。由于 sword 对象和 axe 对象都是 Weapon 类型的，所以对象内部的字段偏移结构应该是完全一样的，故共享一个结构的 vtable。sword 对象先创建，vtable 紧接在它后面，再创建的 axe 对象，所以 axe 对象头部的 offset 为负数。这里为 -12 。
+
+```c
+12 的原码 = 00000000 00000000 00000000 00001100
+12 的反码 = 11111111 11111111 11111111 11110011
+12 的补码 = 11111111 11111111 11111111 11110100
+```
+
+逆向存储即为 244 255 255 255 。
 
 
+### 7. 结束序列化
 
 
-|32 0 0 0 0 0 | 26 0 44 0 32 0 0 0 24 0 28 0 0 0 20 0 27 0 16 0 15 0 8 0 4 0 26 0 0 0 | 40 0 0 0 | 100 0 0 0 0 0 0 | 1 | 56 0 0 0 | 64 0 0 0 | 244 1 0 | 0 | 72 0 0 0 | 0 0 128 63 0 0 0 64 0 0 64 64 | 2 0 0 0 0 0 128 64 0 0 160 64 0 0 192 64 0 0 128 63 0 0 0 64 0 0 64 64 | 2 0 0 0 52 0 0 0 28 0 0 0 | 10 0 0 0 0 1 2 3 4 5 6 7 8 9 0 0 | 3 0 0 0 79 114 99 0 | 244 255 255 255 0 0 5 0 24 0 0 0 | 8 0 12 0 8 0 6 0  | 8 0 0 0 0 0 3 0 12 0 0 0 | 3 0 0 0 65 120 101 0  |5 0 0 0 83 119 111 114 100 0 0 0 |
+```go
+func (b *Builder) Finish(rootTable UOffsetT) {
+	b.assertNotNested()
+	b.Prep(b.minalign, SizeUOffsetT)
+	b.PrependUOffsetT(rootTable)
+	b.finished = true
+}
+```
+
+结束序列化的时候，还需要执行两步操作，一是字节对齐，二是存放指向 root object 的 offset。
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_20.png'>
+</p>
+
+由于在 schema 中我们定义了 root object 为 Monster，序列化完 Monster 对象之后，又紧接着生成了它的 vtable，所以这里 root table 的 offset 为 32 。
+
+
+至此，整个 Monster 就序列化完成了，最终形成的二进制 buffer 如下：
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_21.png'>
+</p>
+
+上图中二进制流上面标的数字，为字段的 offset 值。二进制流下方标识的是字段名。
+
 
 
 
