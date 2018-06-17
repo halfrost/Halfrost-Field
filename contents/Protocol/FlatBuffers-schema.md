@@ -439,7 +439,6 @@ Reference：
 
 [flatbuffers 官方文档](https://google.github.io/flatbuffers/index.html)        
 [Improving Facebook's performance on Android with FlatBuffers](https://code.facebook.com/posts/872547912839369/improving-facebook-s-performance-on-android-with-flatbuffers/)   
-[ Cap'n Proto: Cap'n Proto, FlatBuffers, and SBE](https://capnproto.org/news/2014-06-17-capnproto-flatbuffers-sbe.html)
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 

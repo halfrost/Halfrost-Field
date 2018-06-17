@@ -1002,8 +1002,21 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 <img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_3.png'>
 </p>
 
+flatBuffers 解码的过程就很简单了。由于序列化的时候保存好了各个字段的 offset，反序列化的过程其实就是把数据从指定的 offset 中读取出来。
+
+对于标量，分 2 种情况，有默认值和没有默认值。在上面的例子中，Mana 字段我们序列化的时候，就直接采用的默认值。在 flatbuffer 的二进制流中可以看到 Mana 字段都是 0 ，offset 也为 0，其实这个字段采用的是默认值，在读取的时候，会直接从 flatc 编译后的文件中记录的默认值中读取出来。
+
+Hp 字段有默认值，但是在序列化的时候我们并没有用默认值，而是重新给他了一个新值，这个时候，二进制流中就会记录 Hp 的 offset，值也会存储在二进制流中。
+
+反序列化的过程是把二进制流从 root table 往后读。从 vtable 中读取对应的 offset，然后在对应的 object 中找到对应的字段，如果是引用类型，string / vector / table，读取出 offset，再次寻找 offset 对应的值，读取出来。如果是非引用类型，根据 vtable 中的 offset ，找到对应的位置直接读取即可。
+
+
+整个反序列化的过程零拷贝，不消耗占用任何内存资源。并且 flatbuffer 可以读取任意字段，而不是像 JSON 和 protocol buffer 需要读取整个对象以后才能获取某个字段。flatbuffer 的主要优势就在反序列化这里了。
+
 
 ## 六. FlatBuffers 性能
+
+既然 flatbuffer 的优势在反序列化上，那我们就来对比对比，性能究竟有多强。
 
 <p align='center'>
 <img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_8.png'>
@@ -1014,13 +1027,15 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 </p>
 
 
-1. 编码性能：flatbuf 的编码性能要比 protobuf 低得多，前者的性能大概只有后者的一半。在JSON、protobuf 和 flatbuf 之中，flatbuf 编码性能最差，JSON 介于二者之间。
+1. 编码性能：flatbuf 的编码性能要比 protobuf 低。在JSON、protobuf 和 flatbuf 之中，flatbuf 编码性能最差，JSON 介于二者之间。
 
-2. 编码后的数据长度：由于通常情况下，传输的数据都会做压缩，因而又分两种情况，编码后未压缩和压缩后的数据长度。flatbuf 编码后的数据，无论是压缩前还是压缩后，都比 protobuf 的数据长得多，前者的大概是后者的两倍。而 JSON 的数据在编码后未压缩的情况，是三者中最长的，但经 GZIP 压缩之后，实际的数据长度与 protobuf 的已经很接近了，同样比 flatbuf 的要短的多。不过对于某些场景，也会发现由于 protobuf 的二进制格式特性，导致经 GZIP 压缩之后的数据长度比 JSON 要长一些。
+2. 编码后的数据长度：由于通常情况下，传输的数据都会做压缩。在不压缩的情况下，flatbuffer 的数据长度是最长的，理由也很简单，因为二进制流内部填充了很多字节对齐的 0，并且原始数据也没有采取特殊的压缩处理，整个数据膨胀的更大了。不管压不压缩，flatbuffer 的数据长度都是最长的。JSON 经过压缩以后，数据长度会近似于 protocol buffer。protocol buffer 由于自身编码就有压缩，再经过 GZIP 这些压缩算法压缩以后，长度始终维持最小。
 
-3. 解码性能：flatbuf 是一种无需解码的二进制格式，因而解码性能要高许多，大概要比 protobuf 快几百倍的样子，因而比 JSON 快的就更多了。
 
-综上，protobuf 在各个方面的平衡比较好。但如果使用场景是，需要经常解码序列化的数据，则有可能从 flatbuf 的特性获得一定的好处，就像 Facebook 之前那样。而 JSON 则胜在方便调试，生态完善，性能还行。
+3. 解码性能：flatbuffer 是一种无需解码的二进制格式，因而解码性能要高许多，大概要比 protobuf 快几百倍的样子，因而比 JSON 快的就更多了。
+
+
+结论是，如果需要重度依赖反序列化的场景，可以考虑用 flatbuffer。protobuf 则是表现出各方面都很均衡的能力。
 
 
 ## 六. FlatBuffers 优缺点 
@@ -1033,11 +1048,8 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 
 FlatBuffers 的 API 也比较繁琐，创建 buffer 的 API 和 C++ 的 Cocos2D-X 里面创建 sprite 有点类似。可能就是天生为游戏而生的吧。
 
-与 protocol buffers 相比，**FlatBuffers 可以随机访问任何数据**，而 protocol buffers 只能反序列化所有数据以后，才能读取其中的任何数据。 并且  protocol buffers 在反序列化过程中还需要 copy 操作，需要用到额外的内存。FlatBuffers 不需要额外的内存消耗。
 
-
-
-FlatBuffers 优点：
+与 protocol buffers 相比，FlatBuffers 优点有以下这些：
 
 - 1. 不需要解析/拆包就可以访问序列化数据  
 访问序列化数据甚至层级数据都不需要解析。归功于此，我们不需要花费时间去初始化解析器（意味着构建复杂的字段映射）和解析数据。
@@ -1052,11 +1064,8 @@ flatBuffers 和 protocol buffers 组织数据的形式都使用的二进制数�
 由于二进制协议的构造方法，数据必须以“从内到外”的方式插入。构建 FlatBuffers 对象比较麻烦。
 - 3. 向后兼容性    
 在处理结构化二进制数据时，我们必须考虑对该结构进行更改的可能性。从我们的 schema 中添加或删除字段必须小心。读取旧版本对象时，错误的 schema 更改可能会导致出错了但是没有提示。
-- 4. 缺少数据流的处理方式  
-在处理大量数据时，如果想流式处理 flatBuffers 数组，可能会遇到一些问题。Flatbuffers 是向后写入的。这意味着我们数据的关键部分都会出现在文件末尾，使流式传输不可行。
-
-
-与 protocol buffers 相比，FlatBuffers 可以随机访问任何数据，而 protocol buffers 只能反序列化所有数据以后，才能读取其中的任何数据。 并且  protocol buffers 在反序列化过程中还需要 copy 操作，需要用到额外的内存。FlatBuffers 不需要额外的内存消耗。
+- 4. 牺牲了序列化的性能  
+由于 flatbuffer 为了反序列化的性能，所以牺牲了一些序列化时候的性能，序列化的数据长度最长，性能也最差。
 
 
 ## 七. 最后
@@ -1080,11 +1089,14 @@ Cap'n Proto 是一个疯狂快速的数据交换格式并且也同样可用于 R
 
 Reference：  
 
-[flatbuffers 官方文档](https://google.github.io/flatbuffers/index.html)        
+[flatbuffers 官方文档](https://google.github.io/flatbuffers/index.html)     
+[flatcc 官方文档](https://github.com/dvidelabs/flatcc/blob/master/doc/binary-format.md#flatbuffers-binary-format)       
 [Improving Facebook's performance on Android with FlatBuffers](https://code.facebook.com/posts/872547912839369/improving-facebook-s-performance-on-android-with-flatbuffers/)   
 [ Cap'n Proto: Cap'n Proto, FlatBuffers, and SBE](https://capnproto.org/news/2014-06-17-capnproto-flatbuffers-sbe.html)  
-[使用 flatbuffer 能在真实游戏项目的数据读写过程中提速多少?
-](https://www.zhihu.com/question/28500901)
+[使用 flatbuffer 能在真实游戏项目的数据读写过程中提速多少?](https://www.zhihu.com/question/28500901)  
+[FlatBuffers 体验](https://www.race604.com/flatbuffers-intro/#fn:1)  
+[在Android中使用FlatBuffers](https://www.wolfcstech.com/2016/12/08/%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8FlatBuffers/)  
+
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
