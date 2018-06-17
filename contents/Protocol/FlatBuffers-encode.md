@@ -898,6 +898,56 @@ func (b *Builder) WriteVtable() (n UOffsetT) {
 }
 ```
 
+接下来分步来解释一下：
+
+第 1 步，添加 0 对齐标量，对齐以后写入 offset，之后这一位会被距离 vtable 的 offset 重写覆盖掉。`b.PrependSOffsetT(0)`
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_16.png'>
+</p>
+
+Weapon 在 schema 中的定义如下：
+
+```go
+table Weapon {
+  name:string;
+  damage:short;
+}
+```
+
+Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，需要在 table 创建之前创建，并且在 table 中只能引用它的 offset。我们这里先创建好了 “sword” 的 string，offset 为 12，所以在 sword 对象中，需要引用 12 这个 offset。damage 是一个 short，直接内嵌在 sword 对象中即可。加上 4 字节对齐的 2 个 0，开头还要再加上 4 字节的当前 offset 偏移量。**注意，这个时候的偏移量是针对 buffer 尾来说的，还不是针对 vtable 而言的偏移量**。当前 b.offset() 为 32，所以填充 4 字节的 32 。
+
+第 3 步，从 vtables 中逆向搜索已经存储过的 vtable，如果存在相同的且已经存储过的 vtable，直接找到它，索引指向它即可。可以查看 BenchmarkVtableDeduplication 的测试结果，通过索引指向相同的 vtable，而不是新建一个，这种做法可以提高 30% 性能。
+
+这一步就是查找 vtable。如果没有找到就新建 vtable，如果找到了就修改索引指向它。
+
+先假设没有找到。走到第 5 步。
+
+当前 vtable 中存的值是 [24,26]，即 sword 对象中 name 和 damage 的 offset 。从对象的头开始，计算后面属性的偏移量。`off = objectOffset - b.vtable[i]`。这里对应上面代码的第 6 步。
+
+
+第 6 步到第 8 步得到的结果是下图：
+
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_17_.png'>
+</p>
+
+
+从右往左计算 sword 的 offset，当前 sword 的 offset 是 32，偏移 6 个字节到 Damage 字段，继续再偏移 2 个字节到 name 字段。所以 vtable 中末尾 4 个字节为 8 0 6 0 。sword 对象整个大小为 12 字节，包括头的 offset。最后填入 vtable 的大小，8 字节大小。
+
+
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_18.png'>
+</p>
+
+最后一步需要修正 sword 对象头部的 offset，修改成距离 vtable 的 offset。由于当前 vtable 在低地址，所以 sword 对象在它的右边，offset 为正数，offset = vtable size = 8 字节。对应代码实现见第 10 步。
+
+
+如果之前在 vtables 中找到了一样的 vtable，那么就在对象的头部的 offset 改成距离 vtable 的 offset 即可，对应代码第 12 步。
+
+
 weaponOne offset = 12  
 weaponTwo offset = 20  
 sword offset = 32  
