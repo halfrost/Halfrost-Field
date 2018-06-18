@@ -137,7 +137,7 @@ orc := sample.MonsterEnd(builder)
 
 **这也意味着不用担心添加了很多仅在少数实例中使用的字段，它们都默认使用默认值，是不会占用 buffer 的大小的**。
 
-在完成序列化之前，再回顾一下 FlatBuffer union Equipment。每个 FlatBuffer union 都有两部分(具体描述可以看[前一篇文章]())。第一个是隐藏字段 `_type`，它是为了保存 union 所引用的 table 的类型而生成的。这使您可以知道在运行时投入哪种类型。第二个字段是，union 的数据。
+在完成序列化之前，再回顾一下 FlatBuffer union Equipment。每个 FlatBuffer union 都有两部分(具体描述可以看[前一篇文章](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/FlatBuffers-schema.md))。第一个是隐藏字段 `_type`，它是为了保存 union 所引用的 table 的类型而生成的。这使您可以知道在运行时投入哪种类型。第二个字段是，union 的数据。
 
 所以我们也需要添加 2 个字段，一个是 Equipped Type，另一个是 Equipped union。具体代码在这里(上面初始化过了)：
 
@@ -1102,4 +1102,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/flatbuffers/](https://halfrost.com/flatbuffers/)
+> Source: [https://halfrost.com/flatbuffers\_encode/](https://halfrost.com/flatbuffers_encode/)

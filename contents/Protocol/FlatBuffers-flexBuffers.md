@@ -242,4 +242,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/FlexBuffers/](https://halfrost.com/flexBuffers/)
+> Source: [https://halfrost.com/flatBuffers\_flexBuffers/](https://halfrost.com/flatBuffers_flexBuffers/)

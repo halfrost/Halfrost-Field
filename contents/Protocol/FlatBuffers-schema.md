@@ -368,7 +368,7 @@ FlatBuffers 是支持解析 JSON 成自己的格式的。即解析 schema 的解
 `\“` - 双引号。   
 `\\` - 反斜杠。   
 `\/` - 正斜杠。  
-`\uXXXX` - 16位 unicode，转换为等效的 UTF-8 表示。
+`\uXXXX` - 16位 unicode，转换为等效的 UTF-8 表示。   
 `\xXX` - 8 位二进制十六进制数字 XX。这是唯一一个不属于 JSON 规范的地方（请参阅[http://json.org/](http://json.org/)），但是需要能够将字符串中的任意二进制编码为文本并返回而不丢失信息（例如字节 0xFF 就不可以表示为标准的 JSON）。
 
 当从二进制再反向表示生成 JSON 时，它还会再次生成这些转义代码。
@@ -444,4 +444,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/flatbuffers/](https://halfrost.com/flatbuffers/)
+> Source: [https://halfrost.com/flatbuffers\_schema/](https://halfrost.com/flatbuffers_schema/)
