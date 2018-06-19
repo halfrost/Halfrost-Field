@@ -96,7 +96,7 @@ TCP/IP 协议的标准化流程大致分为以下几个阶段：首先是互联�
 
 
 <p align='center'>
-<img src='../images/Protocol_ standardization.png'>
+<img src='../images/Protocol_standardization.png'>
 </p>
 
 
@@ -831,4 +831,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/tcp\_ip/](https://halfrost.com/tcp_ip/)
