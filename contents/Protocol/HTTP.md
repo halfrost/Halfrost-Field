@@ -399,7 +399,7 @@ public 和 private 的差别主要在于如果是有用户认证环节的页面�
 <img src='../images/http_cache.png'>
 </p>
 
-针对“Expires 时间是相对服务器而言，无法保证和客户端时间统一”的问题，http1.1 新增了 Cache-Control 来定义缓存过期时间。注意：若报文中同时出现了 Expires 和 Cache-Control，则以 Cache-Control 为准。
+针对 “Expires 时间是相对服务器而言，无法保证和客户端时间统一” 的问题，http1.1 新增了 Cache-Control 来定义缓存过期时间。注意：若报文中同时出现了 Expires 和 Cache-Control，则以 Cache-Control 为准。
 
 也就是说优先级从高到低分别是 **Pragma -> Cache-Control -> Expires**。
 
@@ -1112,4 +1112,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/http/](https://halfrost.com/http/)
