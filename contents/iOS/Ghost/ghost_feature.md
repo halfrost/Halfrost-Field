@@ -369,15 +369,15 @@ Explore in every moment of the cudgel thinking
 
 Reference：  
 
-[disqus 配置 Configuration Variables 的重要性](https://help.disqus.com/troubleshooting/use-configuration-variables-to-avoid-split-threads-and-missing-comments)  
-[ghost 配置 disqus 方法](https://help.ghost.org/article/15-disqus)  
+[disqus 配置 Configuration Variables 的重要性](https://help.disqus.com/troubleshooting/use-configuration-variables-to-avoid-split-threads-and-missing-comments)    
+[ghost 配置 disqus 方法](https://help.ghost.org/article/15-disqus)    
 [给 Ghost 实现文章归档](https://xiao.lu/ghost-post-archives-page/)  
 [Ghost 实现文章归档](https://www.ldsun.com/2016/07/23/ghost-archives/)  
-[归档的具体代码](https://github.com/flute/ghost-archives/blob/master/page-archives.hbs)
-[Share Your Blog Posts with MailChimp](https://mailchimp.com/help/share-your-blog-posts-with-mailchimp/)  
-[使用MailChimp配置Ghost博客邮件订阅教程](http://402v.com/ghostbo-ke-shi-yong-mailchimppei-zhi-you-jian-ding-yue/)    
-[RSS Merge Tags](https://mailchimp.com/help/rss-merge-tags/)
-[Preview and Test Your Email Campaign](https://mailchimp.com/help/preview-and-test-your-email-campaign/)  
+[归档的具体代码](https://github.com/flute/ghost-archives/blob/master/page-archives.hbs)  
+[Share Your Blog Posts with MailChimp](https://mailchimp.com/help/share-your-blog-posts-with-mailchimp/)    
+[使用MailChimp配置Ghost博客邮件订阅教程](http://402v.com/ghostbo-ke-shi-yong-mailchimppei-zhi-you-jian-ding-yue/)      
+[RSS Merge Tags](https://mailchimp.com/help/rss-merge-tags/)  
+[Preview and Test Your Email Campaign](https://mailchimp.com/help/preview-and-test-your-email-campaign/)    
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
