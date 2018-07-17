@@ -1,7 +1,7 @@
 # Ghost 博客炫技"新"玩法
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_0.jpg'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleTitleImage/93_0.png'>
 </p>
 
 由于 Ghost 升级到了最新版本，新增加了很多玩法。这里罗列一下“新”玩法，也是对笔者博客新功能的说明。
