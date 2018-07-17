@@ -925,11 +925,11 @@ Running sudo command: systemctl is-active ghost_halfrost-com
 
 Reference：  
 
-[getting-started-guide](https://docs.ghost.org/v1.0.0/docs/getting-started-guide) 
-[cli-install](https://docs.ghost.org/v1.0.0/docs/cli-install)  
-[Install & Setup (production)](https://docs.ghost.org/docs/install)  
-[troubleshooting](https://docs.ghost.org/docs/troubleshooting)  
-[Unlock Your Locked Ghost Account](https://briankoopman.com/unlock-ghost-account/)
+[getting-started-guide](https://docs.ghost.org/v1.0.0/docs/getting-started-guide)   
+[cli-install](https://docs.ghost.org/v1.0.0/docs/cli-install)    
+[Install & Setup (production)](https://docs.ghost.org/docs/install)    
+[troubleshooting](https://docs.ghost.org/docs/troubleshooting)    
+[Unlock Your Locked Ghost Account](https://briankoopman.com/unlock-ghost-account/)  
        
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
