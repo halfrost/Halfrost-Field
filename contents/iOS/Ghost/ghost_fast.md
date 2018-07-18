@@ -1,5 +1,9 @@
 # 博客跑分优化
 
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_0_.png'>
+</p>
+
 本篇文章会持续更新，因为优化无止境。
 
 本文会罗列目前已经优化过的点。从开始页面略卡顿，到最后跑满分，笔者在这里都会一一展现出来。
