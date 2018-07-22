@@ -239,11 +239,6 @@ http {
 
     gzip_types         text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript image/svg+xml;
 
-    # 如果编译时添加了 ngx_brotli 模块，需要增加 brotli 相关配置
-    brotli             on;
-    brotli_comp_level  6;
-    brotli_types       text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript image/svg+xml;
-
     #... ...#
 
     include            /home/jerry/www/nginx_conf/*.conf;
@@ -256,7 +251,45 @@ http {
 
 主要步骤需要先现在最新的 OpenSSL 和 Nginx，然后先编译 OpenSSL，再编译 Nginx。在编译 Nginx 的时候要带上刚刚编译的 OpenSSL 和 TLS1.3 的编译参数即可。
 
-### 5. 支持 QUIC
+开启 TLS 1.3 可以参考这两篇文章[《本站开始支持TLS1.3》](https://www.cainwang.cn/tls1_3support/)、[《本博客开始支持 TLS 1.3》](https://imququ.com/post/enable-tls-1-3.html#comment-4000795428)。
+
+### 5. 启用 OCSP Stapling
+
+
+```nginx
+server {
+    ssl_session_cache        shared:SSL:10m;
+    ssl_session_timeout      60m;
+
+    ssl_session_tickets      on;
+
+    ssl_stapling             on;
+    ssl_stapling_verify      on;
+    ssl_trusted_certificate  /xxx/full_chain.crt;
+
+    resolver                 8.8.4.4 8.8.8.8  valid=300s;
+    resolver_timeout         10s;
+    ... ...
+}
+```
+
+TLS 会话恢复的目的是为了简化 TLS 握手，有两种方案：Session Cache 和 Session Ticket。他们都是将之前握手的 Session 存起来供后续连接使用，所不同是 Cache 存在服务端，占用服务端资源；Ticket 存在客户端，不占用服务端资源。另外目前主流浏览器都支持 Session Cache，而 Session Ticket 的支持度一般。
+
+`ssl_stapling` 开始的几行用来配置 OCSP stapling 策略。浏览器可能会在建立 TLS 连接时在线验证证书有效性，从而阻塞 TLS 握手，拖慢整体速度。OCSP stapling 是一种优化措施，服务端通过它可以在证书链中封装证书颁发机构的 OCSP（Online Certificate Status Protocol）响应，从而让浏览器跳过在线查询。服务端获取 OCSP 一方面更快（因为服务端一般有更好的网络环境），另一方面可以更好地缓存。
+
+
+Let's Encrypt 目前支持 ECC 证书，申请完以后顺带记得开启 OCSP Stapling。具体的步骤可以参考这篇文章[《Let's Encrypt，免费好用的 HTTPS 证书》](https://imququ.com/post/letsencrypt-certificate.html)
+
+配置完需要验证 OCSP Stapling 是否开启，可以用以下的命令：
+
+```nginx
+$ cd /var/www/ghost/ssl/
+
+$ openssl ocsp -CAfile full_chained.pem -issuer intermediate.pem -cert chained.pem -no_nonce -text -url http://ocsp.int-x3.letsencrypt.org -header "HOST" "ocsp.int-x3.letsencrypt.org"
+
+```
+
+### 6. 支持 QUIC
 
 本博客目前支持了 QUIC，但是性能上没有感觉有多少提升。而且目前只有 Chrome 支持 QUIC，开启几率也极低，基本上还都是走 HTTP/2。
 
@@ -266,17 +299,17 @@ http {
 add_header alt-svc 'quic=":443"; ma=2592000; v="39"';
 ```
 
-### 6. 开启 HSTS
+### 7. 开启 HSTS
 
 开启 HSTS 首先需要满足以下条件：
 
 - 拥有合法的证书（如果使用 SHA-1 证书，过期时间必须早于 2016 年）；
 - 将所有 HTTP 流量重定向到 HTTPS；
 - 确保所有子域名都启用了 HTTPS；
-- 输出 HSTS 响应头：
-max-age 不能低于 18 周（10886400 秒）；
-必须指定 includeSubdomains 参数；
-必须指定 preload 参数；
+- 输出 HSTS 响应头：  
+  max-age 不能低于 18 周（10886400 秒）；  
+  必须指定 includeSubdomains 参数；  
+  必须指定 preload 参数；  
 
 然后 Nginx 要加入相关的安全策略
 
@@ -301,7 +334,7 @@ ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
 最后可以在 [ssllabs](https://www.ssllabs.com/ssltest/index.html)上进行测试。笔者拿到了 A+ 的成绩：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_19_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_19.png'>
 </p>
 
 ## 最后
@@ -328,19 +361,23 @@ ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
 Reference：  
 
 
-[优化 Google Analytics 异步加载来提高你的网站速度](https://imiku.me/2017/07/14/916.html)    
-[服务端使用 Google Analytics](https://blog.alphatr.com/google-analytics-on-server.html)  
-[Analytics代码延迟异步加载](http://blog.angular.in/analyticsdai-ma-yan-chi-yi-bu-jia-zai/)    
-[IntersectionObserver’s Coming into View](https://developers.google.com/web/updates/2016/04/intersectionobserver)      
-[七牛图片基本处理 API](https://developer.qiniu.com/dora/manual/1279/basic-processing-images-imageview2)    
-[PWA 网络应用清单](https://developers.google.com/web/fundamentals/web-app-manifest/#_5)    
-[2018 前端性能优化清单](http://cherryblog.site/front-end-performance-checklist-2018.html)      
-[Nginx 配置之安全篇](https://imququ.com/post/my-nginx-conf-for-security.html)      
-[Nginx 配置之完整篇](https://imququ.com/post/my-nginx-conf.html)    
-[解决Nginx配置http2不生效，谷歌浏览器仍然采用http1.1协议问题](https://zhangge.net/5114.html)    
-[使用 Service Workers](https://developer.mozilla.org/zh-CN/docs/Web/API/Service_Worker_API/Using_Service_Workers)    
-[让你的Ghost博客支持Progressive Web Apps (PWA)](https://blog.wangkaibo.com/node-express-ghost-progressive-web-apps-pwa/)    
+[优化 Google Analytics 异步加载来提高你的网站速度](https://imiku.me/2017/07/14/916.html)  
+[服务端使用 Google Analytics](https://blog.alphatr.com/google-analytics-on-server.html)
+[Analytics代码延迟异步加载](http://blog.angular.in/analyticsdai-ma-yan-chi-yi-bu-jia-zai/)  
+[IntersectionObserver’s Coming into View](https://developers.google.com/web/updates/2016/04/intersectionobserver)    
+[七牛图片基本处理 API](https://developer.qiniu.com/dora/manual/1279/basic-processing-images-imageview2)  
+[PWA 网络应用清单](https://developers.google.com/web/fundamentals/web-app-manifest/#_5)  
+[2018 前端性能优化清单](http://cherryblog.site/front-end-performance-checklist-2018.html)    
+[Nginx 配置之安全篇](https://imququ.com/post/my-nginx-conf-for-security.html)    
+[Nginx 配置之完整篇](https://imququ.com/post/my-nginx-conf.html)  
+[解决Nginx配置http2不生效，谷歌浏览器仍然采用http1.1协议问题](https://zhangge.net/5114.html)  
+[使用 Service Workers](https://developer.mozilla.org/zh-CN/docs/Web/API/Service_Worker_API/Using_Service_Workers)  
+[让你的Ghost博客支持Progressive Web Apps (PWA)](https://blog.wangkaibo.com/node-express-ghost-progressive-web-apps-pwa/)  
 [本站开启支持-quic-的方法与配置](https://liudanking.com/beautiful-life/%E6%9C%AC%E7%AB%99%E5%BC%80%E5%90%AF%E6%94%AF%E6%8C%81-quic-%E7%9A%84%E6%96%B9%E6%B3%95%E4%B8%8E%E9%85%8D%E7%BD%AE/)  
+[Let's Encrypt，免费好用的 HTTPS 证书](https://imququ.com/post/letsencrypt-certificate.html)  
+[本站开始支持TLS1.3](https://www.cainwang.cn/tls1_3support/)  
+[本博客开始支持 TLS 1.3](https://imququ.com/post/enable-tls-1-3.html#comment-4000795428)      
+[从无法开启 OCSP Stapling 说起](https://imququ.com/post/why-can-not-turn-on-ocsp-stapling.html)  
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
