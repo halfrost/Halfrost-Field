@@ -301,7 +301,7 @@ ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
 最后可以在 [ssllabs](https://www.ssllabs.com/ssltest/index.html)上进行测试。笔者拿到了 A+ 的成绩：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_18_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_19_.png'>
 </p>
 
 ## 最后
