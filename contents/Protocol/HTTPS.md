@@ -1,4 +1,4 @@
-# HTTPS 温故知新（一） —— TLS 握手流程
+# HTTPS 温故知新（一） —— TLS 握手流程概述
 
 
 <p align='center'>
@@ -176,7 +176,7 @@ SSL 提供报文摘要功能来验证完整性。
 Reference：
   
 《图解 HTTP》    
-《HTTP 权威指南》
+《HTTP 权威指南》  
 《深入浅出 HTTPS》  
 [How to Migrate from HTTP to HTTPS – Complete Tutorial](https://woorkup.com/http-to-https/)
 
