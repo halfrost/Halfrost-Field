@@ -112,7 +112,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 - 缺点：密钥容易被获取。
 
 <p align='center'>
-<img src='../images/Symmetric-Key_Encryption.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_6.png'>
 </p>
 
 
@@ -124,7 +124,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 - 缺点：运算速度慢；
 
 <p align='center'>
-<img src='../images/Public-Key_Encryption.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_7.png'>
 </p>
 
 
@@ -135,8 +135,9 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 
 <p align='center'>
-<img src='../images/How-HTTPS-Works.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_8.png'>
 </p>
+
 
 
 ## 认证
@@ -149,7 +150,7 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 
 <p align='center'>
-<img src='../images/mutualssl_small.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_9.png'>
 </p>
 
 
@@ -158,6 +159,10 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 ## 完整性
 
 SSL 提供报文摘要功能来验证完整性。
+
+<p align='center'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_5.png'>
+</p>
 
 ## 四、握手流程
 
