@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/96_0.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/97_0.png'>
 </p>
 
 
@@ -21,15 +21,6 @@
 
 ## 四、TLS 1.3 握手流程
 
-
-<p align='center'>
-<img src='../images/HTTPS_guide.png'>
-</p>
-
-
-<p align='center'>
-<img src='../images/http_https.png'>
-</p>
 
 ------------------------------------------------------
 
