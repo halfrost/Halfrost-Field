@@ -24,6 +24,10 @@
 
 ## 五、TLS 1.2 第二次握手流程
 
+为何会出现再次握手呢？这个就牵扯到了会话复用机制。
+
+在 TLS 1.3 中，会话复用机制，一种是 session id 复用，一种是 session ticket 复用。session id 复用存在于服务端，session ticket 复用存在于客户端。
+
 
 ## 六、TLS 1.3 第二次握手流程
 
