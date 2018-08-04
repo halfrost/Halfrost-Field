@@ -1831,7 +1831,7 @@ callback的回调比较简单，taskCenter.callback会调用callbackManager.cons
 
 
 
-图片有点大，链接[点这里](https://ob6mci30g.qnssl.com/Blog/ArticleImage/45_12_.png)
+图片有点大，链接[点这里](https://img.halfrost.com/Blog/ArticleImage/45_12_.png)
 
 
 

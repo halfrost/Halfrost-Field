@@ -1,7 +1,7 @@
 # Ghost 博客搭建日记
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_0_.jpg'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/26_0_.jpg'>
 </p>
 
 #### 前言
@@ -27,7 +27,7 @@
 #### 一.Ghost简介
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_1.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_1.png)
 
 
 
@@ -85,7 +85,7 @@ Ghost中文文档 http://docs.ghostchina.com/zh/
 #### 三. 开始搭建
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_2.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_2.png)
 
 
 
@@ -93,7 +93,7 @@ Ghost中文文档 http://docs.ghostchina.com/zh/
 Ghost是基于Node.js构建的开源博客平台，所以我们首先搭建Node环境。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_3.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_3.png)
 
 
 
@@ -125,7 +125,7 @@ v0.10.40
 
 **一定要注意node的版本号和Ghost的版本是否对应**，如果不对应，会报下面的错误
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_26.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_26.png)
 
 解决办法就是更改node的版本。
 
@@ -135,7 +135,7 @@ v0.10.40
 ##### 2. 安装Nginx
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_4.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_4.png)
 
 
 Nginx是一款轻量级的Web服务器/反向代理服务器及电子邮件（IMAP/POP3）代理服务器，并在一个BSD-like 协议下发行。
@@ -231,7 +231,7 @@ Nginx 就配置完成了。
 
 ##### 4. 安装Mysql
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_5.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_5.png)
 
 
 
@@ -359,7 +359,7 @@ Mysql数据库就安装配置完成了。
 ##### 6. 安装Ghost
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_6.jpg)
+![](https://img.halfrost.com/Blog/ArticleImage/26_6.jpg)
 
 
 
@@ -515,7 +515,7 @@ pm2 start/stop/restart ghost
 
 #### 四. 全站Https
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_7.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_7.png)
 
 
 Let's Encrypt是国外一个公共的免费SSL项目，由 Linux 基金会托管，它的来头不小，由Mozilla、思科、Akamai、IdenTrust和EFF等组织发起，目的就是向网站自动签发和管理免费证书，以便加速互联网由HTTP过渡到HTTPS，目前Facebook等大公司开始加入赞助行列。
@@ -554,7 +554,7 @@ $ yum install python-argparse
 
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_8.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_8.png)
 
 
 
@@ -576,7 +576,7 @@ $ ./letsencrypt-auto
 
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_9.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_9.png)
 
 
 
@@ -585,14 +585,14 @@ $ ./letsencrypt-auto
 执行上述命令后，会弹出对话框，同意用户协议。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_10.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_10.png)
 
 
 
 接着会提示让你关闭Nginx或者Apache。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_11.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_11.png)
 
 
 
@@ -600,7 +600,7 @@ $ ./letsencrypt-auto
 Let's Encrypt需要用到80和443端口，所以你需要关闭那些占用这两个端口的应用。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_12.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_12.png)
 
 
 
@@ -626,7 +626,7 @@ IMPORTANT NOTES:
 见下图：
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_13.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_13.png)
 
 
 
@@ -659,7 +659,7 @@ $ chmod +x letsencrypt.sh
 
 ```
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_14.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_14.png)
 
 
 
@@ -710,13 +710,13 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 
 到这里，访问你博客网站对应的443端口就是https了。
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_23.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_23.png)
 
 #### 五. 管局备案 / 公安备案
 
 进行到这一步，其实网站已经“上线”，并且可以成功访问了。不过正常访问80端口会出现以下的界面。
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_15.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_15.png)
 
 
 但是如果配置好了Https，正常访问443端口是没问题的。
@@ -725,7 +725,7 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 
 想让我们辛辛苦苦搭建的博客能以正常的方式访问到，那么需要申请管局的备案。我在阿里云买的服务器，申请备案有直达链接，很方便。
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_16.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_16.png)
 
 
 申请过程需要先填写个人信息，申请地要写身份证所在地。个别地方有特殊规定，比如上海和北京，如果有居住证，可以写居住证的所在地。然后还要上传手持身份证图片，和一些需要亲手签字的扫描件。
@@ -734,14 +734,14 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_17.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_17.png)
 
 
 
 之后就是等待了，一般备案从提交到审核通过大概10个工作日左右。如果觉得慢，还可以电话咨询审核进度。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_18.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_18.png)
 
 
 
@@ -751,7 +751,7 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 公安备案也是需要填写个人信息。这里全部提交完全之后提交就好了，没有管局的备案麻烦，只需要等待审核通过即可。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_19.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_19.png)
 
 
 
@@ -761,7 +761,7 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 
 #### 六. CDN优化访问速度
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_20.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_20.png)
 
 
 网站上线以后，访问速度会比服务器在国外的GitPage访问快一点。但是如果网站图片很多，或者文章图片质量很高，很多，访问速度还是会随之下降。
@@ -778,7 +778,7 @@ ValueError: hkh.freehao123.info challenge did not pass: {u'status': u'invalid', 
 设置好了以后，我跑了一个分，对比之前放在GitPage上的博客访问速度。
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_21.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_21.png)
 
 
 
@@ -835,7 +835,7 @@ static 解压后丢到站点根目录下即可。
 
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/26_22.png)
+![](https://img.halfrost.com/Blog/ArticleImage/26_22.png)
 
 
 经过我们自己辛辛苦苦一路踩坑过来，搭建出来的博客，一定会好好珍惜。这是我们程序员自己的家，让我们用一篇篇的用心的博客来装饰我们的新家吧。

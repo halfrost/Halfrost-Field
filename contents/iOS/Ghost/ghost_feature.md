@@ -1,13 +1,13 @@
 # Ghost 博客炫技"新"玩法
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleTitleImage/93_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleTitleImage/93_0.png'>
 </p>
 
 由于 Ghost 升级到了最新版本，新增加了很多玩法。这里罗列一下“新”玩法，也是对笔者博客新功能的说明。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_24.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_24.png'>
 </p>
 
 如果读者也想修改自己的主题，那么请先阅读官方的文档：
@@ -23,7 +23,7 @@
 新版本的博客导航功能放到了 footer 上了。可能有人问为何不放在 header 上。我尝试了好几种位置，都觉得不太合适，还是放在 footer 上了。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_1.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_1.png'>
 </p>
 
 footer 上主要分了 3 列，TAGS、ABOUT、NEWSLETTER。
@@ -35,7 +35,7 @@ footer 上主要分了 3 列，TAGS、ABOUT、NEWSLETTER。
 由于受到了知乎专栏的 CSS 影响，加上 Ghost 本身也支持 cover 功能，所以笔者在这次升级的时候，把原来的主题重新修改了，把 cover 封面重新添加回来了。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_2.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_2.png'>
 </p>
 
 用过知乎专栏的朋友会知道，每篇文章一进去，就是一个占满全屏的封面题图，这种设计笔者觉得挺好的，所以也“抄”过来了。
@@ -50,12 +50,12 @@ footer 上主要分了 3 列，TAGS、ABOUT、NEWSLETTER。
 这个功能也是读者提过的需求。因为有些文章比较长，常常容易看到后面忘记了前面，如果有一个目录，可以分章节阅读文章，也可以迅速浏览目录，抓住文章脉络。这次升级笔者也加上了这个功能。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_3.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_3.png'>
 </p>
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_4.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_4.png'>
 </p>
 
 文章目录这个功能的不难，只要遍历一遍 markdown 的标题就可以了。github 上可以找到现成的 jquery 版本的代码 `jquery.toc.js`。引用它，然后初始化的时候加上自己的配置：
@@ -79,7 +79,7 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 这个需求是自己给自己加的，因为看见别人博客有，自己也想做一下。最终成品如下：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_5.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_5.png'>
 </p>
 
 在 Ghost 里面想加入搜索功能，需要现在后台开启 public API ，因为它会用到 Ghost 一下实验的接口。
@@ -106,7 +106,7 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 加入侧边栏本意是想在每篇文章增加一些彩蛋环节，给读者一些惊喜。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_6.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_6.png'>
 </p>
 
 侧边栏一般都是用 `<aside>` 标签完成的。
@@ -118,7 +118,7 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 在老版本的博客中，笔者博客是没有这个功能，一直用 github 作为博客的目录🤪，不过现在有了这个功能，说不定知道的人也不多。🤓
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_7.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_7.png'>
 </p>
 
 在 Ghost 中，允许用户针对单页做特殊的 CSS。默认样式是 page.hbs。如果用户想新增单页的样式，就需要自己新建一个文件，page-XXX.hbs，然后在发布文章的时候，选择单页，并且网址要路由到 XXX ，这样设置以后，就有单页了。
@@ -179,7 +179,7 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_22.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_22.png'>
 </p>
 
 可能有人会问，这个题图是什么寓意呢？先卖个关子，下文会说明。
@@ -193,27 +193,27 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_8.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_8.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_9.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_9.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_10.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_10.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_11.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_11.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_12.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_12.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_13.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_13.png'>
 </p>
 
 具体做法是在 Ghost 后台 tag 管理中，找到对应的 tag，给每个 tag 都加上题图。网页路由很简单，只要按照 `/tag/XXX/` 这种方式就可以跳转到对应的 tag 页面中了。
@@ -224,13 +224,13 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 这个功能之前做的比较简陋，现在在新版里面单独加一个页面来展示。具体新加单页的步骤和添加文章归档是一样的，这里就不再赘述了。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_14.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_14.png'>
 </p>
 
 新建 page-links.hbs ，然后把这些友链信息都写到单页文章中，调整一下 CSS 即可。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_23.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_23.png'>
 </p>
 
 眼力尖的同学应该发现了，友链的题图和文章归档的题图有些联系。
@@ -245,11 +245,11 @@ selector 代表会搜索 markdown 文章标题的层级深度，这里是从 h1 
 这个功能其实算性能优化。有些读者没有梯子，不能翻墙也就不能评论。但是由于 Disqus 脚本会一直加载，直到超时才会停止。这样对于没有梯子的读者体验非常不好。所以加入这个伸缩的功能。具体见下图。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_15.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_15.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_16.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_16.png'>
 </p>
 
 只有当读者点击了 COMMENTS 按钮的时候，才会开始去加载 Disqus 评论框。这样对整个文章页面的渲染也提速了。因为在加载 JS 的时候，不需要先加载 Disqus 评论框架了。
@@ -290,7 +290,7 @@ s.setAttribute('data-timestamp', +new Date());
 关于这个功能可以用的产品挺多的，比如 mailgun 和 mailchimp。笔者这里选用了 mailchimp。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_17.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_17.png'>
 </p>
 
 当读者点击了 footer 上的 subscribe 按钮，就会跳转到这个页面了。这个页面是在 mailchimp 上生成的。填上邮箱就能在本博客更新的时候收到更新邮件提醒了。
@@ -301,14 +301,14 @@ s.setAttribute('data-timestamp', +new Date());
 先在 mailchimp 上注册好账号，建立好 Lists，这个就是要发送用户的邮件组。有了 Lists 以后就要新建 Campaigns。Campaigns 是会绑定 Lists 的。新建 Campaigns 记得要选择 RSS Update。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_18.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_18.png'>
 </p>
 
 上图是 Campaigns 的基本设置页面。在这个页面最好勾选 To Field 那一项，这一样是为了防止垃圾邮件扫描的。防止更新邮件被识别成垃圾邮件了。
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_19.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_19.png'>
 </p>
 
 这一步就是设计发送邮件的模板了。笔者设计的比较简单。这里有很多可选项。具体可以看这个文档[《RSS Merge Tags》](https://mailchimp.com/help/rss-merge-tags/)，文档里面写了所有可用的 tags。
@@ -345,13 +345,13 @@ Explore in every moment of the cudgel thinking
 ```
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_20.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_20.png'>
 </p>
 
 一路 next 点下来以后，到最后一个页面别慌着点 start rss，在右上角可以选择测试 send 发送邮件，看看最终效果是否是你想要的。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_21.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_21.png'>
 </p>
 
 最后完成配置以后，就会看见这个星星的手势了，就代表成功了。
@@ -360,7 +360,7 @@ Explore in every moment of the cudgel thinking
 ## 最后
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/93_25.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/93_25.png'>
 </p>
 
 以上就是本次博客升级以后新增的一些功能，至于性能优化放在下篇文章再细说吧。
