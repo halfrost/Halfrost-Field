@@ -13,7 +13,7 @@
 博客页面优化从 Chrome 的 Performance 开始。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_1_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_1_.png'>
 </p>
 
 从上图中可以看到页面前 550ms 都是空白，时间耗在了加载 JS 的过程上了。这段是 Disqus 的脚本和 Google 统计脚本。
@@ -46,7 +46,7 @@
 把上面这两块弄好，会得到下面这张图：
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_14_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_14_.png'>
 </p>
 
 效果就很明显了，首页首次有效渲染时间（FMP，是指主要内容出现在页面上所需的时间）小于 100 ms 了。
@@ -56,7 +56,7 @@
 接下来是 Chrome 的 Audits。笔者第一次跑分的结果比较难看。分数比较低的是 Performance 和 Accessibility。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_2_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_2_.png'>
 </p>
 
 Performance 上，有以下几个衡量的指标：
@@ -75,7 +75,7 @@ HTML 的前 14~15kb 加载是是最关键的有效载荷块 —— 也是第一�
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_3_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_3_.png'>
 </p>
 
 由于本博客首页大量使用图片，所以图片优化是大头。上图中可以看到 Chrome 对图片指出 3 点优化建议：
@@ -85,7 +85,7 @@ HTML 的前 14~15kb 加载是是最关键的有效载荷块 —— 也是第一�
 - 离屏渲染。屏幕以外的图片进行 lazy-load。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_4_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_4_.png'>
 </p>
 
 在性能方面还有几处需要重点优化的：
@@ -95,7 +95,7 @@ HTML 的前 14~15kb 加载是是最关键的有效载荷块 —— 也是第一�
 - 减少阻塞渲染的 JS 脚本
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_5_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_5_.png'>
 </p>
 
 Accessibility 上，有以下容易漏掉的指标：
@@ -109,7 +109,7 @@ Accessibility 上，有以下容易漏掉的指标：
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_6_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_6_.png'>
 </p>
 
 在默认页面上，还有一些要求：
@@ -118,7 +118,7 @@ Accessibility 上，有以下容易漏掉的指标：
 - `<meta name="viewport">` 标签里面不要加入 `[user-scalable="no"]`，并且 `[maximum-scale]` 属性要大于 5
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_7_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_7_.png'>
 </p>
 
 最后 SEO 方面，文字有限制，那就是文字大小要求 75% 以上的文字 >= 16 px。
@@ -130,7 +130,7 @@ Accessibility 上，有以下容易漏掉的指标：
 关于 lazy-load 的原理简单说明一下，在 viewport 中可以获取到当前视窗里面元素的百分比，根据这个比例，我们会知道接下来哪个元素即将要被加载。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_15_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_15_.png'>
 </p>
 
 可以在图片的标签里面加上 `data-url` 属性来存储图片的真实地址。
@@ -142,7 +142,7 @@ Accessibility 上，有以下容易漏掉的指标：
 当滚动到图片需要被展示的时候，再进行一些处理，把最后真实要获取图片的地址赋值到 src 属性上，这样浏览器会加载指定的图片。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_16_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_16_.png'>
 </p>
 
 更加详细的说明可以看谷歌的这篇官方文档[《IntersectionObserver’s Coming into View》](https://developers.google.com/web/updates/2016/04/intersectionobserver)
@@ -171,14 +171,14 @@ Code-splitting 是 Webpack 的一个特性，可将你的代码分解为按需�
 ## 其他优化
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_13_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_13_.png'>
 </p>
 
 
 ### 1. PWA
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_17_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_17_.png'>
 </p>
 
 
@@ -334,7 +334,7 @@ ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
 最后可以在 [ssllabs](https://www.ssllabs.com/ssltest/index.html)上进行测试。笔者拿到了 A+ 的成绩：
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_19.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_19.png'>
 </p>
 
 ## 最后
@@ -344,13 +344,13 @@ ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
 没有缓存的情况下，FMP 160ms，FI 300ms
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_11_0.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_11_0.png'>
 </p>
 
 有缓存的情况下，FMP 和 FI 都是 110ms，这得益于 PWA 的缓存效果。
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_12_0.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_12_0.png'>
 </p>
 
 但是优化还远远没有终点。本文会持续更新。
