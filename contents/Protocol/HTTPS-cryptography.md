@@ -23,7 +23,7 @@
 
 
 <p align='center'>
-<img src='../images/HTTPS_guide.png'>
+<img src='../images/https_guide.png'>
 </p>
 
 
