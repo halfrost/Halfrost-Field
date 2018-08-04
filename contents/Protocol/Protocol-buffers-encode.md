@@ -554,7 +554,7 @@ Varint 确实是一种紧凑的表示数字的方法。它用一个或多个字�
 protocol buffer 中 message 是一系列键值对。message 的二进制版本只是使用字段号(field's number 和 wire_type)作为 key。每个字段的名称和声明类型只能在解码端通过引用消息类型的定义（即 `.proto` 文件）来确定。这一点也是人们常常说的 protocol buffer 比 JSON，XML 安全一点的原因，如果没有数据结构描述 `.proto` 文件，拿到数据以后是无法解释成正常的数据的。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/84_7.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/84_7.png'>
 </p>
 
 由于采用了 tag-value 的形式，所以 option 的 field 如果有，就存在在这个 message buffer 中，如果没有，就不会在这里，这一点也算是压缩了 message 的大小了。

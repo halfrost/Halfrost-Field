@@ -67,7 +67,7 @@
 
 ## 附录
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/certificate.png)
+![](https://img.halfrost.com/Blog/ArticleImage/certificate.png)
 
 
 ------------------------------------------------------
