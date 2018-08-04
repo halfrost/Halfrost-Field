@@ -1,7 +1,7 @@
 # 博客跑分优化
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_0_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_0_.png'>
 </p>
 
 本篇文章会持续更新，因为优化无止境。
