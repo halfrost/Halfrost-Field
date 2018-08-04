@@ -1,7 +1,7 @@
 # Ghost 博客升级指南
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/92_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/92_0.png'>
 </p>
 
 在笔者一开始建站的时候，用的 Ghost 版本就是 0.7.4 中文版。这个非常早期的版本也有不少 hack 的玩法。直到最近周围有朋友也在玩 Ghost 的时候，我发现最新版很多新功能非常吸引我：比如最新版早就支持了 markdown 插入表格，也能支持 LateX。关于不支持 markdown 插入表格这个比较痛苦，之前表格的替代方法是在 github 上发布完文章以后截图，然后把图片传到 Ghost 上。
@@ -27,7 +27,7 @@ Ghost 在 V1.XX 以后改动比较大，因为加入了很多方便的脚手架�
 >Ghost is a fully open source, hackable platform for building and running a modern online publication.
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/92_1.jpg'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/92_1.jpg'>
 </p>
 
 安装 Ghost 最新版之前请先阅读官方文档：  
@@ -601,7 +601,7 @@ $ sudo systemctl enable ghost_halfrost-com
 ## 遇到的问题
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/92_2.jpg'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/92_2.jpg'>
 </p>
 
 如果按照上面的步骤升级完 Ghost，没有出现问题，那么恭喜你，可以愉快的离开本文了。如果遇到了问题，请继续往下看。

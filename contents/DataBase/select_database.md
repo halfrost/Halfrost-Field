@@ -11,7 +11,7 @@
 产品选型导图
 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/select_database.png)
+![](https://img.halfrost.com/Blog/ArticleImage/select_database.png)
 
 ### MySQL
    优劣：
