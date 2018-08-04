@@ -28,7 +28,7 @@ WebSocket 是 HTML5 开始提供的一种在单个 TCP 连接上进行**全双�
 
 ## (1) 最开始的短轮询 Polling 阶段 
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/8_2.png)
+![](https://img.halfrost.com/Blog/ArticleImage/8_2.png)
 
 这种方式下，是不适合获取实时信息的，客户端和服务器之间会一直进行连接，每隔一段时间就询问一次。客户端会轮询，有没有新消息。这种方式连接数会很多，一个接受，一个发送。而且每次发送请求都会有 HTTP 的 Header，会很耗流量，也会消耗 CPU 的利用率。
 
@@ -49,7 +49,7 @@ WebSocket 是 HTML5 开始提供的一种在单个 TCP 连接上进行**全双�
 
 ## (2) 改进版的长轮询 Long polling 阶段（Comet Long polling）
 
-![](https://ob6mci30g.qnssl.com/Blog/ArticleImage/8_3.png)
+![](https://img.halfrost.com/Blog/ArticleImage/8_3.png)
 
 长轮询是对轮询的改进版，客户端发送 HTTP 给服务器之后，有没有新消息，如果没有新消息，就一直等待。直到有消息或者超时了，才会返回给客户端。消息返回后，客户端再次建立连接，如此反复。这种做法在某种程度上减小了网络带宽和 CPU 利用率等问题。
 
@@ -716,7 +716,7 @@ ws.binaryType = "arraybuffer";
 有一张来自 WebSocket.org 网站的测试，用 XHR 轮询和 WebSocket 进行对比：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/8_5.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/8_5.png'>
 </p>
 
 上图中，我们先看蓝色的柱状图，是 Polling 轮询消耗的流量，这次测试，HTTP 请求和响应头信息开销总共包括 871 字节。当然每次测试不同的请求，头的开销不同。这次测试都以 871 字节的请求来测试。

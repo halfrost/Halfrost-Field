@@ -1,7 +1,7 @@
 # 深入浅出 FlatBuffers 之 FlexBuffers
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_0.png'>
 </p>
 
 ## 一. FlexBuffers 是什么？
@@ -18,7 +18,7 @@ FlexBuffers 与 FlatBuffers 不同，它只有一种偏移量，它是一个无�
 ## 二. 为什么要发明 FlexBuffers ？
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_1.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_1.png'>
 </p>
 
 有时候需要存储一些不符合 schema 格式的数据，因为无法提前知道需要存储哪些内容。出于此目的，FlexBuffers 就诞生了。FlatBuffers 有一个称为 FlexBuffers 的专用格式。这是一种二进制格式，可以与 FlatBuffers 一起使用（通过以 FlexBuffers 格式存储缓冲区的一部分），或者也可以作为自己独立的序列化格式。
@@ -49,7 +49,7 @@ uint8_t 3, 1, 2, 3, 4, 4, 4
 ## 四. FlexBuffers 中的 Types
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_2.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_2.png'>
 </p>
 
 
@@ -72,7 +72,7 @@ Typed vectors 仅适用于这些节省空间要求很高的类型子集，即内
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_3.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_3.png'>
 </p>
 
 
@@ -96,7 +96,7 @@ blob（TYPE\_BLOB）的编码类似于一个数组，但有一点不同：它元
 map（TYPE\_MAP）就像一个（无类型）数组，但在 size 字段之前有两个前缀：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_6.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_6.png'>
 </p>
 
 由于 map 与数组相同，因此它可以像数组一样迭代（这可能比按 key 查找快）。
@@ -137,7 +137,7 @@ uint8_t 13, 4, 1    // Value, type, root byte width.
 ## 八. FlexBuffers 的用法举例
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/88_4.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/88_4.png'>
 </p>
 
 

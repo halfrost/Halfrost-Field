@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/96_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/96_0.png'>
 </p>
 
 

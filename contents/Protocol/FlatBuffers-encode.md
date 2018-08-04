@@ -1,7 +1,7 @@
 # 深入浅出 FlatBuffers 之 Encode
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_1.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_1.png'>
 </p>
 
 ## 一. FlatBuffers 生成二进制流
@@ -167,7 +167,7 @@ buf := builder.FinishedBytes() // Of type `byte[]`.
 ## 二. FlatBuffers 读取二进制流
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_2.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_2.png'>
 </p>
 
 
@@ -273,7 +273,7 @@ if monster.Equipped(unionTable) {
 ## 四. FlatBuffers 编码原理
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_7.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_7.png'>
 </p>
 
 根据上面简单实用的流程，我们一步步的来看看源码。
@@ -430,7 +430,7 @@ func (b *Builder) Pad(n int) {
 那么 500 最终在二进制流中表示的结果为 ：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_10.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_10.png'>
 </p>
 
 
@@ -566,7 +566,7 @@ PlaceUOffsetT() 方法主要是设置 builder 的 UOffset，SizeUOffsetT = 4 字
 上面例子中，偏移到 InventoryVector 的 offset 是 60，添加 10 个 1 字节的标量元素以后，就到 70 字节了，由于 alignment = 1，小于 SizeUint32 = 4，所以按照 4 字节对齐，距离 70 最近的，且是 4 字节倍数的就是 72，所以对齐需要额外添加 2 字节的 0 。最终在二进制流里面的表现是 ：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_11.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_11.png'>
 </p>
 
 ```c
@@ -615,7 +615,7 @@ weaponOne := builder.CreateString("Sword")
 所以最终 Sword 字符串在二进制流中如下排列：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_12_.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_12_.png'>
 </p>
 
 ```c
@@ -669,7 +669,7 @@ func CreateVec3(builder *flatbuffers.Builder, x float32, y float32, z float32) f
 
 ```
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_13.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_13.png'>
 </p>
 
 
@@ -807,7 +807,7 @@ func (b *Builder) EndObject() UOffsetT {
 vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtable 的大小（以字节为单位），包括自身。第二个是对象的大小，以字节为单位（包括 vtable 偏移量）。这个大小可以用于流式传输，知道要读取多少字节才能访问对象的所有内联 inline 字段。第三个是 N 个偏移量，其中 N 是编译构建此 buffer 的代码编译时（因此，表的大小为 N  + 2）时在 schema 中声明的字段数量(包括 deprecated 字段)。每个以 SizeVOffsetT 字节为宽度。见下图：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_14_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_14_0.png'>
 </p>
 
 
@@ -815,7 +815,7 @@ vtable 的元素都是 VOffsetT 类型，它是 uint16。第一个元素是 vtab
 一个 object 的第一个元素是 SOffsetT，object 和 vtable 之间的偏移量，可正可负。第二个元素就是 object 的数据 data。在读取 object 的时候，会先比较一下 SOffsetT，防止新代码读取旧数据的情况。如果要读取的字段在 offset 中超出了数组的范围，或者 vtable 的条目为 0，则表示此对象中不存在该字段，并且返回该字段的默认值。如果没有超出范围，则读取该字段的 offset。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_15.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_15.png'>
 </p>
 
 
@@ -903,7 +903,7 @@ func (b *Builder) WriteVtable() (n UOffsetT) {
 第 1 步，添加 0 对齐标量，对齐以后写入 offset，之后这一位会被距离 vtable 的 offset 重写覆盖掉。`b.PrependSOffsetT(0)`
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_16.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_16.png'>
 </p>
 
 Weapon 在 schema 中的定义如下：
@@ -930,7 +930,7 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_17_.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_17_.png'>
 </p>
 
 
@@ -939,7 +939,7 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_18_.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_18_.png'>
 </p>
 
 最后一步需要修正 sword 对象头部的 offset，修改成距离 vtable 的 offset。由于当前 vtable 在低地址，所以 sword 对象在它的右边，offset 为正数，offset = vtable size = 8 字节。对应代码实现见第 10 步。
@@ -950,7 +950,7 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_19.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_19.png'>
 </p>
 
 这里可以用 axe 对象的例子来说明找到相同 vtable 的情况。由于 sword 对象和 axe 对象都是 Weapon 类型的，所以对象内部的字段偏移结构应该是完全一样的，故共享一个结构的 vtable。sword 对象先创建，vtable 紧接在它后面，再创建的 axe 对象，所以 axe 对象头部的 offset 为负数。这里为 -12 。
@@ -979,7 +979,7 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 结束序列化的时候，还需要执行两步操作，一是字节对齐，二是存放指向 root object 的 offset。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_20.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_20.png'>
 </p>
 
 由于在 schema 中我们定义了 root object 为 Monster，序列化完 Monster 对象之后，又紧接着生成了它的 vtable，所以这里 root table 的 offset 为 32 。
@@ -988,7 +988,7 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 至此，整个 Monster 就序列化完成了，最终形成的二进制 buffer 如下：
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_21.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_21.png'>
 </p>
 
 上图中二进制流上面标的数字，为字段的 offset 值。二进制流下方标识的是字段名。
@@ -999,7 +999,7 @@ func (b *Builder) Finish(rootTable UOffsetT) {
 ## 五. FlatBuffers 解码原理
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_3.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_3.png'>
 </p>
 
 flatBuffers 解码的过程就很简单了。由于序列化的时候保存好了各个字段的 offset，反序列化的过程其实就是把数据从指定的 offset 中读取出来。
@@ -1019,11 +1019,11 @@ Hp 字段有默认值，但是在序列化的时候我们并没有用默认值�
 既然 flatbuffer 的优势在反序列化上，那我们就来对比对比，性能究竟有多强。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_8.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_8.png'>
 </p>
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_9.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_9.png'>
 </p>
 
 
@@ -1041,7 +1041,7 @@ Hp 字段有默认值，但是在序列化的时候我们并没有用默认值�
 ## 六. FlatBuffers 优缺点 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_5.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_5.png'>
 </p>
 
 读完本篇 FlatBuffers 编码原理以后，读者应该能明白以下几点：
@@ -1079,7 +1079,7 @@ flatBuffers 和 protocol buffers 组织数据的形式都使用的二进制数�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/87_6.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/87_6.png'>
 </p>
 
 Cap'n Proto 是一个疯狂快速的数据交换格式并且也同样可用于 RPC 系统中。这里有一篇性能对比的文章，[《Cap'n Proto: Cap'n Proto, FlatBuffers, and SBE》](https://capnproto.org/news/2014-06-17-capnproto-flatbuffers-sbe.html)，感兴趣的同学可以当额外的阅读材料看看。

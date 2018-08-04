@@ -1,8 +1,8 @@
-# HTTPS 温故知新（一） —— TLS 握手流程概述
+# HTTPS 温故知新（一） —— 概述
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_0.png'>
 </p>
 
 
@@ -21,7 +21,7 @@ HTTP1.1 有以下安全性问题：
 基于 TCP/IP 的网络，网络各处都会存在被监听的风险。而且如果用 HTTP 协议进行通信，HTTP 本身没有加密功能，所以也无法做到对通信整体(使用 HTTP 协议通信的请求和响应的内容)进行加密。即，HTTP 报文使用明文(指未经过加密的报文)方式发送。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_1.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_1.png'>
 </p>
 
 像上图表示的那样，在互联网各个环节都可能被监听。就算是加密通信，也能被监听到通信内容，只不过监听者看到的是密文。要解决 HTTP 上面 3 个大的安全问题，第一步就是要先进行加密通信。于是在传输层增加了一层 SSL（Secure Sockets Layer 安全套接层）/ TLS (Transport Layer Security 安全层传输协议) 来加密 HTTP 的通信内容。
@@ -32,7 +32,7 @@ HTTPS (HTTP Secure) 并不是新协议，而是 HTTP 先和 SSL（Secure Sockets
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_2.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_2.png'>
 </p>
 
 就算直接对 HTTP 进行加密，HTTP 头部也没有加密，而头部信息也会导致信息不安全。
@@ -56,7 +56,7 @@ HTTP 也有可以验证报文完整性的方法，但是还是不可靠。比如
 有下载服务的 Web 网站也会提供 PGP (Pretty Good Privacy，完美隐私)创建的数字签名及 MD5 算法生成的散列值。PGP 用来证明创建文件的数字签名，MD5 是由单向函数生成的散列值。在 HTTP 的协议下，浏览器是无法知晓数据被篡改了，还是需要用户自己查看。但是如果 PGP 和 MD5 在传输前就被篡改了，用户拿到以后验证对比发现是一致的，这种情况也没法保证数据的完整正确性。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_3.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_3.png'>
 </p>
 
 通过使用 SSL，HTTPS 不仅能保证密文传输，重要的是还可以做到验证通信方的身份，保证报文的完整性。完美的解决了 HTTP 在安全性上的三大缺陷。
@@ -65,7 +65,7 @@ HTTP 也有可以验证报文完整性的方法，但是还是不可靠。比如
 ## 二、部署 HTTPS 有何好处
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_4.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_4.png'>
 </p>
 
 可能读者有这样的疑惑，除去电商，金融，和钱打交道以外的网站必须要部署 HTTPS，其他的网站用不用 HTTPS 无所谓。笔者之前也有类似的想法，不过这个想法是错误的。
@@ -112,7 +112,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 - 缺点：密钥容易被获取。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_6.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_6.png'>
 </p>
 
 
@@ -124,7 +124,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 - 缺点：运算速度慢；
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_7.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_7.png'>
 </p>
 
 
@@ -135,7 +135,7 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_8.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_8.png'>
 </p>
 
 
@@ -150,7 +150,7 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_9.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_9.png'>
 </p>
 
 
@@ -161,7 +161,7 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 SSL 提供报文摘要功能来验证完整性。
 
 <p align='center'>
-<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/95_5.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_5.png'>
 </p>
 
 ## 四、握手流程
