@@ -95,7 +95,7 @@ HTML 的前 14~15kb 加载是是最关键的有效载荷块 —— 也是第一�
 - 减少阻塞渲染的 JS 脚本
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/94_5_.png'>
+<img src='https://ob6mci30g.qnssl.com/Blog/ArticleImage/94_5_.png'>
 </p>
 
 Accessibility 上，有以下容易漏掉的指标：
