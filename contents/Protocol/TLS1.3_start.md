@@ -41,10 +41,10 @@ $ tar zxf nginx-1.15.1.tar.gz
 
 安装原版的 Nginx 1.15.1，少了一些好用的功能，还好有 patch，笔者在这里打了 5 个 patch，也推荐大家使用。
 
-- 支持 SPDY
-- 支持 HTTP/2 HPACK
+- 恢复对 SPDY 协议的支持
+- 支持 HTTP/2 HPACK 加密
 - 支持 Dynamic TLS Record (这个强烈推荐)
-- 支持 PRIORITIZE\_CHACHA (这个强烈推荐)
+- 支持 SSL\_OP\_PRIORITIZE\_CHACHA (这个强烈推荐)
 - Fix Http2 Push Error 补丁 (推荐)
 
 这些补丁不一定适用于最新的 Nginx 已测试通过的版本请查看[https://github.com/kn007/patch](https://github.com/kn007/patch)
