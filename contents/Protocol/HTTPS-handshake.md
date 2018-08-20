@@ -1,4 +1,4 @@
-# HTTPS 温故知新（三） —— 握手流程
+# HTTPS 温故知新（三） —— 直观感受 TLS 握手流程
 
 
 <p align='center'>
@@ -6,12 +6,60 @@
 </p>
 
 
-## 一、为什么需要握手
+## 一、为什么需要 TLS
 
 
 
 
-## 二、
+## 二、TLS 的好处
+
+
+## 三、TLS 对速度的影响
+
+由于部署了 HTTPS，传输层增加了 TLS，对一个完成的请求耗时又会多增加一些。具体会增加几个 RTT 呢？
+
+先来看看一个请求从零开始，完整的需要多少个 RTT。假设访问一个 HTTPS 网站，用户从 HTTP 开始访问，到收到第一个 HTTPS 的 Response，大概需要经历一下几个步骤(以目前最主流的 TLS 1.2 为例)：
+
+
+流程 | 消耗时间 | 总计 |
+---- | --- | ---
+1. DNS 解析网站域名 | 1-RTT | |
+2. 访问 HTTP 网页 TCP 握手 |  1-RTT | |
+3. HTTPS 重定向 302 |  1-RTT | |
+4. 访问 HTTPS 网页 TCP 握手|  1-RTT | |
+5. TLS 记录层握手| 1-RTT||
+6. 【证书校验】CA 站点的 DNS 解析| 1-RTT||
+7. 【证书校验】CA 站点的 TCP 握手| 1-RTT||
+8. 【证书校验】请求 OCSP 验证|1-RTT||
+9. TLS 加密层握手| 1-RTT||
+10. 第一个 HTTPS 请求| 1-RTT||
+|||10-RTT|
+
+
+在上面这些步骤中，1、10 肯定无法省去，6、7、8 如果浏览器本地有缓存，是可选的。将剩下的画在流程图上，见下图：
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_1.png)
+
+针对上面的步骤进行一些说明：
+
+如果网站做了 HSTS (HTTP Strict Transport Security)，那么上面的第 3 步就不存在，因为浏览器会直接替换掉 HTTP 的请求，变成 HTTPS 的，防止重定向的中间人攻击。
+
+如果浏览器有主流 CA 的域名解析缓存，也不需要进行上面的第 6 步，直接访问即可。
+
+如果浏览器关闭掉了 OCSP 或者是有本地缓存，那么也不需要进行上面的第 7 和第 8 步。
+
+上面这 10 步是最最完整的流程，一般有各种缓存不会经历上面每一步。如果有各种缓存，并且有 HSTS 策略，那么用户访问一次的流程如下：
+
+流程 | 消耗时间 | 总计 |
+---- | --- | ---
+1. DNS 解析网站域名 | 1-RTT | |
+2. 访问 HTTPS 网页 TCP 握手 |  1-RTT | |
+3. TLS 记录层握手| 1-RTT||
+4. TLS 加密层握手| 1-RTT||
+5. 第一个 HTTPS 请求| 1-RTT||
+|||5-RTT|
+
+除去 1、5 是无论如何都无法省掉的以外，剩下的就是 TCP 和 TLS 握手了。 TCP 想要减至 0-RTT，目前来看有点难。那 TLS 呢？目前 TLS 1.2 完整一次握手需要 2-RTT，能再减少一点么？答案是可以的。
 
 
 
@@ -19,10 +67,10 @@
 
 
 
-## 四、TLS 1.3 首次握手流程
+## 四、TLS 1.2 第二次握手流程
 
 
-## 五、TLS 1.2 第二次握手流程
+## 五、TLS 1.3 首次握手流程
 
 为何会出现再次握手呢？这个就牵扯到了会话复用机制。
 
@@ -64,7 +112,9 @@ Reference：
 《图解 HTTP》    
 《HTTP 权威指南》  
 《深入浅出 HTTPS》    
-[TLS1.3 draft-28](https://tools.ietf.org/html/draft-ietf-tls-tls13-28)
+[TLS1.3 draft-28](https://tools.ietf.org/html/draft-ietf-tls-tls13-28)  
+[Keyless SSL: The Nitty Gritty Technical Details](https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/)  
+[大型网站的 HTTPS 实践（二）-- HTTPS 对性能的影响](https://developer.baidu.com/resources/online/doc/security/https-pratice-2.html)
 
 > GitHub Repo：[Halfrost-Field](HTTPS://github.com/halfrost/Halfrost-Field)
 > 
