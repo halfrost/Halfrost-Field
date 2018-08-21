@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/97_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/97_0_.png'>
 </p>
 
 
@@ -64,21 +64,74 @@
 
 
 
-## 三、TLS 1.2 首次握手流程
+## 四、TLS 1.2 首次握手流程
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_2.png)
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_3.png)
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_6.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_7.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_8.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_9.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_10.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_11.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_12.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_13.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_14.png)
 
 
 
-## 四、TLS 1.2 第二次握手流程
-
-
-## 五、TLS 1.3 首次握手流程
+## 五、TLS 1.2 第二次握手流程
 
 为何会出现再次握手呢？这个就牵扯到了会话复用机制。
 
-在 TLS 1.3 中，会话复用机制，一种是 session id 复用，一种是 session ticket 复用。session id 复用存在于服务端，session ticket 复用存在于客户端。
+在 TLS 1.2 中，会话复用机制，一种是 session id 复用，一种是 session ticket 复用。session id 复用存在于服务端，session ticket 复用存在于客户端。
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_4.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_5.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_23.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_24.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_25.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_26.png)
+
+## 六、TLS 1.3 首次握手流程
 
 
-## 六、TLS 1.3 第二次握手流程
+![](https://img.halfrost.com/Blog/ArticleImage/97_15.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_16.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_17.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_18.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_19.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_20.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_21.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_22.png)
+
+
+
+## 七、TLS 1.3 第二次握手流程
 
 这里网上很多文章对 TLS 1.3 第二次握手有误解。经过自己实践以后发现了“真理”。
 
@@ -88,6 +141,17 @@ TLS 1.3 再次握手其实是分两种：会话恢复模式、0-RTT 模式
 
 ### 1. 会话恢复模式
 
+![](https://img.halfrost.com/Blog/ArticleImage/97_27.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_28.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_29.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_30.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_31.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_32.png)
 
 ### 2. 0-RTT 模式
 
