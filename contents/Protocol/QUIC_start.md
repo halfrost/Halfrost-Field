@@ -437,9 +437,6 @@ $ docker network inspect bridge
                 "EndpointID": "18ea99dc8e5add8867d6933717b682701f01452439e699274a8b71a053c673df",
                 "MacAddress": "02:42:c0:a8:00:03",
                 "IPv4Address": "192.168.0.3/20",
-
-▽
-https://halfrost.com
                 "IPv6Address": ""
             }
         },
