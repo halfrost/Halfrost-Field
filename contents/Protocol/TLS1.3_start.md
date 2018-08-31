@@ -21,7 +21,7 @@ OpenSSL 目前有 draft-18 分支, pre2 版本的 draft-23 以及 pre7+ 的 draf
 
 我的 ECS 系统是 centOS 7.0，如果你使用其它发行版，与包管理有关的命令请自行调整。
 
-目前 nginx 最新是 Nginx 1.15.1，OpenSSL 最新是 1.1.1-pre8，笔者这次都安装最新版。
+目前 nginx 最新是 Nginx 1.15.3，OpenSSL 最新是 1.1.1-pre9，笔者这次都安装最新版。
 
 首先安装依赖库和编译要用到的工具：
 
@@ -31,15 +31,15 @@ $ sudo yum install -y git wget zlib zlib-devel pcre-devel google-perftools googl
 $ sudo yum install -y git gcc gcc-c clang automake make autoconf libtool zlib-devel libatomic_ops-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd-devel GeoIP-devel gperftools-devel  perl-devel perl-ExtUtils-Embed
 ```
 
-### Nginx 1.15.1
+### Nginx 1.15.3
 
 ```bash
-#下载 Nginx 1.15.1
-$ wget https://nginx.org/download/nginx-1.15.1.tar.gz
-$ tar zxf nginx-1.15.1.tar.gz
+#下载 Nginx 1.15.3
+$ wget https://nginx.org/download/nginx-1.15.3.tar.gz
+$ tar zxf nginx-1.15.3.tar.gz
 ```
 
-安装原版的 Nginx 1.15.1，少了一些好用的功能，还好有 patch，笔者在这里打了 5 个 patch，也推荐大家使用。
+安装原版的 Nginx 1.15.3，少了一些好用的功能，还好有 patch，笔者在这里打了 5 个 patch，也推荐大家使用。
 
 - 恢复对 SPDY 协议的支持
 - 支持 HTTP/2 HPACK 加密
@@ -52,23 +52,21 @@ $ tar zxf nginx-1.15.1.tar.gz
 ```bash
 # 打 SPDY, HTTP2 HPACK, Dynamic TLS Record, PRIORITIZE_CHACHA, Fix Http2 Push Error 补丁
 
-$ cd nginx-1.15.1
+$ cd nginx-1.15.3
 $ wget https://raw.githubusercontent.com/kn007/patch/45f1417c450fc82cd470cb73a32e23085c4ba3d5/nginx.patch
 $ wget https://raw.githubusercontent.com/kn007/patch/c59592bc1269ba666b3bb471243c5212b50fd608/nginx_auto_using_PRIORITIZE_CHACHA.patch
-$ wget https://raw.githubusercontent.com/kn007/patch/b70155131a74deafe9c642194b4394edda20ccec/fix_nginx_hpack_push_error.patch
 $ patch -p1 < nginx.patch
 $ patch -p1 < nginx_auto_using_PRIORITIZE_CHACHA.patch
-$ patch -p1 < fix_nginx_hpack_push_error.patch
 $ cd ..
 ```
 
 
-### OpenSSL 1.1.1-pre8
+### OpenSSL 1.1.1-pre9
 
 ```bash
-# 下载 OpenSSL 1.1.1-pre8
-$ wget https://www.openssl.org/source/openssl-1.1.1-pre8.tar.gz
-$ tar zxf openssl-1.1.1-pre8.tar.gz
+# 下载 OpenSSL 1.1.1-pre9
+$ wget https://www.openssl.org/source/openssl-1.1.1-pre9.tar.gz
+$ tar zxf openssl-1.1.1-pre9.tar.gz
 ```
 
 由于不同版本的 chrome 支持的 TLS 不同，所以我们最好能支持所有主流版本的 TLS 1.3 。这里再打上同时支持 draft 23,26,28 的补丁。
@@ -76,9 +74,9 @@ $ tar zxf openssl-1.1.1-pre8.tar.gz
 ```bash
 # 打 TLS1.3 Draft 23,26,28 补丁
 # 根据 OpenSSL 版本决定, 具体见 https://github.com/hakasenyang/openssl-patch
-$ cd openssl-1.1.1-pre8
-$ wget https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/openssl-equal-pre8.patch
-$ patch -p1 < openssl-equal-pre8.patch
+$ cd openssl-1.1.1-pre9
+$ wget https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/openssl-equal-pre9.patch
+$ patch -p1 < openssl-equal-pre9.patch
 $ cd ..
 ```
 
@@ -96,7 +94,7 @@ $ cd ..
 
 ## 二. 编译 Nginx
 
-使用 --with\-openssl=..\/openssl\-1.1.1\-pre8 来指定 OpenSSL 路径。
+使用 `--with\-openssl=../openssl\-1.1.1\-pre9` 来指定 OpenSSL 路径。
 
 HTTP2 HPACK 需要加入 `--with-http_v2_hpack_enc`
 
@@ -107,7 +105,7 @@ TLS 1.3 需要加入 `--with-openssl-opt='enable-tls1_3'`
 所有的编译参数合起来如下：
 
 ```c
-$ auto/configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre8 --with-openssl-opt='enable-tls1_3' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
+$ auto/configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre9 --with-openssl-opt='enable-tls1_3' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
 ```
 
 如果读者安装了上面笔者推荐的所有补丁，那么再往下编译可能会出现问题。需要把编译参数 `--with-cc-opt` 里面的 `-O2` 去掉即可。
@@ -115,7 +113,7 @@ $ auto/configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=
 笔者的最终编译参数如下，仅供参考：
 
 ```bash
-$ auto/configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre8 --with-openssl-opt='enable-tls1_3' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
+$ auto/configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre9 --with-openssl-opt='enable-tls1_3' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
 ```
 
 修改好编译参数以后就可以开始 make 了：
@@ -155,11 +153,11 @@ $ vim ./objs/Makefile
 ```bash
 $ nginx -V
 
-nginx version: nginx/1.15.1
+nginx version: nginx/1.15.3
 built by gcc 4.8.5 20150623 (Red Hat 4.8.5-28) (GCC)
-built with OpenSSL 1.1.1-pre8 (beta) 20 Jun 2018
+built with OpenSSL 1.1.1-pre9 (beta) 21 Aug 2018
 TLS SNI support enabled
-configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre8 --with-openssl-opt=enable-tls1_3 --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
+configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre9 --with-openssl-opt=enable-tls1_3 --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
 ```
 
 
@@ -168,7 +166,7 @@ configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-p
 ```bash
 $ cd /usr/sbin
 $ mv nginx nginx.1.13.8_old
-$ cp /tmp/nginx-release-1.15.1/objs/nginx ./
+$ cp /tmp/nginx-release-1.15.3/objs/nginx ./
 ```
 
 测试 nginx 是否能正常工作：
