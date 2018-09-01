@@ -472,10 +472,17 @@ ln, err := net.Listen("tcp", "127.0.0.1:61234")
 // 随便写一个大一点的没有被占用的端口就可以
 ```
 
-就是把原本的 443 地址换成一个没用的地址，然后重新编译，就能在已经开了 nginx 的情况下正常启动 Caddy 了。为了能让Caddy变成一个守护进程运行在后台，可以使用nohup命令：
+就是把原本的 443 地址换成一个没用的地址，然后重新编译，
+
+```go
+$ cd $GOPATH/src/github.com/mholt/caddy/caddy
+$ go run build.go --goos=linux --goarch=amd64
+```
+
+顺利编译完成以后，就能在已经开了 nginx 的情况下正常启动 Caddy 了。为了能让Caddy变成一个守护进程运行在后台，可以使用 nohup 命令：
 
 ```bash
-nohup sudo ./caddy -quic -conf ./conf  >/dev/null 2>&1 &
+$ nohup sudo ./caddy -quic -conf ./conf  >/dev/null 2>&1 &
 ```
 
 至此，笔者的 QUIC “完美”的部署好了。
