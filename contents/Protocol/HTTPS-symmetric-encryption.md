@@ -572,4 +572,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/symmetric\_encryption/](https://halfrost.com/symmetric_encryption/)
