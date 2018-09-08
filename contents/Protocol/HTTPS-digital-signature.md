@@ -227,7 +227,6 @@ Rabin 方式是由 M.O.Rabin 设计的公钥算法，利用了在 mod N 中求�
 Reference：
   
 《图解密码技术》        
-[SHA-3 wikipedia](https://en.wikipedia.org/wiki/SHA-3)
 
 > GitHub Repo：[Halfrost-Field](HTTPS://github.com/halfrost/Halfrost-Field)
 > 
