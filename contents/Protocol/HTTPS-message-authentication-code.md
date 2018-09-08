@@ -307,7 +307,6 @@ caddr_t         digest;              /* caller digest to be filled in */
 Reference：
   
 《图解密码技术》        
-[SHA-3 wikipedia](https://en.wikipedia.org/wiki/SHA-3)
 
 > GitHub Repo：[Halfrost-Field](HTTPS://github.com/halfrost/Halfrost-Field)
 > 
