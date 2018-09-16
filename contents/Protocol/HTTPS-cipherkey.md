@@ -133,7 +133,7 @@ B 是 1~(P-2) 之间的整数。这个数只有 Bob 知道。
 
 ```c
 (G^B mod P)^A mod P = G^(B*A) mod P 
-					= G^(A*B) mod P
+                    = G^(A*B) mod P
 ```
 
 7. Bob 用 Alice 发过来的数计算 B 次方并求 mod P  
