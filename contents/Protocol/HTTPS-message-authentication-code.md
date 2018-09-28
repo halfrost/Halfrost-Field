@@ -73,10 +73,11 @@
 
 2000 年以后，人们基于认证的研究更加进一步，产生了**认证加密** (AE：Authenticated Encryption，AEAD：Authenticated Encryption with Associated Data)。认证加密是一种将对称密码和消息认证相结合的技术，同时满足加密性，完整性和认证性三大功能。
 
-认证加密有几种，这里举例：例如 Encrypt-then-MAC，先用对称密码将明文加密，然后计算密文的 MAC 值。Encrypt-and-MAC，将明文用对称密码加密，并对明文计算 MAC 值。MAC-then-Encrypt，先计算明文的 MAC 值，然后将明文和 MAC 值同时用对称密码加密。
+认证加密有几种，这里举例：例如 Encrypt-then-MAC，先用对称密码将明文加密，然后计算密文的 MAC 值。Encrypt-and-MAC，将明文用对称密码加密，并对明文计算 MAC 值。MAC-then-Encrypt，先计算明文的 MAC 值，然后将明文和 MAC 值同时用对称密码加密。**在 HTTPS 中，一般使用 MAC-then-Encrypt 这种模式进行处理**。
 
 GCM(Galois/Counter Mode)是一种认证加密方式。GCM 中使用 AES 等 128 位比特分组密码的 CTR 模式，并使用一个反复进行加法和乘法运算的散列函数来计算 MAC 值。CTR 模式加密与 MAC 值的计算使用的是相同密钥，所以密钥管理很方便。专门用于消息认证码的 GCM 成为 GMAC。**GCM 和 CCM (CBC Counter Mode) 都是被推荐的认证加密方式**。
 
+>ChaCha20-Poly1305 是谷歌发明的一种算法，使用 ChaCha20 流密码进行加密运算，使用 Poly1305 算法进行 MAC 运算。
 
 ## 六、HMAC 算法
 
