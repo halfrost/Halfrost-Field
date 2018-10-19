@@ -53,6 +53,18 @@
 
 密钥交换消息用于确保客户端和服务器的安全性和建立用于保护握手和数据的通信密钥的安全性。
 
+### 1. Cryptographic Negotiation
+
+在 TLS 协议中，密钥协商的过程中，client 在 ClientHello 中可以提供以下 4 种 options。
+
+
+- 客户端支持的加密套件列表。密码套件里面中能体现出客户端支持的 AEAD 算法或者 HKDF 哈希对。
+- “supported\_groups” 的扩展 和 "key\_share" 扩展。“supported\_groups” 这个扩展表明了客户端支持的 (EC)DHE groups，"key\_share" 扩展表明了客户端是否包含了一些或者全部的（EC）DHE共享。
+- "signature\_algorithms" 签名算法和 "signature\_algorithms\_cert" 签名证书算法的扩展。"signature\_algorithms" 这个扩展展示了客户端可以支持了签名算法有哪些。"signature\_algorithms\_cert" 这个扩展展示了具体证书的签名算法。
+- "pre\_shared\_key" 预共享密钥和 "psk\_key\_exchange\_modes" 扩展。预共享密钥扩展包含了客户端可以识别的对称密钥标识。"psk\_key\_exchange\_modes" 扩展表明了可能可以和 psk 一起使用的密钥交换模式。
+
+
+
 
 ------------------------------------------------------
 
