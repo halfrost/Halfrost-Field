@@ -64,6 +64,19 @@
 - "pre\_shared\_key" 预共享密钥和 "psk\_key\_exchange\_modes" 扩展。预共享密钥扩展包含了客户端可以识别的对称密钥标识。"psk\_key\_exchange\_modes" 扩展表明了可能可以和 psk 一起使用的密钥交换模式。
 
 
+如果服务端不选择 PSK，那么上面 4 个 option 中的前 3 个是正交的，服务端独立的选择一个加密套件，独立的选择一个 (EC)DHE 组，独立的选择一个用于建立连接的密钥共享，独立的选择一个签名算法/证书对用于给客户端验证服务端。如果服务端收到的 "supported\_groups" 中没有服务端能支持的算法，那么就必须返回 "handshake\_failure" 或者 "insufficient\_security" 的 alert 消息。
+
+如果服务端选择了 PSK，它必须从客户端的 "psk\_key\_exchange\_modes" 扩展消息中选择一个密钥建立模式。这个时候 PSK 和 (EC)DHE 是分开的。在 PSK 和 (EC)DHE 分开的基础上，即使，"supported\_groups" 中不存在服务端和客户端相同的算法，也不会终止握手。
+
+如果服务端选择了 (EC)DHE 组，并且客户端在 ClientHello 中没有提供合适的 "key\_share" 扩展，服务端必须用 HelloRetryRequest 消息作为回应。
+
+
+如果服务端成功的选择了参数，也就不需要 HelloRetryRequest 消息了。服务端将发送 ServerHello 消息，它包含以下几个参数：
+
+- 如果正在使用 PSK，服务端将发送 "pre\_shared\_key" 扩展，里面包含了选择的密钥。
+- 如果没有使用 PSK，选择的 (EC)DHE，服务端将会提供一个 "key\_share" 扩展。通常，如果 PSK 没有使用，就会使用 (EC)DHE 和基于证书的认证。
+
+
 
 
 ------------------------------------------------------
