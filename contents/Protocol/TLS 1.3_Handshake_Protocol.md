@@ -199,9 +199,21 @@ D  O  W  N  G  R  D
 D  O  W  N  G  R  D
 ```
 	
-TLS 1.3 Client 接收到 TLS 1.2 或者 TLS 更老的版本的 ServerHello 消息以后，必须要检查 ServerHello 中的 Random 字段的最后 8 字节不等于上面 2 个值猜对。TLS 1.2 的 Client 也需要检查最后 8 个字节，如果协商的是 TLS 1.1 或者是更老的版本，那么 Random 值也不应该等于上面第二个值。如果都没有匹配上，那么 Client 必须用 "illegal\_parameter" alert 消息中止握手。
+TLS 1.3 Client 接收到 TLS 1.2 或者 TLS 更老的版本的 ServerHello 消息以后，必须要检查 ServerHello 中的 Random 字段的最后 8 字节不等于上面 2 个值猜对。TLS 1.2 的 Client 也需要检查最后 8 个字节，如果协商的是 TLS 1.1 或者是更老的版本，那么 Random 值也不应该等于上面第二个值。如果都没有匹配上，那么 Client 必须用 "illegal\_parameter" alert 消息中止握手。这种机制提供了有限的保护措施，抵御降级攻击。通过 Finished exchange ，能超越保护机制的保护范围：因为在 TLS 1.2 或更低的版本上，ServerKeyExchange 消息包含 2 个随机值的签名。只要使用了临时的加密方式，攻击者就不可能在不被发现的情况下，修改随机值。所以对于静态的 RSA，是无法提供降级攻击的保护。
+
+>请注意，上面这些改动在 [RFC5246]() 中说明的，实际上许多 TLS 1.2 的 Client 和 Server 都没有按照上面的规定来实践。
+
+如果 Client 在重新协商 TLS 1.2 或者更老的版本的时候，协商过程中收到了 TLS 1.3 的 ServerHello，这个时候 Client 必须立即发送 “protocol\_version” alert 中止握手。请注意，**一旦 TLS 1.3 协商完成，就无法再重新协商了，因为 TLS 1.3 严禁重新协商**。
 
 
+### 4. Hello Retry Request
+
+如果在 Client 发来的 ClientHello 消息中能够找到一组可以相互支持的参数，但是 Client 又不能为接下来的握手提供足够的信息，这个时候 Server 就需要发送 HelloRetryRequest 消息来响应 ClientHello 消息。在上一节中，谈到 HelloRetryRequest 和 ServerHello 消息是有相同的数据结构，legacy\_version, legacy\_session\_id\_echo, cipher\_suite, legacy\_compression\_method 这些字段的含义也是一样的。为了讨论的方便，下文中，我们讨论 HelloRetryRequest 消息都当做不同的消息来对待。
+
+Server 的扩展集中必须包含 "supported\_versions"。另外，它还需要包含最小的扩展集，能让 Client 生成正确的 ClientHello 对。相比 ServerHello 而言，HelloRetryRequest 只能包含任何在第一次 ClientHello 中出现过的扩展，除了可选的 "cookie" 以外。
+
+
+Client 接收到 HelloRetryRequest 消息以后，必须要先校验 legacy\_version, legacy\_session\_id\_echo, cipher\_suite, legac\y_compression]_method 这四个参数。
 
 ------------------------------------------------------
 
