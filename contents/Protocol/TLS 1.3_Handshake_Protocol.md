@@ -213,7 +213,150 @@ TLS 1.3 Client 接收到 TLS 1.2 或者 TLS 更老的版本的 ServerHello 消�
 Server 的扩展集中必须包含 "supported\_versions"。另外，它还需要包含最小的扩展集，能让 Client 生成正确的 ClientHello 对。相比 ServerHello 而言，HelloRetryRequest 只能包含任何在第一次 ClientHello 中出现过的扩展，除了可选的 "cookie" 以外。
 
 
-Client 接收到 HelloRetryRequest 消息以后，必须要先校验 legacy\_version, legacy\_session\_id\_echo, cipher\_suite, legac\y_compression]_method 这四个参数。
+Client 接收到 HelloRetryRequest 消息以后，必须要先校验 legacy\_version, legacy\_session\_id\_echo, cipher\_suite, legac\y_compression]_method 这四个参数。先从 “supported\_versions” 开始决定和 Server 建立连接的版本，然后再处理扩展。如果 HelloRetryRequest 不会导致 ClientHello 的任何更改，Client 必须用 “illegal\_parameter” alert 消息中止握手。如果 Client 在一个连接中收到了第 2 个 HelloRetryRequest 消息( ClientHello 本身就是响应 HelloRetryRequest 的)，那么必须用 “unexpected\_message” alert 消息中止握手。
+
+否则，Client 必须处理 HelloRetryRequest 中所有的扩展，并且发送第二个更新的 ClientHello。在本规范中定义的 HelloRetryRequest 扩展名是：
+
+- supported\_versions
+- cookie
+- key\_share
+
+Client 在接收到自己并没有提供的密码套件的时候必须立即中止握手。Server 必须确保在接收到合法并且更新过的 ClientHello 时，它们在协商相同的密码套件(如果 Server 把选择密码套件作为协商的第一步，那么这一步会自动发送)。Client 收到 ServerHello 后必须检查 ServerHello 中提供的密码套件是否与 HelloRetryRequest 中的密码套件相同，否则将以 “illegal\_parameter” alert 消息中止握手。
+
+
+此外，Client 在其更新的 ClientHello 中，Client 不能提供任何与所选密码套件以外的预共享密钥(与哈希相关联的)。这允许 Client 避免在第二个 ClientHello 中计算多个散列的部分哈希转录。
+
+在 HelloRetryRequest 的 "support\_versions" 扩展中的 selected\_version 字段的值必须被保留在 ServerHello 中，如果这个值变了，Client 必须用 “illegal\_parameter” alert 消息中止握手。
+
+
+## 二. Extensions
+
+许多 TLS 的消息都包含 tag-length-value 编码的扩展数据结构：
+
+```c
+    struct {
+        ExtensionType extension_type;
+        opaque extension_data<0..2^16-1>;
+    } Extension;
+
+    enum {
+        server_name(0),                             /* RFC 6066 */
+        max_fragment_length(1),                     /* RFC 6066 */
+        status_request(5),                          /* RFC 6066 */
+        supported_groups(10),                       /* RFC 8422, 7919 */
+        signature_algorithms(13),                   /* RFC 8446 */
+        use_srtp(14),                               /* RFC 5764 */
+        heartbeat(15),                              /* RFC 6520 */
+        application_layer_protocol_negotiation(16), /* RFC 7301 */
+        signed_certificate_timestamp(18),           /* RFC 6962 */
+        client_certificate_type(19),                /* RFC 7250 */
+        server_certificate_type(20),                /* RFC 7250 */
+        padding(21),                                /* RFC 7685 */
+        pre_shared_key(41),                         /* RFC 8446 */
+        early_data(42),                             /* RFC 8446 */
+        supported_versions(43),                     /* RFC 8446 */
+        cookie(44),                                 /* RFC 8446 */
+        psk_key_exchange_modes(45),                 /* RFC 8446 */
+        certificate_authorities(47),                /* RFC 8446 */
+        oid_filters(48),                            /* RFC 8446 */
+        post_handshake_auth(49),                    /* RFC 8446 */
+        signature_algorithms_cert(50),              /* RFC 8446 */
+        key_share(51),                              /* RFC 8446 */
+        (65535)
+    } ExtensionType;
+```
+
+这里：
+
+- "extension\_type" 标识特定的扩展状态。
+- "extension\_data" 包含特定于该特定扩展类型的信息。
+
+所有的扩展类型由 IANA 维护，具体的见附录。
+
+扩展通常以请求/响应方式构建，虽然有些扩展只是一些标识，并不会有任何响应。Client 在 ClientHello 中发送其扩展请求，Server 在 ServerHello, EncryptedExtensions, HelloRetryRequest,和 Certificate 消息中发送对应的扩展响应。Server 在 CertificateRequest 消息中发送扩展请求，Client 可能回应 Certificate 消息。Server 也有可能不请自来的在 NewSessionTicket 消息中直接发送扩展请求，Client 可以不用直接响应这条消息。
+
+如果远端没有发送相应的扩展请求，除了 HelloRetryRequest 消息中的 “cookie” 扩展以外，实现方不得发送扩展响应。在接收到这样的扩展以后，端点必须用 "unsupported\_extension" alert 消息中止握手。
+
+
+下表给出了可能出现的消息的扩展名，使用以下表示法：CH (ClientHello), SH (ServerHello), EE (EncryptedExtensions), CT (Certificate), CR (CertificateRequest), NST (NewSessionTicket), 和 HRR (HelloRetryRequest) 。当实现方在接收到它能识别的消息，并且并没有为出现的消息做规定的话，它必须用 "illegal\_parameter" alert 消息中止握手。
+
+```c
+   +--------------------------------------------------+-------------+
+   | Extension                                        |     TLS 1.3 |
+   +--------------------------------------------------+-------------+
+   | server_name [RFC6066]                            |      CH, EE |
+   |                                                  |             |
+   | max_fragment_length [RFC6066]                    |      CH, EE |
+   |                                                  |             |
+   | status_request [RFC6066]                         |  CH, CR, CT |
+   |                                                  |             |
+   | supported_groups [RFC7919]                       |      CH, EE |
+   |                                                  |             |
+   | signature_algorithms (RFC 8446)                  |      CH, CR |
+   |                                                  |             |
+   | use_srtp [RFC5764]                               |      CH, EE |
+   |                                                  |             |
+   | heartbeat [RFC6520]                              |      CH, EE |
+   |                                                  |             |
+   | application_layer_protocol_negotiation [RFC7301] |      CH, EE |
+   |                                                  |             |
+   | signed_certificate_timestamp [RFC6962]           |  CH, CR, CT |
+   |                                                  |             |
+   | client_certificate_type [RFC7250]                |      CH, EE |
+   |                                                  |             |
+   | server_certificate_type [RFC7250]                |      CH, EE |
+   |                                                  |             |
+   | padding [RFC7685]                                |          CH |
+   |                                                  |             |
+   | key_share (RFC 8446)                             | CH, SH, HRR |
+   |                                                  |             |
+   | pre_shared_key (RFC 8446)                        |      CH, SH |
+   |                                                  |             |
+   | psk_key_exchange_modes (RFC 8446)                |          CH |
+   |                                                  |             |
+   | early_data (RFC 8446)                            | CH, EE, NST |
+   |                                                  |             |
+   | cookie (RFC 8446)                                |     CH, HRR |
+   |                                                  |             |
+   | supported_versions (RFC 8446)                    | CH, SH, HRR |
+   |                                                  |             |
+   | certificate_authorities (RFC 8446)               |      CH, CR |
+   |                                                  |             |
+   | oid_filters (RFC 8446)                           |          CR |
+   |                                                  |             |
+   | post_handshake_auth (RFC 8446)                   |          CH |
+   |                                                  |             |
+   | signature_algorithms_cert (RFC 8446)             |      CH, CR |
+   +--------------------------------------------------+-------------+
+```
+
+当存在多种不同类型的扩展的时候，除了 "pre\_shared\_key" 必须是 ClientHello 的最后一个扩展，其他的扩展间的顺序可以是任意的。("pre\_shared\_key" 可以出现在 ServerHello 中扩展块中的任何位置)。不能存在多个同一个类型的扩展。
+
+在 TLS 1.3 中，与 TLS 1.2 不同，即使是恢复 PSK 模式，每次握手都需要协商扩展。然而，0-RTT 的参数是在前一次握手中协商的。如果参数不匹配，需要拒绝 0-RTT。
+
+在 TLS 1.3 中新特性和老特性之间存在微妙的交互，这可能会使得整体安全性显著下降。下面是设计新扩展的时候需要考虑的因素：
+
+- Server 不同意扩展的某些情况是错误的(例如握手不能继续)，有些情况只是简单的不支持特定的功能。一般来说，前一种情况应该用错误的 alert，后一种情况应该用 Server 的扩展响应中的一个字段来处理。
+
+- 扩展应尽可能设计为防止能通过人为操纵握手信息，从而强制使用（或不使用）特定功能的攻击。不管这个功能是否会引起安全问题，这个原则都必须遵守。通常，包含在 Finished 消息的哈希输入中的扩展字段是不用担心的，但是在握手阶段，扩展试图改变了发送消息的含义，这种情况需要特别小心。设计者和实现者应该意识到，在握手完成身份认证之前，攻击者都可以修改消息，插入、删除或者替换扩展。
+
+### 1. Supported Versions
+
+```c
+      struct {
+          select (Handshake.msg_type) {
+              case client_hello:
+                   ProtocolVersion versions<2..254>;
+
+              case server_hello: /* and HelloRetryRequest */
+                   ProtocolVersion selected_version;
+          };
+      } SupportedVersions;
+
+```
+
+“supported\_versions” 对于 Client 来说，Client 用它来标明它所能支持的 TLS 版本，对于 Server 来说，Server 用它来标明正在使用的 TLS 版本。这个扩展包含一个按照优先顺序排列的，能支持的版本列表。最优先支持的版本放在第一个。TLS 1.3 这个版本的规范是必须在发送 ClientHello 消息时候带上这个扩展，扩展中包含所有准备协商的 TLS 版本。(对于这个规范来说，这意味着最低是 0x0304，但是如果要协商 TLS 的以前的版本，那么这个扩展必须要带上)
+
 
 ------------------------------------------------------
 
