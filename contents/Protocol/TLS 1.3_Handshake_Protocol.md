@@ -183,7 +183,7 @@ ClientHello 消息的结构是
 当收到 server\_hello 消息以后，实现必须首先检查这个随机值是不是和上面这个值匹配。如果和上面这个值是一致的，再继续处理。
 
 
-TLS 1.3 具有降级保护机制，这种机制是通过嵌入在服务器的随机值实现的。TLS 1.3 Server 协商 TLS 1.2 或者更老的版本，为了响应 ClientHello ，ServerHello 消息中必须在最后 8 个字节中填入特定的随机值。
+TLS 1.3 具有降级保护机制，这种机制是通过嵌入在 Server 的随机值实现的。TLS 1.3 Server 协商 TLS 1.2 或者更老的版本，为了响应 ClientHello ，ServerHello 消息中必须在最后 8 个字节中填入特定的随机值。
 
 如果协商的 TLS 1.2 ，TLS 1.3 Server 必须把 ServerHello 中的 Random 字段的最后 8 字节设置为：
 
@@ -356,6 +356,42 @@ Client 在接收到自己并没有提供的密码套件的时候必须立即中�
 ```
 
 “supported\_versions” 对于 Client 来说，Client 用它来标明它所能支持的 TLS 版本，对于 Server 来说，Server 用它来标明正在使用的 TLS 版本。这个扩展包含一个按照优先顺序排列的，能支持的版本列表。最优先支持的版本放在第一个。TLS 1.3 这个版本的规范是必须在发送 ClientHello 消息时候带上这个扩展，扩展中包含所有准备协商的 TLS 版本。(对于这个规范来说，这意味着最低是 0x0304，但是如果要协商 TLS 的以前的版本，那么这个扩展必须要带上)
+
+
+如果不存在 “supported\_versions” 扩展，满足 TLS 1.3 并且也兼容 TLS 1.2 规范的 Server 需要协商 TLS 1.2 或者之前的版本，即使 ClientHello.legacy\_version 是 0x0304 或者更高的版本。Server 在接收到 ClientHello 中的 legacy\_version 的值是 0x0304 或者更高的版本的时候，Server 可能需要立刻中止握手。
+
+如果 ClientHello 中存在 “supported\_versions” 扩展，Server 禁止使用 ClientHello.legacy\_version 的值作为版本协商的值，只能使用 "supported\_versions" 决定 Client 的偏好。Server 必须只选择该扩展中存在的 TLS 版本，并且必须要忽略任何未知版本。注意，如果通信的一方支持稀疏范围，这种机制使得可以在 TLS 1.2 之前的版本间进行协商。选择支持 TLS 的以前版本的 TLS 1.3 的实现应支持 TLS 1.2。Server 应准备好接收包含此扩展名的 ClientHellos 消息，但不要在 viersions 列表中包含 0x0304。
+
+Server 在协商 TLS 1.3 之前的版本，必须要设置 ServerHello.version，不能发送 "supported\_versions" 扩展。Server 在协商 TLS 1.3 版本时候，必须发送 "supported\_versions" 扩展作为响应，并且扩展中要包含选择的 TLS 1.3 版本号(0x0304)。还要设置 ServerHello.legacy\_version 为 0x0303(TLS 1.2)。Client 必须在处理 ServerHello 之前检查此扩展(尽管需要先解析 ServerHello 以便读取扩展名)。如果 "supported\_versions" 扩展存在，Client 必须忽略 ServerHello.legacy\_version 的值，只使用 "supported\_versions" 中的值确定选择的版本。如果 ServerHello 中的 "supported\_versions" 扩展包含了 Client 没有提供的版本，或者是包含了 TLS 1.3 之前的版本(本来是协商 TLS 1.3 的，却又包含了 TLS 1.3 之前的版本)，Client 必须立即发送 "illegal\_parameter" alert 消息中止握手。
+
+
+### 2. Cookie
+
+```c
+      struct {
+          opaque cookie<1..2^16-1>;
+      } Cookie;
+```
+
+Cookies 有 2 大主要目的：
+
+- 允许 Server 强制 Client 展示网络地址的可达性(因此提供了一个保护 Dos 的度量方法)，这主要是面向无连接的传输(参考 [RFC 6347](https://tools.ietf.org/html/rfc6347) 中的例子)
+
+
+- 允许 Server 卸载状态。从而允许 Server 在向 Client 发送 HelloRetryRequest 消息的时候，不存储任何状态。为了实现这一点，可以通过 Server 把 ClientHello 的哈希存储在 HelloRetryRequest 的 cookie 中(用一些合适的完整性算法保护)。
+
+
+当发送 HelloRetryRequest 消息时，Server 可以向 Client 提供 “cookie” 扩展(这是常规中的一个例外，常规约定是：只能是可能被发送的扩展才可以出现在 ClientHello 中)。当发送新的 ClientHello 消息时，Client 必须将 HelloRetryRequest 中收到的扩展的内容复制到新 ClientHello 中的 “cookie” 扩展中。Client 不得在后续连接中使用首次 ClientHello 中的 Cookie。
+
+
+当 Server 在无状态运行的时候，在第一个和第二个 ClientHello 之间可能会收到不受保护的 change\_cipher\_spec 消息。由于 Server 没有存储任何状态，它会表现出像到达的第一条消息一样。无状态的 Server 必须忽略这些记录。
+
+
+
+### 3. Signature Algorithms
+
+
+
 
 
 ------------------------------------------------------
