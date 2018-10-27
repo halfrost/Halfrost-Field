@@ -391,6 +391,133 @@ Cookies 有 2 大主要目的：
 ### 3. Signature Algorithms
 
 
+TLS 1.3 提供了 2 种扩展来标明在数字签名中可能用到的签名算法。"signature\_algorithms\_cert" 扩展提供了证书里面的签名算法。"signature\_algorithms" 扩展(TLS 1.2 中就有这个扩展了)，提供了 CertificateVerify 消息中的签名算法。证书中的密钥必须要根据所用的签名算法匹配合适的类型。对于 RSA 密钥和 PSS 签名，这是一个特殊问题，描述如下：如果没有 "signature\_algorithms\_cert" 扩展，则 "signature\_algorithms" 扩展同样适用于证书中的签名。Client 想要 Server 通过证书来认证自己，则必须发送 "signature\_algorithms" 扩展。如果 Server 正在进行证书的认证，这个时候 Client 又没有提供 "signature\_algorithms"扩展，Server 必须 发送 "missing\_extension" 消息中止握手。
+
+加入 "signature\_algorithms\_cert" 扩展的意图是为了让已经支持了证书的不同算法集的实现方，能明确的标识他们的能力。TLS 1.2 实现应该也应该处理这个扩展。在两种情况下具有相同策略的实现可以省略 "signature\_algorithms\_cert" 扩展名。
+
+这些扩展中的 "extension\_data" 字段包含一个 SignatureSchemeList 值：
+
+```c
+enum {
+          /* RSASSA-PKCS1-v1_5 algorithms */
+          rsa_pkcs1_sha256(0x0401),
+          rsa_pkcs1_sha384(0x0501),
+          rsa_pkcs1_sha512(0x0601),
+
+          /* ECDSA algorithms */
+          ecdsa_secp256r1_sha256(0x0403),
+          ecdsa_secp384r1_sha384(0x0503),
+          ecdsa_secp521r1_sha512(0x0603),
+
+          /* RSASSA-PSS algorithms with public key OID rsaEncryption */
+          rsa_pss_rsae_sha256(0x0804),
+          rsa_pss_rsae_sha384(0x0805),
+          rsa_pss_rsae_sha512(0x0806),
+
+          /* EdDSA algorithms */
+          ed25519(0x0807),
+          ed448(0x0808),
+
+          /* RSASSA-PSS algorithms with public key OID RSASSA-PSS */
+          rsa_pss_pss_sha256(0x0809),
+          rsa_pss_pss_sha384(0x080a),
+          rsa_pss_pss_sha512(0x080b),
+
+          /* Legacy algorithms */
+          rsa_pkcs1_sha1(0x0201),
+          ecdsa_sha1(0x0203),
+
+          /* Reserved Code Points */
+          private_use(0xFE00..0xFFFF),
+          (0xFFFF)
+      } SignatureScheme;
+
+      struct {
+          SignatureScheme supported_signature_algorithms<2..2^16-2>;
+      } SignatureSchemeList;
+
+```
+
+请注意：这个枚举之所以名为 "SignatureScheme"，是因为在 TLS 1.2中已经存在了 "SignatureAlgorithm" 类型，取而代之。在本篇文章中，我们都使用术语 "签名算法"。
+
+每一个列出的 SignatureScheme 的值是 Client 想要验证的单一签名算法。这些值按照优先级降序排列。请注意，签名算法以任意长度的消息作为输入，而不是摘要作为输入。传统上用于摘要的算法应该在 TLS 中定义，首先使用指定的哈希算法对输入进行哈希计算，然后再进行常规处理。上面列出的代码具有以下含义：
+
+
+- RSASSA-PKCS1-v1\_5 algorithms:
+	表示使用 RSASSA-PKCS1-v1\_5 [RFC8017]() 和定义在 [SHS]() 中对应的哈希算法的签名算法。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。
+	
+- ECDSA algorithms:
+	表示签名算法使用 ECDSA，对应的曲线在 ANSI X9.62 [ECDSA]() 和 FIPS 186-4 [DSS]() 中定义了，对应的哈希算法在 [SHS]() 中定义了。签名被表示为 DER 编码的 ECDSA-Sig-Value 结构。
+	
+- RSASSA-PSS RSAE algorithms:
+	表示使用带有掩码生成函数 1 的 RSASSA-PSS 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS]() 中定义的相应的哈希算法。盐的长度必须等于摘要算法输出的长度。如果公钥在 X.509 证书中，则必须使用 rsaEncryption OID [RFC5280]()。
+	
+- EdDSA algorithms:
+	表示使用定义在 [RFC 8032]() 中的 EdDSA 算法或者其后续改进算法。请注意，这些相应算法是 "PureEdDSA" 算法，而不是 "prehash" 变种算法。
+
+- RSASSA-PSS PSS algorithms:
+	表示使用带有掩码生成函数 1 的 RSASSA-PSS [RFC 8017]() 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS]() 中定义的相应的哈希算法。盐的长度必须等于摘要算法的长度。如果公钥在 X.509 证书中，则必须使用 RSASSA-PSS OID [RFC5756]()。当它被用在证书签名中，算法参数必须是 DER 编码。如果存在相应的公钥参数，则签名中的参数必须与公钥中的参数相同。
+	
+- Legacy algorithms:
+	表示使用正在被废弃中的算法，因为这些算法有已知的缺点。特别是 SHA-1 配合上文提到的 RSASSA-PKCS1-v1\_5 和 ECDSA 算法一起使用。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。终端不应该协商这些算法，但允许这样做只是为了向后兼容。提供这些值的 Client 必须把他们列在最低优先级的位置上(在 SignatureSchemeList 中的所有其他算法之后列出)。TLS 1.3 Server 绝不能提供 SHA-1 签名证书，除非没有它就无法生成有效的证书链。
+
+	
+自签名证书上的签名或信任锚的证书不能通过校验，因为它们开始了一个认证路径(见 [RFC 5280](https://tools.ietf.org/html/rfc5280#section-3.2))。开始认证路径的证书可以使用 "signature\_algorithms" 扩展中不建议支持的签名算法。
+	
+请注意，TLS 1.2 中这个扩展的定义和 TLS 1.3 的定义不同。在协商 TLS 1.2 版本时，愿意协商 TLS 1.2 的 TLS 1.3 实现必须符合 [RFC5246]() 的要求，尤其是：
+
+- TLS 1.2 ClientHellos 可以忽略此扩展。	
+
+- 在 TLS 1.2 中，扩展包含 hash/signature pairs。这些 pairs 被编码为两个八位字节，所以已经分配空间的 SignatureScheme 值与 TLS 1.2 的编码对齐。 一些传统的 pairs 保留未分配。这些算法已被 TLS 1.3 弃用。它们不得在任何实现中被提供或被协商。 特别是，不得使用 MD5 [[SLOTH]](https://tools.ietf.org/html/rfc8446#ref-SLOTH) 、SHA-224 和 DSA。
+
+- ECDSA 签名方案和 TLS 1.2 的 hash/signature pairs 一致。然而，旧的语义并没有限制签名曲线。如果 TLS 1.2 被协商了，实现方必须准备接受在 "supported\_groups" 扩展中使用任何曲线的签名。
+	
+- 即使协商了 TLS 1.2，支持了 RSASSA-PSS（在TLS 1.3中是强制性的）的实现方也准备接受该方案的签名。在TLS 1.2中，RSASSA-PSS 与 RSA 密码套件一起使用。
+	
+	
+	
+	
+### 4. Certificate Authorities
+	
+"certificate\_authorities" 扩展用于表示终端支持的 CA, 并且接收的端点应该使用它来指导证书的选择。
+	
+"certificate\_authorities" 扩展的主体包含了一个 CertificateAuthoritiesExtension 结构：
+
+```c
+      opaque DistinguishedName<1..2^16-1>;
+
+      struct {
+          DistinguishedName authorities<3..2^16-1>;
+      } CertificateAuthoritiesExtension;
+```
+	
+- authorities:
+	可接受证书颁发机构的一个可分辨名字 [X501](https://tools.ietf.org/html/rfc8446#ref-X501) 的列表	，这个列表是以 DER [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 编码格式表示的。这些可分辨的名称为，信任锚或从属的 CA 指定所需的可分辨的名称。因此，可以使用此消息描述已知的信任锚以及所需的授权空间。
+	
+Client 可能会在 ClientHello 消息中发送 "certificate\_authorities" 扩展，Server 可能会在 CertificateRequest 消息中发送 "certificate\_authorities" 扩展。
+
+
+"trusted\_ca\_keys" 扩展和 "certificate\_authorities" 扩展有相同的目的，但是更加复杂。"trusted\_ca\_keys" 扩展不能在 TLS 1.3 中使用，但是它在 TLS 1.3 之前的版本中，可能出现在 Client 的 ClientHello 消息中。
+
+
+### 5. OID Filters
+
+"oid\_filters" 扩展允许 Server 提供一组 OID/value 对，用来匹配 Client 的证书。如果 Server 想要发送这个扩展，有且仅有在 CertificateRequest 消息中才能发送。
+
+```c
+      struct {
+          opaque certificate_extension_oid<1..2^8-1>;
+          opaque certificate_extension_values<0..2^16-1>;
+      } OIDFilter;
+
+      struct {
+          OIDFilter filters<0..2^16-1>;
+      } OIDFilterExtension;
+```
+
+- filters:
+	一个有允许值的证书扩展 OID [RFC 5280](https://tools.ietf.org/html/rfc5280) 列表，以 DER 编码 [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 格式表示。
+
 
 
 
