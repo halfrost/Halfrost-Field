@@ -516,7 +516,269 @@ Client 可能会在 ClientHello 消息中发送 "certificate\_authorities" 扩�
 ```
 
 - filters:
-	一个有允许值的证书扩展 OID [RFC 5280](https://tools.ietf.org/html/rfc5280) 列表，以 DER 编码 [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 格式表示。
+	一个有允许值的证书扩展 OID [RFC 5280](https://tools.ietf.org/html/rfc5280) 列表，以 DER 编码 [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 格式表示。一些证书扩展 OID 允许多个值(例如，Extended Key Usage)。如果 Server 包含非空的 filters 列表，则响应中包含的 Client 证书必须包含 Client 识别的所有指定的扩展 OID。对于 Client 识别的每个扩展 OID，所有指定的值必须存在于 Client 证书中（但是证书也可以具有其他值）。然而，Client 必须忽略并跳过任何无法识别的证书扩展 OID。如果 Client 忽略了一些所需的证书扩展 OID 并提供了不满足请求的证书。Server 可以自行决定是继续与没有身份认证的 Client 保持连接，还是用 "unsupported\_certificate" alert 消息中止握手。任何给定的 OID 都不能在 filters 列表中出现多次。
+
+
+PKIX RFC 定义了各种证书扩展 OID 及其对应的值类型。根据类型，匹配的证书扩展值不一定是按位相等的。期望 TLS 实现将依靠它们的 PKI 库，使用证书扩展 OID 来做证书的选择。
+
+本文档定义了 [RFC5280](https://tools.ietf.org/html/rfc5280) 中定义的两个标准证书扩展的匹配规则：
+
+
+- 当请求中声明的所有 Key Usage 位也同样在 Key Usage 证书扩展声明了，那么证书中的 Key Usage 扩展匹配了请求。
+
+- 当请求中所有的密钥 OIDs 在 Extended Key Usage 证书扩展中也存在，那么证书中的 Extended Key Usage 匹配了请求。特殊的 anyExtendedKeyUsage OID 一定不能在请求中使用。
+
+
+单独的规范可以为其他证书扩展的规则定义匹配规则。
+
+
+
+### 6. Post-Handshake Client Authentication
+
+
+"post\_handshake\_auth" 扩展用于表明 Client 愿意握手后再认证。Server 不能向没有提供此扩展的 Client 发送握手后再认证的 CertificateRequest 消息。Server 不能发送此扩展。
+
+```c
+      struct {} PostHandshakeAuth;
+```
+
+"post\_handshake\_auth" 扩展名中的 "extension\_data" 字段为零长度。
+
+
+### 7. Supported Groups
+
+当 Client 发送 "supported\_groups" 扩展的时候，这个扩展表明了 Client 支持的用于密钥交换的命名组。按照优先级从高到低。
+
+
+请注意：在 TLS 1.3 之前的版本中，这个扩展原来叫 "elliptic\_curves"，并且只包含椭圆曲线组。具体请参考 [RFC8422](https://tools.ietf.org/html/rfc8422) 和 [RFC7919](https://tools.ietf.org/html/rfc7919)。这个扩展同样可以用来协商 ECDSA 曲线。签名算法现在独立协商了。
+
+这个扩展中的 "extension\_data" 字段包含一个 "NamedGroupList" 值：
+
+```c
+      enum {
+
+          /* Elliptic Curve Groups (ECDHE) */
+          secp256r1(0x0017), secp384r1(0x0018), secp521r1(0x0019),
+          x25519(0x001D), x448(0x001E),
+
+          /* Finite Field Groups (DHE) */
+          ffdhe2048(0x0100), ffdhe3072(0x0101), ffdhe4096(0x0102),
+          ffdhe6144(0x0103), ffdhe8192(0x0104),
+
+          /* Reserved Code Points */
+          ffdhe_private_use(0x01FC..0x01FF),
+          ecdhe_private_use(0xFE00..0xFEFF),
+          (0xFFFF)
+      } NamedGroup;
+
+      struct {
+          NamedGroup named_group_list<2..2^16-1>;
+      } NamedGroupList;
+```
+
+- Elliptic Curve Groups (ECDHE):
+	表示支持在 FIPS 186-4 [[DSS]](https://tools.ietf.org/html/rfc8446#ref-DSS) 或者 [[RFC7748]](https://tools.ietf.org/html/rfc7748) 中定义的对应命名的曲线。0xFE00 到 0xFEFF 的值保留使用[[RFC8126]](https://tools.ietf.org/html/rfc8126)。
+	
+	
+
+- Finite Field Groups (DHE):
+	表示支持相应的有限域组，相关定义可以参考 [[RFC7919]](https://tools.ietf.org/html/rfc7919)。0x01FC 到 0x01FF 的值保留使用。
+
+named\_group\_list 中的项根据发送者的优先级排序(最好是优先选择的)。
+
+在 TLS 1.3 中，Server 允许向 Client 发送 "supported\_groups" 扩展。Client 不能在成功完成握手之前，在 "supported\_groups" 中找到的任何信息采取行动，但可以使用从成功完成的握手中获得的信息来更改在后续连接中的 "key\_share" 扩展中使用的组。如果 Server 中有一个组，它更想接受 "key\_share" 扩展中的那些值，但仍然愿意接受 ClientHello 消息，这时候它应该发送 "supported\_groups" 来更新 Client 的偏好视图。无论 Client 是否支持它，这个扩展名都应该包含 Server 支持的所有组。
+
+
+### 8. Key Share
+
+"key\_share" 扩展包含终端的加密参数。
+
+Client 可能会发送空的 client\_shares 向量，以额外的往返代价，向 Server 请求选择的组。
+
+
+```c
+      struct {
+          NamedGroup group;
+          opaque key_exchange<1..2^16-1>;
+      } KeyShareEntry;
+```
+
+- group:
+	要交换的密钥的命名组。
+	
+- key\_exchange:
+	密钥交换信息。这个字段的内容由特定的组和相应的定义确定。有限域的 Diffie-Hellman 参数在下面会描述。椭圆曲线 Diffie-Hellman 参数也会下面会描述。
+
+
+在 ClientHello 消息中，"key\_share" 扩展中的 "extension\_data" 包含 KeyShareClientHello 值：
+
+```c
+      struct {
+          KeyShareEntry client_shares<0..2^16-1>;
+      } KeyShareClientHello;
+```
+
+- client\_shares: 
+	按照 Client 偏好降序顺序提供的 KeyShareEntry 值列表。
+
+如果 Client 正在请求 HelloRetryRequest， 则这个向量可以为空。每个 KeyShareEntry 值必须对应一个在 "supported\_groups" 扩展中提供的组，并且出现的顺序必须相同。然而，当优先级排名第一的组合是新的，并且不足以提供预生成 key shares 的时候，那么值可以是 "supported\_groups" 扩展的非连续子集，并且可以省略最优选的组，这种情况是可能会出现的。
+
+
+Client 可以提供与其提供的 support groups 一样多数量的 KeyShareEntry 的值。每个值都代表了一组密钥交换参数。例如，Client 可能会为多个椭圆曲线或者多个 FFDHE 组提供 shares。每个 KeyShareEntry 中的 key\_exchange 值必须独立生成。Client 不能为相同的 group 提供多个 KeyShareEntry 值。Client 不能为，没有出现在 Client 的 "supported\_group" 扩展中列出的 group 提供任何 KeyShareEntry 值。Server 会检查这些规则，如果违反了规则，立即发送 "illegal\_parameter" alert 消息中止握手。
+
+在 HelloRetryRequest 消息中，"key\_share" 扩展中的 "extension\_data" 字段包含 KeyShareHelloRetryRequest 值。
+
+```c
+      struct {
+          NamedGroup selected_group;
+      } KeyShareHelloRetryRequest;
+```
+
+- selected\_group:
+	Server 打算协商的相互支持并且正在请求重试 ClientHello / KeyShare 的 group。
+
+
+在 HelloRetryRequest 消息中收到此扩展后，Client 必须要验证 2 点。第一点，selected\_group 必须在原始的 ClientHello 中的 "supported\_groups" 中出现过。第二点，selected\_group 没有在原始的 ClientHello 中的 "key\_share" 中出现过。如果上面 2 点检查都失败了，那么 Client 必须通过 "illegal\_parameter" alert 消息来中止握手。否则，在发送新的 ClientHello 时，Client 必须将原始的 "key\_share" 扩展替换为仅包含触发 HelloRetryRequest 的 selected\_group 字段中指示的组,这个组中只包含新的 KeyShareEntry。
+
+
+在 ServerHello 消息中，"key\_share" 扩展中的 "extension\_data" 字段包含 KeyShareServerHello 值。
+
+```c
+      struct {
+          KeyShareEntry server_share;
+      } KeyShareServerHello;
+```
+
+- server\_share:
+	与 Client 共享的位于同一组的单个 KeyShareEntry 值。
+
+如果使用 (EC)DHE 密钥建立链接，Server 在 ServerHello 中只提供了一个 KeyShareEntry。这个值必须与，Server 为了协商密钥交换在 Client 提供的 KeyShareEntry 值中选择的值，在同一组中。Server 不能为 Client 的 "supported\_groups" 扩展中指定的任何 group 发送 KeyShareEntry 值。Server 也不能在使用 "psk\_ke" PskKeyExchangeMode 时候发送 KeyShareEntry 值。如果使用 (EC)DHE 建立链接，Client 收到了包含在 "key\_share" 扩展中的 HelloRetryRequest 消息，Client 必须验证在 ServerHello 中选择的 NameGroup 与 HelloRetryRequest 中是否相同。如果不相同，Client 必须立即发送 "illegal\_parameter" alert 消息中止握手。
+
+
+#### (1) Diffie-Hellman Parameters
+
+Client 和 Server 两者的 Diffie-Hellman [[DH76]](https://tools.ietf.org/html/rfc8446#ref-DH76) 参数都编码在 KeyShareEntry 中的 KeyShare 数据结构中 opaque 类型的 key\_exchange 字段中。opaque 类型的值包含指定 group 的 Diffie-Hellman 公钥(Y = g^X mod p)，是用大端整数编码的。这个值大小为 p 字节，如果字节不够，需要在其左边添加 0 。
+
+
+请注意：对于给定的 Diffie-Hellman 组，填充会导致所有的公钥具有相同的长度。
+
+对端必须要相互验证对方的公钥，确保 1 < Y < p-1。此检查确保远程对端正常运行，也使得本地系统不会强制进入进入更小的 subgroup。
+
+
+#### (2) ECDHE Parameters
+
+
+Client 和 Server 两者的 ECDHE 参数都编码在 KeyShareEntry 中的 KeyShare 数据结构中 opaque 类型的 key\_exchange 字段中。
+
+对于 secp256r1，secp384r1 和 secp521r1，内容是以下结构体的序列化值：
+
+```c
+      struct {
+          uint8 legacy_form = 4;
+          opaque X[coordinate_length];
+          opaque Y[coordinate_length];
+      } UncompressedPointRepresentation;
+```
+
+X 和 Y 分别是网络字节顺序中 X 和 Y 值的二进制表示。由于没有内部长度标记，所以每个数字占用曲线参数隐含的 8 位字节数。对于 P-256，这意味着 X 和 Y 中的每一个占用 32 个八位字节，如果需要，则在左侧填充零。对于 P-384，它们分别占用 48 个八位字节，对于 P-521，它们各占用 66 个八位字节。
+
+对于曲线 secp256r1, secp384r1, 和 secp521r1，对端必须验证对方的的公钥 Q，以保证这个点是椭圆曲线上有效的点。合适的验证方法定义在 [[ECDSA]](https://tools.ietf.org/html/rfc8446#ref-ECDSA) 中或者 [[KEYAGREEMENT]](https://tools.ietf.org/html/rfc8446#ref-KEYAGREEMENT)。这个处理包括了 3 步。第一步：验证 Q 不是无穷大的点 (O)。第二步，验证 Q = (x, y) 中的两个整数 x，y 有正确的间隔。第三步，验证 (x, y) 是椭圆曲线方程的正确的解。对于这些曲线，实现方不需要再验证正确的 subgroup 中的成员身份。
+
+
+对于 X25519 和 X448 来说，公共值的内容是 [[RFC7748]](https://tools.ietf.org/html/rfc7748) 中定义的相应函数的字节串输入和输出，X25519 的是 32 个字节， X448 的是 56 个字节。
+
+请注意：**TLS 1.3 之前的版本允许 point format 协商，TLS 1.3 移除了这个功能，以利于每个曲线的单独 point format**。
+
+
+
+### 9. Pre-Shared Key Exchange Modes
+
+为了使用 PSK，Client 还必须发送一个 "psk\_key\_exchange\_modes" 扩展。这个扩展语意是 Client 仅支持使用具有这些模式的 PSK。这就限制了在这个 ClientHello 中提供的 PSK 的使用，也限制了 Server 通过 NewSessionTicket 提供的 PSK 的使用。
+
+如果 Client 提供了 "pre\_shared\_key" 扩展，那么它必须也要提供 "psk\_key\_exchange\_modes" 扩展。如果 Client 发送不带 "psk\_key\_exchange\_modes" 扩展名的 "pre\_shared\_key"，Server 必须立即中止握手。Server 不能选择一个 Client 没有列出的密钥交换模式。此扩展还限制了与 PSK 恢复使用的模式。Server 也不能发送与建议的 modes 不兼容的 NewSessionTicket。不过如果 Server 一定要这样做，影响的只是 Client 在尝试恢复会话的时候会失败。
+
+
+Server 不能发送 "psk\_key\_exchange\_modes" 扩展:
+
+```c
+      enum { psk_ke(0), psk_dhe_ke(1), (255) } PskKeyExchangeMode;
+
+      struct {
+          PskKeyExchangeMode ke_modes<1..255>;
+      } PskKeyExchangeModes;
+```
+
+- psk\_ke:
+	仅 PSK 密钥建立。在这种模式下，Server 不能提供 "key\_share" 值。
+
+- psk\_dhe\_ke:
+	PSK 和 (EC)DHE 建立。在这种模式下，Client 和 Server 必须提供 "key\_share" 值。
+
+未来分配的任何值都必须要能保证传输的协议消息可以明确的标识 Server 选择的模式。目前 Server 选择的值由 ServerHello 中存在的 "key\_share" 表示。
+
+### 10. Early Data Indication
+
+当使用 PSK 并且 PSK 允许使用 early\_data 的时候，Client 可以在其第一个消息中发送应用数据。如果 Client 选择这么做，则必须发送 "pre\_shared\_key" 和 "early\_data" 扩展。
+
+
+Early Data Indication 扩展中的 "extension\_data" 字段包含了一个 EarlyDataIndication 值。
+
+```c
+      struct {} Empty;
+
+      struct {
+          select (Handshake.msg_type) {
+              case new_session_ticket:   uint32 max_early_data_size;
+              case client_hello:         Empty;
+              case encrypted_extensions: Empty;
+          };
+      } EarlyDataIndication;
+```
+
+有关 max\_early\_data\_size 字段的使用请看 [New Session Ticket Message]() 章节。
+
+
+0-RTT 数据(版本，对称加密套件，应用层协议协商协议[[RFC7301]](https://tools.ietf.org/html/rfc7301)，等等)的参数与使用中的 PSK 参数相关。对于外部配置的 PSK，关联值是由密钥提供的。对于通过 NewSessionTicket 消息建立的 PSK，关联值是在建立 PSK 连接时协商的值。PSK 用来加密 early data 必须是 Client 在 "pre\_shared\_key" 扩展中列出的第一个 PSK。
+
+
+对于通过 NewSessionTicket 提供的 PSK，Server 必须验证所选 PSK 标识中的 ticket age(从 PskIdentity.obfuscated\_ticket\_age 取 2^32 模中减去 ticket\_age\_add)距离 ticket 发出的时间是否有一个很小的公差。如果相差的时间很多，那么 Server 应该继续握手，但是要拒绝 0-RTT，并且还要假定这条 ClientHello 是新的，也不能采取任何其他措施。
+
+
+在第一次 flight 中发送的 0-RTT 消息与其他 flight (握手和应用程序数据)中发送的相同类型的消息具有相同(加密)的内容类型，但受到不同密钥的保护。如果 Server 已经接收了 early data，Client 在收到 Server 的 Finished 消息以后，Client 则会发送 EndOfEarlyData 消息表示密钥更改。这条消息将会使用 0-RTT 的 traffic 密钥进行加密。
+
+Server 接收 "early\_data" 扩展必须以下面三种方式之一操作：
+
+- 忽略 "early\_data" 扩展，并返回常规的 1-RTT 响应。Server 尝试通过用握手中的流量密钥(traffic key)解密收到的记录，并忽略掉 early data。丢弃解密失败的记录(取决于配置的 max\_early\_data\_size)。一旦一个记录被解密成功，它将会被 Server 看做 Client 第二次 flight 的开始并且 Server 会把它当做普通的 1-RTT 来处理。
+
+
+- 通过回应 HelloRetryRequest 来请求 Client 发送另外一个 ClientHello。Client 不能在这个 ClientHello 中包含 "early\_data" 扩展。Server 通过跳过具有外部内容类型的 "application\_data"(说明他们被加密了) 的所有记录来忽略 early data(同样取决于配置的 max\_early\_data\_size)。
+
+- 在 EncryptedExtensions 中返回自己的 "early\_data" 扩展，表明它准备处理 early data。Server 不可能只接受 early data 消息中的一部分。即使 Server 发送了一条接收 early data 的消息，但是实际上 early data 可能在 Server 生成这条消息的时候已经在 flight 了。
+
+为了接受 early data，Server 必须已经接受了 PSK 密码套件并且选择了 Client 的 "pre\_shared\_key" 扩展中提供的第一个密钥。此外，Server 还需要验证以下的值和选择的 PSK 关联值一样：
+
+- TLS 版本号
+- 选择的密码套件
+- 选择的 ALPN 协议，如果选择了的话
+
+这些要求是使用相关 PSK 执行 1-RTT 握手所需的超集。对于外部建立的 PSK，关联值是与密钥一起提供的值。对于通过 NewSessionTicket 消息建立的 PSK，关联值是在连接中协商的值，在这期间 ticket 被建立了。
+
+未来的扩展必须定义它们与 0-RTT 的交互。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
