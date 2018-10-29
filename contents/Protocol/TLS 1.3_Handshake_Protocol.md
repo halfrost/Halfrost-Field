@@ -766,6 +766,25 @@ Server 接收 "early\_data" 扩展必须以下面三种方式之一操作：
 未来的扩展必须定义它们与 0-RTT 的交互。
 
 
+如果任何检查失败了，Server 不得在响应中附带扩展，并且必须使用上面列出的前两种机制中的一个，丢弃所有 first-flight 数据(因此回落到 1-RTT 或者 2-RTT)。如果 Client 尝试 0-RTT 握手但 Server 拒绝了它，则 Server 通常不会有 0-RTT 记录保护密钥，而必须使用试用解密（使用 1-RTT 握手密钥或者通过在有 HelloRetryRequest 消息的情况下查找明文 ClientHello）找到第一个非 0-RTT 消息。
+
+
+如果 Server 选择接受 early\_data 扩展，那么在处理 early data 记录的时候，Server 必须遵守用相同的标准(指定的相同错误处理要求)来处理所有记录。具体来说，如果 Server 无法解密已经接受的 "early\_data" 扩展中的记录，则它必须发送 "bad\_record\_mac" alert 消息中止握手。
+
+如果 Server 拒绝 "early\_data" 扩展，则 Client 应用程序可以选择在握手完成后重新发送先前在 early data 中发送的应用程序数据。请注意，early data 的自动重传可能会导致关于连接状态的误判。例如，当协商连接从用于 early data 的协议中选择不同的 ALPN 协议时，应用程序可能需要构造不同的消息。同样，如果 early data 假定包含有关连接状态的任何内容，则在握手完成后可能会错误地发送这些内容。
+
+
+TLS 的实现不应该自动重新发送 early data；应用程序可以很好的决定何时重传。除非协商连接选择相同的 ALPN 协议，否则 TLS 实现绝不能自动重新发送 early data。
+
+
+
+### 11. Pre-Shared Key Extension
+
+"pre\_shared\_key" 扩展用来协商标识的，这个标识是与 PSK 密钥相关联的给定握手所使用的预共享密钥的标识。
+
+
+
+
 
 
 
