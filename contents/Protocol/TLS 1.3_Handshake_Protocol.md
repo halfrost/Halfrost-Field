@@ -783,10 +783,34 @@ TLS 的实现不应该自动重新发送 early data；应用程序可以很好�
 "pre\_shared\_key" 扩展用来协商标识的，这个标识是与 PSK 密钥相关联的给定握手所使用的预共享密钥的标识。
 
 
+这个扩展中的 "extension\_data" 字段包含一个 PreSharedKeyExtension 值:
 
+```c
+      struct {
+          opaque identity<1..2^16-1>;
+          uint32 obfuscated_ticket_age;
+      } PskIdentity;
 
+      opaque PskBinderEntry<32..255>;
 
+      struct {
+          PskIdentity identities<7..2^16-1>;
+          PskBinderEntry binders<33..2^16-1>;
+      } OfferedPsks;
 
+      struct {
+          select (Handshake.msg_type) {
+              case client_hello: OfferedPsks;
+              case server_hello: uint16 selected_identity;
+          };
+      } PreSharedKeyExtension;
+```
+
+- identity:
+	key 的标签。例如，一个 ticket 或者是一个外部建立的预共享密钥的标签。
+	
+- obfuscated\_ticket\_age:
+	age of the key 的混淆版本。[这一章节]()描述了通过 NewSessionTicket 消息建立，如何为标识(identities)生成这个值。对于外部建立的标识(identities)，应该使用 0 的 obfuscated\_ticket\_age，并且 Server 也必须忽略这个值。
 
 
 
