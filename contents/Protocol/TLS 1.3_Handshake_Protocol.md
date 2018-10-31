@@ -813,13 +813,35 @@ TLS 的实现不应该自动重新发送 early data；应用程序可以很好�
 	age of the key 的混淆版本。[这一章节]()描述了通过 NewSessionTicket 消息建立，如何为标识(identities)生成这个值。对于外部建立的标识(identities)，应该使用 0 的 obfuscated\_ticket\_age，并且 Server 也必须忽略这个值。
 
 
+- identities:
+	Client 愿意和 Server 协商的 identities 列表。如果和 "early\_data" 一起发送，第一个标识被用来标识 0-RTT 的。
+	
+
+- binders:
+	一系列的 HMAC 值。和 identities 列表中的每一个值都一一对应，并且顺序一致。
+
+- selected\_identity:
+	Server 选择的标识，这个标识是以 Client 列表中标识表示为基于 0 的索引。
+
+每一个 PSK 都和单个哈希算法相关联。对于通过 ticket 建立的 PSK，当 ticket 在连接中被建立，这时候用的哈希算法是 KDF 哈希算法。对于外部建立的 PSK，当 PSK 建立的时候，哈希算法必须设置，如果没有设置，默认算法是 SHA-256。Server 必须确保它选择的是兼容的 PSK (如果有的话) 和密钥套件。
 
 
+在 TLS 1.3 之前的版本中，Server Name Identification (SNI) 的值旨在与会话相关联。Server 被强制要求，与会话关联的 SNI 值要和恢复握手中指定的 SNI 值相互匹配。然而事实上，实现方和他们使用的两个提供的 SNI 值是不一致的，这样就会导致 Client 需要执行一致性的要求。**在 TLS 1.3 版本中，SNI 的值始终在恢复握手中被明确的指出，并且 Server 不需要将 SNI 值和 ticket 相关联**。不过 Client 需要将 SNI 和 PSK 一起存储，以满足 [[4.6.1 章节]](https://tools.ietf.org/html/rfc8446#section-4.6.1) 的要求。
 
 
+实现者请注意：会话恢复是 PSK 最主要的用途，实现 PSK/密钥套件 匹配要求的最直接的方法是先协商密码套件，然后再排除任何不兼容的 PSK。任何未知的 PSK (例如：不在 PSK 数据库中，或者用未知的 key 进行编码的)都必须忽略。如果找不到可接受的 PSK，如果可能，Server 应该执行 non-PSK 握手。如果向后兼容性很重要，Client 提供的，外部建立的 PSK 应该影响密码套件的选择。
 
 
+在接受PSK密钥建立之前，Server 必须先验证相应的 binder 值(见 [[4.2.11.2 节]](https://tools.ietf.org/html/rfc8446#section-4.2.11.2))。如果这个值不存在或着未验证，则 Server 必须立即中止握手。Server 不应该尝试去验证多个 binder，而应该选择单个 PSK 并且仅验证对应于该 PSK 的 binder。见 [Appendix E.6](https://tools.ietf.org/html/rfc8446#appendix-E.6) 和 [[8.2 节]](https://tools.ietf.org/html/rfc8446#section-8.2) 描述了针对这个要求的安全性解释。为了接受 PSK 密钥建立连接，Server 发送 "pre\_shared\_key" 扩展，标明它所选择的 identity。
 
+
+Client 必须验证 Server 的 selected\_identity 是否在 Client 提供的范围之内。Server 选择的加密套件标明了与 PSK 关联的哈希算法，如果 ClientHello "psk\_key\_exchange\_modes" 有需要，Server 还应该发送 "key\_share" 扩展。如果这些值不一致，Client 必须立即用 "illegal\_parameter" alert 消息中止握手。
+
+
+如果 Server 提供了 "early\_data" 扩展，Client 必须验证 Server 的 selected\_identity 是否为 0。如果返回任何其他值，Client 必须使用 "illegal\_parameter" alert 消息中止握手。
+
+
+"pre\_shared\_key" 扩展必须是 ClientHello 中的最后一个扩展(这有利于下面的描述的实现)。Server 必须检查它是最后一个扩展，否则用 "illegal\_parameter" alert 消息中止握手。
 
 
 
