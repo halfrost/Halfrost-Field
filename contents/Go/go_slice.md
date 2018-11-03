@@ -152,8 +152,7 @@ BenchmarkSlice-4          300000              4055 ns/op            8192 B/op   
 
 而切片的结果就“差”一点，同样也是用的是4核，循环次数是300000，平均每次执行时间是4055 ns，但是每次执行一次，堆上分配内存总量是8192，分配次数也是1 。
 
-这样对比看来，并非所有时候都适合用切片代替数组，因为切片底层数组可能会在堆上分配内存，而且小数组在栈上拷贝的消耗也未必比
- make 消耗大。
+这样对比看来，并非所有时候都适合用切片代替数组，因为切片底层数组可能会在堆上分配内存，而且小数组在栈上拷贝的消耗也未必比 make 消耗大。
 
 
 ## 二. 切片的数据结构
@@ -368,7 +367,7 @@ func growslice(et *_type, old slice, cap int) slice {
 		return slice{unsafe.Pointer(&zerobase), old.len, cap}
 	}
 
-  // 这里就是扩容的策略
+    // 这里就是扩容的策略
 	newcap := old.cap
 	doublecap := newcap + newcap
 	if cap > doublecap {
@@ -377,8 +376,15 @@ func growslice(et *_type, old slice, cap int) slice {
 		if old.len < 1024 {
 			newcap = doublecap
 		} else {
-			for newcap < cap {
+			// Check 0 < newcap to detect overflow
+			// and prevent an infinite loop.
+			for 0 < newcap && newcap < cap {
 				newcap += newcap / 4
+			}
+			// Set newcap to the requested cap when
+			// the newcap calculation overflowed.
+			if newcap <= 0 {
+				newcap = cap
 			}
 		}
 	}
@@ -483,9 +489,10 @@ After newSlice = [10 30 30 40 50], Pointer = 0xc4200b0180, len = 5, cap = 8
 
 Go 中切片扩容的策略是这样的：
 
-如果切片的容量小于 1024 个元素，于是扩容的时候就翻倍增加容量。上面那个例子也验证了这一情况，总容量从原来的4个翻倍到现在的8个。
-
-一旦元素个数超过 1024 个元素，那么增长因子就变成 1.25 ，即每次增加原来容量的四分之一。
+- 首先判断，如果新申请容量（cap）大于2倍的旧容量（old.cap），最终容量（newcap）就是新申请的容量（cap）  
+- 否则判断，如果旧切片的长度小于1024，则最终容量(newcap)就是旧容量(old.cap)的两倍，即（newcap=doublecap）  
+- 否则判断，如果旧切片长度大于等于1024，则最终容量（newcap）从旧容量（old.cap）开始循环增加原来的 1/4，即（newcap=old.cap,for {newcap += newcap/4}）直到最终容量（newcap）大于等于新申请的容量(cap)，即（newcap >= cap）  
+- 如果最终容量（cap）计算值溢出，则最终容量（cap）就是新申请容量（cap）
 
 
 **注意：扩容扩大的容量都是针对原来的容量而言的，而不是针对原来数组的长度而言的。**
