@@ -991,9 +991,9 @@ func initLookupCell(level, i, j, origOrientation, pos, orientation int) {
 由于初始设置的`lookupBits = 4`，所以i，j的变化范围是从[0,15]，总共有16\*16=256个，然后i，j坐标是表示的4个格子，再细分，`lookupBits = 4`这种情况下能表示的点的个数就是256\*4=1024个。这也正好是 lookupIJ 和 lookupPos 的总容量。
 
 
-画一个局部的图，i，j从0-7变化。
+画一个局部的图，i，j从 0-7 变化。
 
-![](http://upload-images.jianshu.io/upload_images/1194012-fc21da0581f7497e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://img.halfrost.com/Blog/ArticleImage/56_49__.png)
 
 上图是一个4阶希尔伯特曲线。初始化的实际过程就是初始化4阶希尔伯特上的1024个点的坐标与坐标轴上的x，y轴的对应关系表。
 
