@@ -852,7 +852,150 @@ Client 必须验证 Server 的 selected\_identity 是否在 Client 提供的范�
 
 #### (2) PSK Binder
 
-PSK binder 的值形成了 2 种绑定关系，一种是 PSK 和当前握手的绑定，另外一种是 PSK 产生以后(如果是通过 NewSessionTicket 消息)的握手和当前握手的绑定。每一个在 binder 列表中的条目都会被计算为直到并包 PreSharedKeyExtension.identities 字段的 ClientHello 的部分（包括握手报头）上的 HMAC。
+PSK binder 的值形成了 2 种绑定关系，一种是 PSK 和当前握手的绑定，另外一种是 PSK 产生以后(如果是通过 NewSessionTicket 消息)的握手和当前握手的绑定。每一个在 binder 列表中的条目都会根据有一部分 ClientHello 的哈希副本计算 HMAC，最终 HMAC 会包含 PreSharedKeyExtension.identities 字段。也就是说，HMAC 包含所有的 ClientHello，但是不包含 binder list 。如果存在正确长度的 binders，消息的长度字段（包括总长度，扩展块的长度和 "pre\_shared\_key" 扩展的长度）都被设置。
+
+
+PskBinderEntry 的计算方法和 Finished 消息一样。但是 BaseKey 是派生的 binder\_key，派生方式是通过提供的相应的 PSK 的密钥派生出来的。
+
+如果握手包括 HelloRetryRequest 消息，则初始的 ClientHello 和 HelloRetryRequest 随着新的 ClientHello 一起被包含在副本中。例如，如果 Client 发送 ClientHello，则其 binder 将通过以下方式计算：
+
+```c
+      Transcript-Hash(Truncate(ClientHello1))
+```
+
+Truncate() 函数的作用是把 ClientHello 中的 binders list 移除。
+
+如果 Server 响应了 HelloRetryRequest，那么 Client 会发送 ClientHello2，它的 binder 会通过以下方式计算：
+
+```c
+      Transcript-Hash(ClientHello1,
+                      HelloRetryRequest,
+                      Truncate(ClientHello2))
+```
+
+完整的 ClientHello1/ClientHello2 都会包含在其他的握手哈希计算中。请注意，在第一次发送中，`Truncate(ClientHello1)` 是直接计算哈希的，但是在第二次发送中，ClientHello1 计算哈希，并且还会再注入一条 "message\_hash" 消息。
+
+
+#### (3) Processing Order
+
+Client 被允许流式的发送 0-RTT 数据，直到它收到 Server 的 Finished 消息。Client 收到 Finished 消息以后，需要在握手的末尾，发送 EndOfEarlyData 消息。为了防止死锁，当 Server 接收 "early\_data" 消息的时候，Server 必须立即处理 Client 的 ClientHello 消息，然后立即回应 ServerHello，而不是等待收到 Client 的 EndOfEarlyData 消息以后再发送 ServerHello。
+
+
+## 三. Server Parameters
+
+
+Server 接下来的 2 条消息，EncryptedExtensions 和 CertificateRequest 消息，包含来自 Server 的消息，这个 Server 确定了握手的其余部分。这些消息是加密的，通过从 server\_handshake\_traffic\_secret 中派生的密钥加密的。
+
+
+### 1. Encrypted Extensions
+
+
+在所有的握手中，Server 必须在 ServerHello 消息之后立即发送 EncryptedExtensions 消息。这是在从 server\_handshake\_traffic\_secret 派生的密钥下加密的第一条消息。
+
+EncryptedExtensions 消息包含应该被保护的扩展。即，任何不需要建立加密上下文但不与各个证书相互关联的扩展。Client 必须检查 EncryptedExtensions 消息中是否存在任何禁止的扩展，如果有发现禁止的扩展，必须立即用 "illegal\_parameter" alert 消息中止握手。
+
+
+```c
+   Structure of this message:
+
+      struct {
+          Extension extensions<0..2^16-1>;
+      } EncryptedExtensions;
+```
+
+- extensions:
+	扩展列表。
+
+
+### 2. Certificate Request
+
+使用证书进行身份验证的 Server 可以选择性的向 Client 请求证书，这条请求消息(如果发送了)要跟在 EncryptedExtensions 消息后面。
+
+消息的结构体：
+
+```c
+      struct {
+          opaque certificate_request_context<0..2^8-1>;
+          Extension extensions<2..2^16-1>;
+      } CertificateRequest;
+```
+
+
+- certificate_request_context:
+	一个不透明的字符串，这个字符串用来标识证书请求，并在 Client 的 Certificate 消息中回显。certificate\_request\_context 必须在本次连接中必须是唯一的(从而防止 Client 的 CertificateVerify 重放攻击)。这个字段一般情况下都是 0 长度，除非用于 [[4.6.2]]() 中描述的握手后身份验证交换。当请求握手后身份验证以后，Server 应该发送不可预测的上下文给 Client (例如，用随机数生成)，这样是为了防止攻击者破解。攻击者可以预先计算有效的 CertificateVerify 消息，从而获取临时的 Client 私钥的权限。
+
+
+- extensions:
+	一组描述正在请求的证书需要的参数扩展集。"signature\_algorithms" 扩展必须是特定的，如果其他的扩展被这个消息所定义，那么其他扩展也可能可选的被包含进来。Client 必须忽略不能识别的扩展。
+
+
+在 TLS 1.3 之前的版本中，CertificateRequest 消息携带了签名算法列表和 Server 可接受的证书授权列表。在 TLS 1.3 中，签名算法列表可以通过 "signature\_algorithms" 和可选的 "signature_algorithms_cert" 扩展来表示。而后者证书授权列表可以通过发送 "certificate\_authorities" 扩展来表示。
+
+
+通过 PSK 进行验证的 Server 不能在主握手中发送 CertificateRequest 消息，不过它们可能可以在握手后身份验证中发送 CertificateRequest 消息，前提是 Client 已经发送了 "post\_handshake\_auth" 扩展名。
+
+
+
+
+## 四. Authentication Messages
+
+正如我们在 [section-2](https://tools.ietf.org/html/rfc8446#section-2) 中讨论的，TLS 使用一组通用的消息用于身份验证，密钥确认和握手的正确性：Certificate, CertificateVerify 和 Finished。(PSK binders 也以类似的方式进行密钥确认)。这三条消息总是作为握手消息的最后三条消息。Certificate 和 CertificateVerify 消息如下面描述的那样，只在某些情况才会发送。Finished 的消息总是作为认证块的一部分发送。这些消息使用从 sender\_handshake\_traffic\_secret 派生出来的密钥进行加密。
+
+Authentication 消息的计算统一采用以下的输入方式：
+
+- 要使用证书和签名密钥
+- 握手上下文由哈希副本中的一段消息集组成
+- Base key 用于计算 MAC 密钥
+
+基于这些输入，消息包含：
+
+- Certificate：用于认证的证书和链中任何支持的证书。请注意，基于证书的 Client 身份验证在 PSK 握手流中不可用(包括 0-RTT)
+
+- CertificateVerify: 根据 Transcript-Hash(Handshake Context, Certificate)的值得出的签名
+
+- Finished: 根据 Transcript-Hash(Handshake Context, Certificate, CertificateVerify)的值得出的 MAC 。使用从 Base key 派生出来的 MAC key 计算的 MAC 值。
+
+对于每个场景，下表定义了握手上下文和 MAC Base Key    
+
+```c
+   +-----------+-------------------------+-----------------------------+
+   | Mode      | Handshake Context       | Base Key                    |
+   +-----------+-------------------------+-----------------------------+
+   | Server    | ClientHello ... later   | server_handshake_traffic_   |
+   |           | of EncryptedExtensions/ | secret                      |
+   |           | CertificateRequest      |                             |
+   |           |                         |                             |
+   | Client    | ClientHello ... later   | client_handshake_traffic_   |
+   |           | of server               | secret                      |
+   |           | Finished/EndOfEarlyData |                             |
+   |           |                         |                             |
+   | Post-     | ClientHello ... client  | client_application_traffic_ |
+   | Handshake | Finished +              | secret_N                    |
+   |           | CertificateRequest      |                             |
+   +-----------+-------------------------+-----------------------------+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
