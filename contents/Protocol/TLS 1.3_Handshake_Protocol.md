@@ -976,21 +976,60 @@ Authentication 消息的计算统一采用以下的输入方式：
 ```
 
 
+### 1. The Transcript Hash
+
+TLS 中的许多加密计算都使用了哈希副本。这个值是通过级联每个包含的握手消息的方式进来哈希计算的，它包含握手消息头部携带的握手消息类型和长度字段，但是不包括记录层的头部。例如：
+
+```c
+Transcript-Hash(M1, M2, ... Mn) = Hash(M1 || M2 || ... || Mn)
+```
+
+作为此一般规则的例外，当 Server 用一条 HelloRetryRequest 消息来响应一条 ClientHello 消息时，ClientHello1 的值替换为包含 Hash(ClientHello1）的握手类型为 "message\_hash" 的特殊合成握手消息。例如：
+
+```c
+  Transcript-Hash(ClientHello1, HelloRetryRequest, ... Mn) =
+      Hash(message_hash ||        /* Handshake type */
+           00 00 Hash.length  ||  /* Handshake message length (bytes) */
+           Hash(ClientHello1) ||  /* Hash of ClientHello1 */
+           HelloRetryRequest  || ... || Mn)
+```
+
+设计这种结构的原因是允许服务器通过在 cookie 中仅存储 ClientHello1 的哈希值来执行无状态 HelloRetryRequest，而不是要求它导出整个中间哈希状态。
+
+具体而言，哈希副本始终取自于下列握手消息序列，从第一个 ClientHello 开始，仅包括已发送的消息：ClientHello, HelloRetryRequest, ClientHello, ServerHello, EncryptedExtensions, server CertificateRequest, server Certificate, server CertificateVerify, server Finished, EndOfEarlyData, client Certificate, client CertificateVerify, client Finished。
+
+通常上，实现方可以下面的方法来实现哈希副本：根据协商的哈希来维持一个动态的哈希副本。请注意，随后的握手后认证不会相互包含，只是通过主握手结束的消息。
+
+
+### 2. Certificate
 
 
 
 
+```c
+      enum {
+          X509(0),
+          RawPublicKey(2),
+          (255)
+      } CertificateType;
 
+      struct {
+          select (certificate_type) {
+              case RawPublicKey:
+                /* From RFC 7250 ASN.1_subjectPublicKeyInfo */
+                opaque ASN1_subjectPublicKeyInfo<1..2^24-1>;
 
+              case X509:
+                opaque cert_data<1..2^24-1>;
+          };
+          Extension extensions<0..2^16-1>;
+      } CertificateEntry;
 
-
-
-
-
-
-
-
-
+      struct {
+          opaque certificate_request_context<0..2^8-1>;
+          CertificateEntry certificate_list<0..2^24-1>;
+      } Certificate;
+```
 
 
 
