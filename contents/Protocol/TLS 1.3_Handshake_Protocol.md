@@ -1003,7 +1003,16 @@ Transcript-Hash(M1, M2, ... Mn) = Hash(M1 || M2 || ... || Mn)
 
 ### 2. Certificate
 
+此消息将端点的证书链发给对端。
 
+每当约定的密钥交换方法是用证书进行认证(这包括本文档中除了 PSK 以外定义的所有密钥交换方法)的时候，Server 就必须发送 Certificate 消息。
+
+当且仅当 Server 通过发送 CertificateRequest 消息请求 Client 认证时，Client 必须发送 Certificate 消息。
+
+
+如果 Server 请求 Client 认证但没有合适的证书可用，则 Client 必须发送不包含证书的证书消息(例如，具有长度为 0 的 "certificate\_list" 字段)。Finished 消息必须发送，无论 Certificate 消息是否为空。
+
+Certificate 消息的结构体是：
 
 
 ```c
@@ -1031,13 +1040,21 @@ Transcript-Hash(M1, M2, ... Mn) = Hash(M1 || M2 || ... || Mn)
       } Certificate;
 ```
 
+- certificate\_request\_context:
+	如果此消息是响应 CertificateRequest 消息的，则该消息中的 certificate\_request\_context 的值不为 0。否则(在 Server 认证的情况下)，该字段应为零长度。
 
 
+- certificate\_list:
+	这是一个 CertificateEntry 结构的序列(链)，每个结构包含单个证书和一组扩展。
 
-
-
-
-
+- extensions:
+	CertificateEntry 的一组扩展值。
+	
+	
+	
+	
+	
+	
 
 ------------------------------------------------------
 
