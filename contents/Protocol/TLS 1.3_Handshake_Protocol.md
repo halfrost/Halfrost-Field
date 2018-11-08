@@ -1048,13 +1048,27 @@ Certificate 消息的结构体是：
 	这是一个 CertificateEntry 结构的序列(链)，每个结构包含单个证书和一组扩展。
 
 - extensions:
-	CertificateEntry 的一组扩展值。
+	CertificateEntry 的一组扩展值。"Extension" 的格式在 [[Section 4.2]](https://tools.ietf.org/html/rfc8446#section-4.2) 中定义了。有效的扩展包括 OCSP 状态扩展 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 SignedCertificateTimestamp [[RFC6962]](https://tools.ietf.org/html/rfc6962) 扩展。未来可以为此消息定义一些新的扩展。Server 的 Certificate 消息中的扩展必须对应于 ClientHello 消息中的扩展。Client 的 Certificate 消息中的扩展必须对应于 Server 的 CertificateRequest 消息中的扩展。如果一个扩展适应用于整个链，它应该被包括在第一个 CertificateEntry 中。
 	
+
+如果没有在 EncryptedExtensions 中协商相应的证书类型扩展名 ("server\_certificate\_type" 或 "client\_certificate\_type")，或者协商了 X.509 证书类型，则每个 CertificateEntry 都要包含 DER 编码的 X.509 证书。发件者的证书必须位于列表中的第一个 CertificateEntry 中。之后的每个证书都应该直接证明其前面的证书。由于证书验证要求信任锚独立分发，因此可以从链中省略指定信任锚的证书(前提是已知支持的对等方拥有可省略的证书)。
 	
+注意：TLS 1.3 之前的版本，"certificate\_list" 排序需要每个证书要证明紧接在其前面的证书，然而，一些实现允许一些灵活性。Server 有时为了过渡的目的而发送当前和已弃用的中间体，而其他的配置不正确，但这些情况仍然可以正确地验证。为了最大程度的兼容性，所有实现应该准备处理可能是无关紧要的证书和 TLS 版本的任意排序，但最终实体证书(排序的顺序)必须是第一个。
+
+如果协商了 RawPublicKey 证书类型，则 certificate\_list 必须包含不超过一个CertificateEntry，CertificateEntry 中包含定义在 [[RFC7250], Section 3](https://tools.ietf.org/html/rfc7250#section-3) 中的 ASN1\_subjectPublicKeyInfo 值。
 	
-	
-	
-	
+
+OpenPGP 证书类型禁止在 TLS 1.3 中使用。
+
+Server 的 certificate\_list 必须始终是非空的。如果 Client 没有适当的证书要发送以响应 Server 的身份验证请求，则会发送空的 certificate\_list。
+
+#### (1) OCSP Status and SCT Extensions
+
+[[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 提供了协商 Server 向客户端发送 OCSP 响应的扩展。 在 TLS 1.2 及以下版本中，Server 回复空的扩展名以表示对此扩展的协商，并且在 CertificateStatus 消息中携带 OCSP 信息。在 TLS 1.3 中，Server 的 OCSP 信息在包含相关证书的 CertificateEntry 中的扩展中。特别的，来自 Server 的 "status\_request" 扩展的主体必须是分别在 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6960]](https://tools.ietf.org/html/rfc6960) 中定义的 CertificateStatus 结构。
+
+
+
+
 
 ------------------------------------------------------
 
