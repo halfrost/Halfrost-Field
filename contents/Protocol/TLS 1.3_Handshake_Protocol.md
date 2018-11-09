@@ -1067,6 +1067,31 @@ Server 的 certificate\_list 必须始终是非空的。如果 Client 没有适�
 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 提供了协商 Server 向客户端发送 OCSP 响应的扩展。 在 TLS 1.2 及以下版本中，Server 回复空的扩展名以表示对此扩展的协商，并且在 CertificateStatus 消息中携带 OCSP 信息。在 TLS 1.3 中，Server 的 OCSP 信息在包含相关证书的 CertificateEntry 中的扩展中。特别的，来自 Server 的 "status\_request" 扩展的主体必须是分别在 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6960]](https://tools.ietf.org/html/rfc6960) 中定义的 CertificateStatus 结构。
 
 
+注意：status\_request\_v2 扩展 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 已经废弃了，TLS 1.3 不能根据它是否存在或者根据它的信息来出来 ClientHello 消息。特别是，禁止在 EncryptedExtensions, CertificateRequest 和 Certificate 消息中发送 status\_request\_v2 扩展。TLS 1.3 的 Server 必须要能够处理包含它的 ClientHello 消息，因为这条消息可能是由希望在早期协议版本中使用它的 Client 发送的。
+
+
+Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_request" 扩展来请求客户端使用其证书来做 OCSP 的响应。如果客户端选择性的发送 OCSP 响应，则其 "status\_request" 扩展的主体必须是在 [[RFC6966]](https://tools.ietf.org/html/rfc6966) 中定义的 CertificateStatus 结构。
+
+
+类似地，[[RFC6962]](https://tools.ietf.org/html/rfc6962) 为 Server 提供了一种机制，用在 TLS 1.2 及更低版本中的，可在 ServerHello 中发送签名证书时间戳 (SCT) 的扩展。 在 TLS 1.3 中，Server 的 SCT 信息在 CertificateEntry 的扩展中。
+
+
+#### (2) Server Certificate Selection
+
+以下规则适用于服务器发送的证书:
+
+- 证书类型必须是 X.509v3 [[RFC5280]](https://tools.ietf.org/html/rfc5280)，除非另有明确协商（例如，[[RFC5081]](https://tools.ietf.org/html/rfc5081)）
+
+- Server 的终端实体证书的公钥（和相关限制）必须与 Client的 "signature\_algorithms" 扩展(目前为RSA，ECDSA 或 EdDSA)中的所选认证算法兼容。
+
+- 证书必须允许密钥用于签名（即，如果存在密钥用法扩展，则必须设置 digitalSignature 位），并在 Client 的"signature\_algorithms"/"signature\_algorithms\_cert" 扩展中指示签名方案。
+
+
+- 
+
+
+
+
 
 
 
