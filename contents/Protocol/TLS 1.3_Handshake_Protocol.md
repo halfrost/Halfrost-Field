@@ -994,7 +994,7 @@ Transcript-Hash(M1, M2, ... Mn) = Hash(M1 || M2 || ... || Mn)
            HelloRetryRequest  || ... || Mn)
 ```
 
-设计这种结构的原因是允许服务器通过在 cookie 中仅存储 ClientHello1 的哈希值来执行无状态 HelloRetryRequest，而不是要求它导出整个中间哈希状态。
+设计这种结构的原因是允许 Server 通过在 cookie 中仅存储 ClientHello1 的哈希值来执行无状态 HelloRetryRequest，而不是要求它导出整个中间哈希状态。
 
 具体而言，哈希副本始终取自于下列握手消息序列，从第一个 ClientHello 开始，仅包括已发送的消息：ClientHello, HelloRetryRequest, ClientHello, ServerHello, EncryptedExtensions, server CertificateRequest, server Certificate, server CertificateVerify, server Finished, EndOfEarlyData, client Certificate, client CertificateVerify, client Finished。
 
@@ -1064,13 +1064,13 @@ Server 的 certificate\_list 必须始终是非空的。如果 Client 没有适�
 
 #### (1) OCSP Status and SCT Extensions
 
-[[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 提供了协商 Server 向客户端发送 OCSP 响应的扩展。 在 TLS 1.2 及以下版本中，Server 回复空的扩展名以表示对此扩展的协商，并且在 CertificateStatus 消息中携带 OCSP 信息。在 TLS 1.3 中，Server 的 OCSP 信息在包含相关证书的 CertificateEntry 中的扩展中。特别的，来自 Server 的 "status\_request" 扩展的主体必须是分别在 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6960]](https://tools.ietf.org/html/rfc6960) 中定义的 CertificateStatus 结构。
+[[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 提供了协商 Server 向 Client 发送 OCSP 响应的扩展。 在 TLS 1.2 及以下版本中，Server 回复空的扩展名以表示对此扩展的协商，并且在 CertificateStatus 消息中携带 OCSP 信息。在 TLS 1.3 中，Server 的 OCSP 信息在包含相关证书的 CertificateEntry 中的扩展中。特别的，来自 Server 的 "status\_request" 扩展的主体必须是分别在 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 [[RFC6960]](https://tools.ietf.org/html/rfc6960) 中定义的 CertificateStatus 结构。
 
 
 注意：status\_request\_v2 扩展 [[RFC6961]](https://tools.ietf.org/html/rfc6961) 已经废弃了，TLS 1.3 不能根据它是否存在或者根据它的信息来出来 ClientHello 消息。特别是，禁止在 EncryptedExtensions, CertificateRequest 和 Certificate 消息中发送 status\_request\_v2 扩展。TLS 1.3 的 Server 必须要能够处理包含它的 ClientHello 消息，因为这条消息可能是由希望在早期协议版本中使用它的 Client 发送的。
 
 
-Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_request" 扩展来请求客户端使用其证书来做 OCSP 的响应。如果客户端选择性的发送 OCSP 响应，则其 "status\_request" 扩展的主体必须是在 [[RFC6966]](https://tools.ietf.org/html/rfc6966) 中定义的 CertificateStatus 结构。
+Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_request" 扩展来请求 Client 使用其证书来做 OCSP 的响应。如果 Client 选择性的发送 OCSP 响应，则其 "status\_request" 扩展的主体必须是在 [[RFC6966]](https://tools.ietf.org/html/rfc6966) 中定义的 CertificateStatus 结构。
 
 
 类似地，[[RFC6962]](https://tools.ietf.org/html/rfc6962) 为 Server 提供了一种机制，用在 TLS 1.2 及更低版本中的，可在 ServerHello 中发送签名证书时间戳 (SCT) 的扩展。 在 TLS 1.3 中，Server 的 SCT 信息在 CertificateEntry 的扩展中。
@@ -1078,7 +1078,7 @@ Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_requ
 
 #### (2) Server Certificate Selection
 
-以下规则适用于服务器发送的证书:
+以下规则适用于 Server 发送的证书:
 
 - 证书类型必须是 X.509v3 [[RFC5280]](https://tools.ietf.org/html/rfc5280)，除非另有明确协商（例如，[[RFC5081]](https://tools.ietf.org/html/rfc5081)）
 
@@ -1104,46 +1104,62 @@ Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_requ
 
 #### (3) Client Certificate Selection
 
-以下的规则适用于客户端发送的证书:
+以下的规则适用于 Client 发送的证书:
 
 - 证书类型必须是 X.509v3 [[RFC5280]](https://tools.ietf.org/html/rfc5280)，除非另有明确协商（例如，[[RFC5081]](https://tools.ietf.org/html/rfc5081)）
 
+- 如果 CertificateRequest 消息中 "certificate\_authorities" 扩展不为空，则证书链中的至少一个证书应该由所列出的 CA 之一发布的。
+
+- 证书必须使用可接受的签名算法签名，如第 4.3.2 节所述。注意，这放宽了在 TLS 的先前版本中发现的证书签名算法的约束。
+
+- 如果 CertificateRequest 消息包含非空的 "oid\_filters" 扩展，则终端实体证书必须匹配 Client 识别的扩展 OID，如第 4.2.5 节中所述。
 
 
 
+#### (4) Receiving a Certificate Message
 
 
+通常，详细的证书验证程序超出了 TLS 的范围(参见[[RFC5280]](https://tools.ietf.org/html/rfc5280))。 本节提供特定于 TLS 的要求。
+
+如果 Server 提供空的证书消息，则 Client 必须使用 "decode\_error" alert 消息中止握手。
+
+如果 Client 没有发送任何证书(即，它发送一个空的证书消息)，Server 可以自行决定是否在没有 Client 认证的情况下继续握手，或者使用 "certificate\_required" alert 消息中止握手。此外，如果证书链的某些方面是不可接受的(例如，它未由已知的可信 CA 签名)，则 Server 可以自行决定是继续握手(考虑 Client 还没有经过身份验证)还是中止握手。
+
+任何端点接收任何需要使用任何签名算法使用 MD5 哈希验证的证书都必须使用 "bad\_certificate" alert 消息中止握手。不推荐使用 SHA-1，并且建议任何接收任何使用 SHA-1 哈希使用任何签名算法验证的证书的端点都会使用 "bad\_certificate" alert 消息中止握手。为清楚起见，这意味着端点可以接受这些算法用于自签名或信任锚的证书。
 
 
+建议所有端点尽快转换为 SHA-256 或更好的算法，以保持与当前正在逐步淘汰 SHA-1 支持的实现的互操作性。
 
 
+请注意，包含一个签名算法的密钥的证书可以使用不同的签名算法进行签名(例如，使用 ECDSA 密钥签名的 RSA 密钥)。
 
 
+### 3. Certificate Verify
+
+此消息用于提供端点拥有与其证书对应的私钥的明确证据。CertificateVerify 消息还为到此为止的握手提供完整性。Server 必须在通过证书进行身份验证时发送此消息。每当通过证书进行身份验证时(即，当证书消息非空时)，Client 必须发送此消息。发送时，此消息必须在 Certificate 消息之后立即出现，并且紧接在 Finished 消息之前。
 
 
+这条消息的结构体是:
 
+```c
+      struct {
+          SignatureScheme algorithm;
+          opaque signature<0..2^16-1>;
+      } CertificateVerify;
+```
 
+algorithm 字段指定使用的签名算法(有关此类型的定义，请参见第 4.2.3 节)。signature 字段是使用该算法的数字签名。签名中涵盖的内容是第 4.4.1 节中描述的哈希输出，即：
 
+```c
+      Transcript-Hash(Handshake Context, Certificate)
+```
 
+计算数字签名是级联计算的：
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 由八位字节32(0x20)组成的字符串重复 64 次
+- 上下文字符串
+- 用作分隔符的单个0字节
+- 要签名的内容
 
 
 
