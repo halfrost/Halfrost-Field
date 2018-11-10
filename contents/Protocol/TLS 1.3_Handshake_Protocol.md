@@ -1087,7 +1087,62 @@ Server 可以通过在其 CertificateRequest 消息中发送空的 "status\_requ
 - 证书必须允许密钥用于签名（即，如果存在密钥用法扩展，则必须设置 digitalSignature 位），并在 Client 的"signature\_algorithms"/"signature\_algorithms\_cert" 扩展中指示签名方案。
 
 
-- 
+- "server\_name" [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 "certificate\_authorities" 扩展用于指导证书选择。由于 Server 可能需要存在 "server\_name" 扩展名，因此 Client 应该在适用时发送此扩展名。
+
+如果 Server 能够提供证书链，Server 所有的证书都必须由 Client 提供的签名算法签名。自签名的证书或预期为信任锚的证书不会作为链的一部分进行验证，因此可以使用任何算法进行签名。
+
+
+如果 Server 不能产生只通过所指示的支持的算法签名的证书链，则它应当通过向 Client 发送其选择的证书链来继续握手，该证书链可能会包括 Client 不知道能否支持的算法。这个回退链可以只在 Client 允许的情况下才可以使用已弃用的 SHA-1 哈希算法，其他情况都必须禁止使用 SHA-1 哈希算法。
+
+
+如果 Client 无法使用提供的证书构造可接受的证书链，那么必须中止握手。中止握手并发送证书相关的 alert 消息(默认的，发送 "unsupported\_certificate" alert 消息)
+
+
+如果 Server 有多张证书，它会根据上述标准(除了其他标准以外，如传输层端点，本地配置和首选项)选择其中的一个证书。
+
+
+
+#### (3) Client Certificate Selection
+
+以下的规则适用于客户端发送的证书:
+
+- 证书类型必须是 X.509v3 [[RFC5280]](https://tools.ietf.org/html/rfc5280)，除非另有明确协商（例如，[[RFC5081]](https://tools.ietf.org/html/rfc5081)）
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
