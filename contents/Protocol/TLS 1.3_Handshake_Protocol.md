@@ -1162,6 +1162,117 @@ algorithm 字段指定使用的签名算法(有关此类型的定义，请参见
 - 要签名的内容
 
 
+设计这个结构目的是为了防止对先前版本的 TLS 的攻击，其中 ServerKeyExchange 格式意味着攻击者可以获得具有所选 32 字节前缀(ClientHello.random)的消息的签名。 最初的 64 字节填充将清除 Server 控制的 ServerHello.random 中的前缀。
+
+Server 签名的上下文字符串是 "TLS 1.3，Server CertificateVerify"。Client 签名的上下文字符串是 "TLS 1.3，Client CertificateVerify"。它用于在不同的上下文中提供签名之间的分离，帮助抵御潜在的跨协议攻击。
+
+例如，如果 hash副本 是 32 字节 01(这个长度对 SHA-256 有意义)，Server 的 CertificateVerify 的数字签名所涵盖的内容将是：
+
+```c
+2020202020202020202020202020202020202020202020202020202020202020
+      2020202020202020202020202020202020202020202020202020202020202020
+      544c5320312e332c207365727665722043657274696669636174655665726966
+      79
+      00
+      0101010101010101010101010101010101010101010101010101010101010101
+```
+
+在发送方，用于计算 CertificateVerify 消息的签名字段的过程作为输入:
+
+- 数字签名算涵盖的内容
+
+- 与上一条消息中发送的证书对应的私有签名密钥
+
+
+如果由 Server 发送 CertificateVerify 消息，则签名算法必须是 Client "signature\_algorithms" 扩展中提供的，除非在没有不支持的算法的情况下不能生成有效的证书链(除非当前支持的算法都不能生成有效的证书链)。
+
+如果由 Client 发送，则签名中使用的签名算法必须是 CertificateRequest 消息中 "signature\_algorithms" 扩展的 supported\_signature\_algorithms 字段中存在的签名算法之一。
+
+另外，签名算法必须与发送者的终端实体证书中的密钥兼容。无论 RSASSA-PKCS1-v1\_5 算法是否出现在 "signature\_algorithms" 中，RSA 签名都必须使用 RSASSA-PSS 算法。SHA-1 算法禁止用于 CertificateVerify 消息的任何签名。
+
+本规范中的所有 SHA-1 签名算法仅定义用于旧证书，并且对 CertificateVerify 签名无效。
+
+CertificateVerify 消息的接收者必须验证签名字段。验证过程作为输入：
+
+- 数字签名所涵盖的内容
+
+- 在关联的证书消息中找到的最终实体证书中包含的公钥
+
+- 在 CertificateVerify 消息的签名字段中收到的数字签名
+
+如果验证失败，接收方必须通过 "decrypt\_error" 警报终止握手。
+
+
+### 4. Finished
+
+
+Finished 消息是认证块中的最后一条消息。它对提供握手和计算密钥的身份验证起了至关重要的作用。
+
+Finished 消息的收件人必须验证内容是否正确，如果不正确，必须使用 "decrypt\_error" alert 消息终止连接。
+
+一旦一方已发送其 Finished 消息并已收到并验证来自其对端的 Finished 消息，它就可以开始通过该连接发送和接收应用数据。有两种设置允许在接收对端的 Finished 之前发送数据:
+
+1. 如 [Section 4.2.10](https://tools.ietf.org/html/rfc8446#section-4.2.10) 中所述，Client 可以发送 0-RTT 数据。
+2. Server 可以在第一个 flight 之后就发送数据，但是因为握手还没有完成，所以不能保证对端的身份正确性，以及对端是否还在线。(ClientHello 可能重播)
+
+用于计算 Finished 消息的密钥是使用 HKDF，它是从第 4.4 节中定义的 Base Key 计算而来的(参见第7.1节)。特别的:
+
+```c
+   finished_key =
+       HKDF-Expand-Label(BaseKey, "finished", "", Hash.length)
+```
+
+
+这条消息的数据结构是:
+
+```c
+      struct {
+          opaque verify_data[Hash.length];
+      } Finished;
+```
+
+verify\_data 按照如下方法计算:
+
+```c
+      verify_data =
+          HMAC(finished_key,
+               Transcript-Hash(Handshake Context,
+                               Certificate*, CertificateVerify*))
+
+      * Only included if present.
+```
+
+
+HMAC [[RFC2104]](https://tools.ietf.org/html/rfc2104) 使用哈希算法进行握手。 如上所述，HMAC输入通常可以通过运行的散列来实现，即，此时仅是握手散列。
+
+在以前版本的TLS中，verify_data总是12个八位字节。 在TLS 1.3中，它是用于握手的哈希的HMAC输出的大小。
+
+注意：警报和任何其他非握手记录类型不是握手消息，并且不包含在哈希计算中。
+
+完成消息之后的任何记录必须在适当的应用程序流量密钥下加密，如第7.2节所述。 特别是，这包括服务器响应客户端证书和CertificateVerify消息而发送的任何警报
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
