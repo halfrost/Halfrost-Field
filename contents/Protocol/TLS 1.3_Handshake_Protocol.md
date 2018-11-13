@@ -1243,24 +1243,72 @@ verify\_data 按照如下方法计算:
 ```
 
 
-HMAC [[RFC2104]](https://tools.ietf.org/html/rfc2104) 使用哈希算法进行握手。 如上所述，HMAC输入通常可以通过运行的散列来实现，即，此时仅是握手散列。
+HMAC [[RFC2104]](https://tools.ietf.org/html/rfc2104) 使用哈希算法进行握手。如上所述，HMAC 输入通常是通过动态的哈希实现的，即，此时仅是握手的哈希。
 
-在以前版本的TLS中，verify_data总是12个八位字节。 在TLS 1.3中，它是用于握手的哈希的HMAC输出的大小。
+在以前版本的 TLS 中，verify\_data 的长度总是 12 个八位字节。在 TLS 1.3中，它是用来表示握手的哈希的 HMAC 输出的大小。
 
-注意：警报和任何其他非握手记录类型不是握手消息，并且不包含在哈希计算中。
+**注意：警报和任何其他非握手记录类型不是握手消息，并且不包含在哈希计算中**。
 
-完成消息之后的任何记录必须在适当的应用程序流量密钥下加密，如第7.2节所述。 特别是，这包括服务器响应客户端证书和CertificateVerify消息而发送的任何警报
-
-
+Finished 消息之后的任何记录都必须在适当的应用程序流量密钥下加密，如第 7.2 节所述。特别是，这包括 Server 响应 Client 的 Certificate 消息和 CertificateVerify 消息而发送的任何 alert。
 
 
 
 
+### 5. End of Early Data
+
+
+```c
+      struct {} EndOfEarlyData;
+```
+
+如果 Server 在 EncryptedExtensions 中发送了 "early\_data" 扩展，则 Client 必须在收到 Server 的 Finished 消息后发送 EndOfEarlyData 消息。 如果 Server 没有在 EncryptedExtensions中发送 "early\_data" 扩展，那么 Client 绝不能发送 EndOfEarlyData 消息。此消息表示已传输完了所有 0-RTT application\_data消息(如果有)，并且接下来的记录受到握手流量密钥的保护。Server 不能发送此消息，Client 如果收到了这条消息，那么必须使用 "unexpected\_message" alert 消息终止连接。这条消息使用从 client\_early\_traffic\_secret 中派生出来的密钥进行加密保护。
 
 
 
+### 6. Post-Handshake Messages
 
 
+TLS 还允许在主握手后发送其他的消息。这些消息使用握手内容类型，并使用适当的应用程序流量密钥进行加密。
+
+
+#### (1) New Session Ticket Message
+
+在 Server 接收到 Client 的 Finished 消息以后的任何时刻，它都可以发送 NewSessionTicket 消息。此消息在 ticket 值和从恢复主密钥派生出来的 PSK 之间创建了唯一的关联。
+
+
+Client 在 ClientHello 消息中包含 "pre\_shared\_key" 扩展，并在扩展中包含 ticket ，那么 Client 就可能在未来的握手中使用 PSK。Server 可能在一个连接中发送多个 ticket，发送时机可能是一个接一个的立即发送，也可能是在某个特定事件以后发送。例如，Server 可能会在握手后身份验证之后发送新的 ticket，以封装其他 Client 身份验证状态。多个 ticket 对于 Client 来说，可用于各种目的，例如：
+
+- 打开多个并行的 HTTP 连接
+
+- 通过(例如) Happy Eyeballs [[RFC8305]](https://tools.ietf.org/html/rfc8305) 或相关的技术在接口和地址簇上进行连接竞争
+
+
+任何 ticket 必须只能使用与用于建立原始连接的 KDF 哈希算法相同的密码套件来恢复会话。
+
+Client 必须只有在新的 SNI 值对原始会话中提供的 Server 证书有效时才能恢复，并且只有在 SNI 值与原始会话中使用的 SNI 值匹配时才应恢复。后者是性能优化：通常，没有理由期望单个证书所涵盖的不同 Server 之间能够相互接受彼此的 ticket；因此，在这种情况下尝试恢复会话将会浪费一次性的 ticket。如果提供了这种指示(外部或通过任何其他方式)，则 Client 可能可以使用不同的 SNI 值进行恢复会话。
+
+
+在恢复会话时，如果向调用的应用程序报告 SNI 值，则实现方必须使用在恢复 ClientHello 中发送的值而不是在先前会话中发送的值。请注意，如果 Server 的实现拒绝了不同 SNI 值的所有 PSK 标识，则这两个值总是相同。
+
+注意：虽然恢复主密钥取决于 Client 的第二次 flight，但是不请求 Client 身份验证的 Server 可以独立计算转录哈希的剩余部分，然后在发送 Finished 消息后立即发送 NewSessionTicket 而不是等待 Client 的 Finished 消息。这可能适用于 Client 需要并行打开多个 TLS 连接并且可以从减少恢复握手的开销中受益的情况。
+
+```c
+      struct {
+          uint32 ticket_lifetime;
+          uint32 ticket_age_add;
+          opaque ticket_nonce<0..255>;
+          opaque ticket<1..2^16-1>;
+          Extension extensions<0..2^16-2>;
+      } NewSessionTicket;
+```
+
+
+- ticket\_lifetime：
+	
+
+- ticket\_age\_add:
+
+- ticket\_nonce:
 
 
 
