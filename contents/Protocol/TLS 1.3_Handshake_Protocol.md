@@ -1304,13 +1304,79 @@ Client 必须只有在新的 SNI 值对原始会话中提供的 Server 证书有
 
 
 - ticket\_lifetime：
-	
+	这个字段表示 ticket 的生存时间，这个时间是以 ticket 发布时间为网络字节顺序的 32 位无符号整数表示以秒为单位的时间。Server 禁止使用任何大于604800秒(7天)的值。值为零表示应立即丢弃 ticket。无论 ticket\_lifetime 如何，Client 都不得缓存超过7天的 ticket，并且可以根据本地策略提前删除 ticket。Server 可以将 ticket 视为有效的时间段短于 ticket\_lifetime 中所述的时间段。
 
 - ticket\_age\_add:
+	安全的生成的随机 32 位值，用于模糊 Client 在 "pre\_shared\_key" 扩展中包含的 ticket 的时间。Client 的 ticket age 以模 2 ^ 32 的形式添加此值，以计算出 Client 要传输的值。Server 必须为它发出的每个 ticket 生成一个新值。
 
 - ticket\_nonce:
+	每一个 ticket 的值，在本次连接中发出的所有的 ticket 中是唯一的。
+
+- ticket:
+	这个值是被用作 PSK 标识的值。ticket 本身是一个不透明的标签。它可以是数据库查找键，也可以是自加密和自我验证的值。
+
+- extensions：
+	ticket 的一组扩展值。扩展格式在 4.2 节中定义的。Client 必须忽略无法识别的扩展。
+	
+当前为 NewSessionTicket 定义的唯一扩展名是 "early\_data"，表示该 ticket 可用于发送 0-RTT 数据(第4.2.10节)。 它包含以下值：
+
+- max\_early\_data\_size:
+	这个字段表示使用 ticket 时允许 Client 发送的最大 0-RTT 数据量(以字节为单位)。数据量仅计算应用数据有效载荷(即，明文但不填充或内部内容类型字节)。Server 如果接收的数据大小超过了 max\_early\_data\_size 字节的 0-RTT 数据，应该立即使用 "unexpected\_message" alert 消息终止连接。请注意，由于缺少加密材料而拒绝 early data 的 Server 将无法区分内容中的填充部分，因此 Client 不应该依赖于能够在 early data 记录中发送大量填充内容。
 
 
+PSK 关联的 ticket 计算方法如下：
+
+```c
+       HKDF-Expand-Label(resumption_master_secret,
+                        "resumption", ticket_nonce, Hash.length)
+```
+
+因为 ticket\_nonce 值对于每个 NewSessionTicket 消息都是不同的，所以每个 ticket 会派生出不同的 PSK。
+
+请注意，原则上可以继续发布新 ticket，该 ticket 无限期地延长生命周期，这个生命周期是最初从初始非 PSK 握手中(最可能与对等证书相关联)派生得到的密钥材料的生命周期。
+ 
+
+建议实现方对密钥材料这些加上总寿命时间的限制。这些限制应考虑到对等方证书的生命周期，干预撤销的可能性以及自从对等方在线 CertificateVerify 签名到当前时间的这段时间。
+
+
+#### (2) Post-Handshake Authentication
+
+当 Client 发送了 "post\_handshake\_auth" 扩展(参见第4.2.6节)时，Server 可以在握手完成后随时通过发送 CertificateRequest 消息来请求客户端身份验证。Client 必须使用适当的验证消息进行响应(参见第4.4节)。如果 Client 选择进行身份验证，则必须发送 Certificate，CertificateVerify，Finished 消息。如果 Client 拒绝身份验证，它必须发送一个 Certificate 证书消息，其中不包含证书，然后是 Finished 消息。响应 Server 的所有 Client 消息必须连续出现在线路上，中间不能有其他类型的消息。
+
+
+在没有发送 "post\_handshake\_auth" 扩展的情况下接收 CertificateRequest 消息的 Client 必须发送 "unexpected\_message" alert 消息。
+
+
+注意：由于 Client 身份验证可能涉及提示用户，因此 Server 必须做好一些延迟的准备，包括在发送 CertificateRequest 和接收响应之间接收任意数量的其他消息。此外，Client 如果连续接收到了多个 CertificateRequests 消息，Client 可能会以不同于它们的顺序响应它们(certificate\_request\_context 值允许服务器消除响应的歧义)
+
+
+
+#### (3) Key and Initialization Vector Update
+
+KeyUpdate 握手消息用于表示发送方正在更新其自己的发送加密密钥。任何对等方在发送 Finished 消息后都可以发送此消息。在接收 Finished 消息之前接收 KeyUpdate 消息的，实现方必须使用 "unexpected\_message" alert 消息终止连接。发送 KeyUpdate 消息后，如第 7.2 节所描述的计算方法，发送方应使用新一代的密钥发送其所有流量。收到 KeyUpdate 后，接收方必须更新其接收密钥。
+
+
+```c
+      enum {
+          update_not_requested(0), update_requested(1), (255)
+      } KeyUpdateRequest;
+
+      struct {
+          KeyUpdateRequest request_update;
+      } KeyUpdate;
+```
+
+- request\_update:
+	这个字段表示 KeyUpdate 的收件人是否应使用自己的 KeyUpdate 进行响应。 如果实现接收到任何其他的值，则必须使用 "illegal\_parameter" alert 消息终止连接。
+	
+
+如果 request\_update 字段设置为 "update\_requested"，则接收方必须在发送其下一个应用程序数据记录之前发送自己的 KeyUpdate，其中 request\_update 设置为 "update\_not\_requested"。此机制允许任何一方强制更新整个连接，但会导致一个实现方接收多个 KeyUpdates，并且它还是静默的响应单个更新。请注意，实现方可能在发送 KeyUpdate (把 request\_update 设置为 "update\_requested") 与接收对等方的 KeyUpdate 之间接收任意数量的消息，因为这些消息可能早就已经在传输中了。但是，由于发送和接收密钥是从独立的流量密钥中导出的，因此保留接收流量密钥并不会影响到发送方更改密钥之前发送的数据的前向保密性。
+
+
+如果实现方独立地发送它们自己的 KeyUpdates，其 request\_update 设置为 "update\_requested" 并且它们的消息都是传输中，结果是双方都会响应，双方都会更新密钥。
+
+
+发送方和接收方都必须使用旧密钥加密其 KeyUpdate 消息。另外，在接受使用新密钥加密的任何消息之前，双方必须强制接收带有旧密钥的 KeyUpdate。如果不这样做，可能会引起消息截断攻击。
 
 
 
