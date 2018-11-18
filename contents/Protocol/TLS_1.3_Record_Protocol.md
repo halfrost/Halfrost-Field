@@ -78,9 +78,82 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 
 ## 二. Record Payload Protection
 
+记录保护功能将 TLSPlaintext 结构转换为 TLSCiphertext 结构。去除保护功能和保护功能互为逆过程。在 TLS 1.3 中，与先前版本的 TLS 相反，所有密码都是“具有关联数据的认证加密”(AEAD)[[RFC5116]](https://tools.ietf.org/html/rfc5116)。 AEAD 功能提供统一的加密和认证操作，将明文转换为经过认证的密文，然后再返回。每个加密记录由一个明文标题后跟一个加密的主体组成，该主体本身包含一个类型和可选的填充。
 
 
+```c
+      struct {
+          opaque content[TLSPlaintext.length];
+          ContentType type;
+          uint8 zeros[length_of_padding];
+      } TLSInnerPlaintext;
 
+      struct {
+          ContentType opaque_type = application_data; /* 23 */
+          ProtocolVersion legacy_record_version = 0x0303; /* TLS v1.2 */
+          uint16 length;
+          opaque encrypted_record[TLSCiphertext.length];
+      } TLSCiphertext;
+```
+
+- content:
+	TLSPlaintext.fragment 值，包含握手或警报消息的字节编码，或要发送的应用程序数据的原始字节。
+	
+- type:
+	TLSPlaintext.type 值，包含记录的内容类型。
+
+- zeros:
+	在类型字段之后的明文中可以出现任意长度的零值字节。只要总数保持在记录大小限制范围内，这个字段为发件人提供了按所选的量去填充任何 TLS 记录的机会。更多详细信息，请参见[[第 5.4 节]](https://tools.ietf.org/html/rfc8446#section-5.4)
+
+- opaque\_type:
+	TLSCiphertext 记录外部的 opaque\_type 字段始终设置为值23(application\_data)，以便与解析以前版本的 TLS 的中间件向外兼容。解密后，在 TLSInnerPlaintext.type 中找到记录的实际内容类型。
+
+
+- legacy\_record\_version:
+	legacy\_record\_version 字段始终为 0x0303。TLS 1.3 TLSCiphertexts 在协商 TLS 1.3 之后才生成，因此没有历史兼容性问题可能会收到其他值。请注意，握手协议(包括 ClientHello 和 ServerHello 消息)会对协议版本进行身份验证，因此该值是多余的。
+
+- length:
+	TLSCiphertext.encrypted\_record 的长度(以字节为单位)，它是内容和填充的长度之和，加上内部内容类型的长度加上 AEAD 算法添加的任何扩展。长度不得超过 2 ^ 14 + 256 字节。接收超过此长度的记录的端点必须使用 "record\_overflow" alert 消息终止连接。
+
+
+- encrypted\_record:
+	AEAD 加密形式的序列化 TLSInnerPlaintext 结构。
+
+AEAD 算法将单个密钥，随机数，明文和要包含在认证检查中的“附加数据”作为输入，如[[RFC5116的第2.1节]](https://tools.ietf.org/html/rfc5116#section-2.1)所述。key 是 client\_write\_key 或 server\_write\_key，nonce 是从序列号和 client\_write\_iv 或 server\_write\_iv 中派生出来的(参见[[第5.3节]](https://tools.ietf.org/html/rfc8446#section-5.3))，附加数据的输入是记录头，例如：
+
+```c
+      additional_data = TLSCiphertext.opaque_type ||
+                        TLSCiphertext.legacy_record_version ||
+                        TLSCiphertext.length
+```
+
+作为输入 AEAD 算法的明文是编码后的 TLSInnerPlaintext 结构。[第7.3节](https://tools.ietf.org/html/rfc8446#section-7.3)定义了流量密钥的派生。
+
+AEAD 输出包括 AEAD 加密操作的密文输出。由于包含 TLSInnerPlaintext.type 和发送方提供的任何填充，明文的长度大于相应的 TLSPlaintext.length。AEAD 输出的长度通常大于明文，但是其中一部分也会随着 AEAD 算法的变化而变化。
+
+由于密码可能包含填充，因此开销量可能随着明文的不同长度而变化。
+
+```c
+      AEADEncrypted =
+          AEAD-Encrypt(write_key, nonce, additional_data, plaintext)
+```
+
+TLSCiphertext 的 encrypted\_record 字段设置为 AEADEncrypted。
+
+为了解密和验证，密码会把密钥，随机数，附加数据和 AEADEncrypted 值作为输入。输出的是明文或表示解密失败的错误。这里没有单独的完整性检查。
+
+```c
+      plaintext of encrypted_record =
+          AEAD-Decrypt(peer_write_key, nonce,
+                       additional_data, AEADEncrypted)
+```
+
+如果解密失败，接收方必须使用 "bad\_record\_mac" alert 消息终止连接。
+
+TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展。从对端的 TLSCiphertext.length 接收记录，如果 TLSCiphertext.length 大于 2 ^ 14 + 256 个八位字节，则必须用 "record\_overflow" 消息终止连接。这个限制源自于：TLSInnerPlaintext 长度的最大值是 2 ^ 14 个八位字节 + 1 个八字节的 ContentType + 255 个八位字节的最大 AEAD 扩展。
+
+
+## 三. Per-Record Nonce
 
 
 
