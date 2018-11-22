@@ -175,25 +175,39 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 
 ### 2. Elliptic Curve Diffie-Hellman
 
-对于 secp256r1，secp384r1 和 secp521r1，ECDH 计算(包括参数和密钥生成以及共享密钥计算)根据 [[IEEE1363]]() 使用 ECKAS-DH1 方案执行，身份映射作为密钥导出函数（KDF）， 因此，共享秘密是表示为八位字节串的ECDH共享秘密椭圆曲线点的x坐标。
+对于 secp256r1，secp384r1 和 secp521r1，ECDH 计算(包括参数和密钥生成以及共享密钥计算)根据 [[IEEE1363]](https://tools.ietf.org/html/rfc8446#ref-IEEE1363) 使用 ECKAS-DH1 方案执行，identity 映射作为密钥导出函数(KDF）， 因此，共享 secret 是表示为八位字节串的 ECDH 共享秘密椭圆曲线点的 x 坐标。
  
-注意，FE2OSP（字段元素到八位字符串转换基元）输出的该八位字节串（IEEE 1363术语中的“Z”）对于任何给定字段具有恒定长度; 在此八位字符串中找到的前导零不得截断。
+注意，FE2OSP (字段元素到八位字符串转换原语)输出的该八位字节串(IEEE 1363 术语中的“Z”)对于任何给定字段都具有恒定长度;在此八位字符串中找到的前导零不得被截断。
 
-（请注意，使用身份KDF是一种技术性。完整的图片是ECDH与非平凡的KDF一起使用，因为TLS不直接将此秘密用于计算其他秘密以外的任何其他内容。）
+(请注意，使用 KDF 标识是一种技术性。完整的做法是 ECDH 与 KDF 一起使用，因为 TLS 不直接将此 secret 用于计算其他 secret 以外的任何其他内容。)
 
+对于 X25519 和 X448，ECDH 计算如下：
+
+- 放入 KeyShareEntry.key\_exchange 结构的公钥是将 ECDH 标量乘法函数应用于适当长度(标量输入)和标准公共基点( u 坐标点输入)的密钥的结果。
+
+- ECDH 共享密钥是将 ECDH 标量乘法函数应用于密钥(标量输入)和对等方的公钥( u 坐标点输入)的结果。输出是直接使用的，没有经过处理的。
+
+对于这些曲线，实现方应该使用 [RFC7748](https://tools.ietf.org/html/rfc7748) 中指定的方法来计算 Diffie-Hellman 共享密钥。实现方必须检查计算的 Diffie-Hellman 共享密钥是否为全零值，如果是，则中止，如 [[RFC7748] 第 6 节](https://tools.ietf.org/html/rfc7748#section-6) 所述。如果实现者使用这些椭圆曲线的替代实现，他们应该执行 [[RFC7748] 第 7 节](https://tools.ietf.org/html/rfc7748#section-7)中指定的附加检查。
 
 
 ## 五. Exporters
 
 
+[RFC5705] 根据 TLS 伪随机函数(PRF)定义 TLS 的密钥材料 exporter。本文档用 HKDF 取代 PRF，因此需要新的结构。exporter 的接口保持不变。
 
+exporter 的值计算方法如下:
 
+```c
+   TLS-Exporter(label, context_value, key_length) =
+       HKDF-Expand-Label(Derive-Secret(Secret, label, ""),
+                         "exporter", Hash(context_value), key_length)
+```
 
+Secret 可以是 early\_exporter\_master\_secret 或 exporter\_master\_secret。除非应用程序明确指定，否则实现方必须使用exporter\_master\_secret。early\_exporter\_master\_secret 被定义用来在 0-RTT 数据需要 exporter 的设置这种情况中使用。建议为 early exporter 提供单独的接口;这可以避免 exporter 用户在需要常规 exporter 时意外使用 early exporter，反之亦然。
 
+如果未提供上下文，则 context\_value 为零长度。因此，不提供上下文计算与提供空上下文得到的结果都是相同的。这是对以前版本的 TLS 的更改，以前的 TLS 版本中，空的上下文产生的输出与不提供的上下文的结果不同。截至本文档，无论是否使用上下文，都不会使用已分配的 exporter 标签。未来的规范绝不能定义允许空上下文和没有相同标签的上下文的 exporter 的使用。exporter 的新用法应该是在所有 exporter 计算中提供上下文，尽管值可能为空。
 
-
-
-
+exporter 标签格式的要求在 [[RFC5705] 第4节](https://tools.ietf.org/html/rfc5705#section-4) 中定义。
 
 ------------------------------------------------------
 
