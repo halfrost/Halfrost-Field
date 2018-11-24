@@ -43,24 +43,40 @@
 
 如果 expected\_arrival\_time 在窗口中，则 Server 检查它是否记录了匹配的ClientHello。如果找到一个，它将使用 "illegal\_parameter" alert 消息中止握手或接受 PSK 但拒绝 0-RTT。如果找不到匹配的 ClientHello，则它接受 0-RTT，然后只要 expected\_arrival\_time 在窗口内，就存储 ClientHello。Server 也可以实现具有误报的数据存储，例如布隆过滤器，在这种情况下，它们必须通过拒绝 0-RTT 来响应明显的重放，但绝不能中止握手。
 
-Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 ClientHello 包含多个 PSK 标识，则攻击者可以创建多个具有不同 binder 值的 ClientHellos，用于不太优选的标识，前提是服务器不会对其进行验证(如 [第4.2.11节](https://tools.ietf.org/html/rfc8446#section-4.2.11) 所述)。即，如果客户端发送PSK A和B但服务器更喜欢A，那么攻击者可以更改B的绑定程序而不影响A的绑定程序。如果B的绑定程序是存储密钥的一部分，则此ClientHello将不会出现作为重复，这将导致ClientHello被接受，并且可能导致副作用，例如重放缓存污染，尽管任何0-RTT数据都不会被解密，因为它将使用不同的密钥。如果使用经过验证的绑定程序或ClientHello.random作为存储密钥，则无法进行此攻击
+Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 ClientHello 包含多个 PSK 标识，则攻击者可以创建多个具有不同 binder 值的 ClientHellos，用于不太优选的标识，前提是 Server 不会对其进行验证(如 [第4.2.11节](https://tools.ietf.org/html/rfc8446#section-4.2.11) 所述)。即，如果 Client 发送PSK A 和 B 但 Server 选择了 A，那么攻击者可以更改 B 的 binder 而不影响 A 的 binder。如果 B 的 binder 是存储密钥的一部分，则此 ClientHello 将不会重复出现，这将导致该 ClientHello 被接受，并且可能导致副作用，例如重放缓存污染，尽管任何 0-RTT 数据都不会被解密，因为它使用的不同的密钥。如果使用经过验证的 binder 或 ClientHello.random 作为存储密钥，则无法进行此攻击。
 
 
+因为这种机制不需要存储所有未完成的 ticket，所以可能更容易在具有高恢复率和 0-RTT 的分布式系统中实现，代价可能是较弱的反重放防御，因为难以可靠地存储和检索收到 ClientHello 消息。在许多这样的系统中，对所有接收的 ClientHellos 进行全局一致的存储是不切实际的。在这种情况下，最好的反重放攻击的方法是，单个存储 zone 具有一个权威性的 ticket，并且不接受来自其他 zone 的 0-RTT 的 ticket。此方法可防止攻击者进行简单重放，因为只有一个 zone 可接受 0-RTT 数据。较弱的设计是为每个 zone 实现单独存储，但允许在任何 zone 中使用 0-RTT。此方法将每个 zone 的重放次数限制为一次。当然，上述的设计仍然可能导致应用程序消息重复。
+
+当实现方刚刚启动的时候，只要其记录窗口的任何部分与启动时间重叠，它们就应该拒绝 0-RTT。否则，接收最初在这段时间内发送的重放是会有风险的。
 
 
+注意：如果 Client 的时钟运行速度比 Server 快，那么将来在窗口外可能会收到一个 ClientHello，在这种情况下，它可能被 1-RTT 接受，导致 Client 重试，然后再接受  0-RTT。这是 [第 8 节](https://tools.ietf.org/html/rfc8446#section-8) 中描述的第二种攻击形式的另一种变体。
 
 
+## 三. Freshness Checks
 
 
+因为 ClientHello 中包含了 Client 发送它的时间，所以可以有效地确定 ClientHello 是否是最近合理地发送，是否仅接受这样的 ClientHello 的 0-RTT，如果不符合规则，就回退到 1-RTT 握手。这对于 [8.2节](https://tools.ietf.org/html/rfc8446#section-8.2) 中描述的 ClientHello 存储机制是必要的，否则 Server 需要存储无限数量的 ClientHellos，并且这个存储机制对于自包含的一次性 ticket 是非常有用的优化，因为它可以有效拒绝不能用于 0-RTT 的 ClientHellos。
+
+为了实现这种机制，Server 需要存储 Server 生成 session ticket 的时间，并通过估计 Client 和 Server 之间的往返时间来抵消。例如:
+
+```c
+adjusted_creation_time = creation_time + estimated_RTT
+```
+
+该值可以在 ticket 中编码，从而避免还要为每个未完成的 ticket 保持状态。Server 可以通过从客户端的 "pre\_shared\_key" 扩展名中的 "obfuscated\_ticket\_age" 参数中减去 ticket 的 "ticket\_age\_add" 值来确定 Client 的 ticket 有效时间。Server 可以将 ClientHello 的 expected\_arrival\_time 确定为:
+
+```c
+expected_arrival_time = adjusted_creation_time + clients_ticket_age
+```
+
+当收到新的 ClientHello 时，然后用 expect\_arrival\_time 与当前 Server 时间进行比较，如果它们相差超过一定数量，则拒绝 0-RTT，尽管 1-RTT 握手也能完成。
 
 
+有几个潜在的错误来源可能会导致 expected\_arrival\_time 和测量时间不匹配。Client 和 Server 时钟速率的变化可能是最小的，但可能绝对时间可能很大，最终导致关闭。网络传播延迟是导致不匹配的最可能的原因。NewSessionTicket 和 ClientHello 消息都可能被重新传输并因此被延迟，这可能被 TCP 隐藏。对于互联网上的客户，这意味着大约有 10 秒的窗口可以解决时钟错误和测量变化的问题;其他部署方案可能有不同的需求。时钟偏差分布不是对称的，因此最佳权衡可能涉及到可允许的不匹配值的不对称范围。
 
-
-
-
-
-
-
+请注意，单独的有效时间检查不足以防止重放，因为它在错误窗口期间未检测到它们，这取决于带宽和系统容量，可能包括实际环境中的数十亿次重放。此外，此有效时间的检查仅在收到 ClientHello 时完成，而不是在收到后续 early Application Data 记录时完成。在接受 early data 之后，记录可以继续在较长时间段内流式传输到 Server。
 
 
 
