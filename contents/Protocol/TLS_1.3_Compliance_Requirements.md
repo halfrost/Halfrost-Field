@@ -62,6 +62,32 @@ Server 如果接收到不符合上述这些要求的 ClientHello 消息，必须
 
 此外，所有实现方必须支持，能够使用它的应用程序使用 "server\_name" 扩展。Server可能要求 Client 发送有效的 "server\_name" 扩展名。需要此扩展的 Server 应该通过使用 "missing\_extension" alert 消息终止连接来响应缺少 "server\_name"扩展名的 ClientHello。
 
+## 三. Protocol Invariants
+
+本节介绍 TLS 终端和中间件必须遵循的不变的东西。它也适用于早期版本的 TLS。
+
+
+TLS 设计的宗旨是安全且能兼容性地扩展。较新的 Client 或 Server 在与较新的对等方通信时，应协商最优选的公共参数。TLS 握手提供降级保护: 中间件在较新的 Client 和较新的 Server 之间传递流量而不终止 TLS ，中间件不能影响握手(参见附录 E.1)。同时，部署协议应该以不同的速率去更新，因此较新的 Client 或 Server 可以继续支持较旧的参数，这将允许它与较旧的终端进行互操作(向下兼容)。
+
+
+为此，实现方必须正确处理可扩展字段:
+
+- 发送 ClientHello 的 Client 必须支持其中公布的所有参数。否则，Server 可能无法通过选择其中一个参数进行互操作。
+
+- 接收 ClientHello 的 Server 必须正确地忽略所有无法识别的密码套件，扩展和其他参数。否则，它可能无法与较新的 Client 互操作。在 TLS 1.3 中，接收 CertificateRequest 或 NewSessionTicket 的 Client 也必须忽略所有无法识别的扩展。
+
+- 能终止 TLS 连接的中间件必须表现为兼容的 TLS 的 Server(对原始的 Client 来说)，包括具有 Client 愿意接受的证书，这个中间件也能作为兼容的 TLS 的 Client(对原始的 Server 来说)，包括验证原始 Server 的证书。特别是，它必须生成自己的 ClientHello，其中只包含它理解的参数，它必须生成一个新的 ServerHello 随机值，而不是转发终端的值。
+
+请注意，TLS 的协议要求和安全性分析仅适用于两个分开的连接。如何安全地部署 TLS terminator 需要额外的安全注意事项，这超出了本文档的讨论范围。
+
+- 如果中间件转发了自己不能理解的 ClientHello 参数，它不允许处理 ClientHello 之外的任何消息。它必须转发所有的未经修改的后续流量。否则，它可能无法与较新的 Client 和 Server 进行互操作。
+
+转发的 ClientHellos 可能包含中间件不支持的功能，因此响应体里面可能包括中间件无法识别的未来 TLS 新添加的特性。这些新添加的特性可能会改变 ClientHello 以外的任何消息。特别是，ServerHello 中发送的值可能会变，ServerHello 格式可能会变，TLSCiphertext 格式也可能会变。
+
+
+TLS 1.3 的设计受到了广泛部署却不符合 TLS 规范的中间件的限制(见附录 D.4);但是，它并没有放松不变的东西。这些中间件继续不符合规范。
+
+
 ------------------------------------------------------
 
 Reference：
