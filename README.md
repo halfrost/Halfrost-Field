@@ -84,7 +84,7 @@ Latest：[目录](https://github.com/halfrost/Halfrost-Field/blob/master/content
 | StoryBoard |  | [关于IB_DESIGNABLE / IBInspectable的那些需要注意的事](http://www.jianshu.com/p/a5351d270ac1) <br>  |
 | WWDC 2016 |  | [WWDC2016 Session笔记 - Xcode 8 Auto Layout新特性](http://www.jianshu.com/p/2521c610fac3) <br>[WWDC2016 Session笔记 - iOS 10 UICollectionView新特性](http://www.jianshu.com/p/e97780a24224) <br>[WWDC2016 Session笔记 - iOS 10  推送Notification新特性](http://www.jianshu.com/p/9b720efe3779) <br>  |
 | Jekyll |  | [如何快速给自己构建一个温馨的"家"——用Jekyll搭建静态博客](http://www.jianshu.com/p/9a6bc31d329d) <br>  |
-| Swift | 2.2 | [iOS如何优雅的处理“回调地狱Callback hell”(二)——使用Swift](http://www.jianshu.com/p/deb65d0a6b8c) <br>  |
+| Swift | 2.2 | [iOS如何优雅的处理“回调地狱Callback hell”(二)——使用Swift](https://github.com/halfrost/Halfrost-Field/blob/master/contents/iOS/Swift/iOS_Callback_Hell_Swift.md) <br>  |
 | PromiseKit |  | [iOS如何优雅的处理“回调地狱Callback hell”(一)——使用PromiseKit](https://github.com/halfrost/Halfrost-Field/blob/master/contents/iOS/PromiseKit/iOS_Callback_Hell_PromiseKit.md) <br>  |
 | WebSocket |  | [谈谈 WebSocket](https://github.com/halfrost/Halfrost-Field/blob/master/contents/iOS/WebSocket/iOS_WebSocket.md) <br>  |
 | Realm |  | [Realm数据库 从入门到“放弃”](https://github.com/halfrost/Halfrost-Field/blob/master/contents/iOS/Realm/Realm%E6%95%B0%E6%8D%AE%E5%BA%93%20%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E2%80%9C%E6%94%BE%E5%BC%83%E2%80%9D.md) <br>[手把手教你从Core Data迁移到Realm](https://github.com/halfrost/Halfrost-Field/blob/master/contents/iOS/Realm/%E6%89%8B%E6%8A%8A%E6%89%8B%E6%95%99%E4%BD%A0%E4%BB%8ECore%20Data%E8%BF%81%E7%A7%BB%E5%88%B0Realm.md) <br> |
