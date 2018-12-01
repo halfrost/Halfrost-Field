@@ -126,6 +126,7 @@ func requestAsyncOperation(request : String ) -> Async <String>
 ## 二.进一步的讨论
 1.@noescape，throws，rethrows关键字
 flatMap还有这种写法：
+
 ```swift  
 func flatMap<U> (@noescape f: T throws -> Async<U>)rethrows -> Async<U> 
 ```
@@ -145,6 +146,7 @@ throws关键字是代表该闭包可能会抛出异常。
 rethrows关键字是代表这个闭包如果抛出异常，仅可能是因为传递给它的闭包的调用导致了异常。
 
 2.继续说说上面例子里面的Result，和Async一样，我们也可以继续封装Result，也加上map和flatMap方法。
+
 ```swift  
 
 func ==<T:Equatable>(lhs:Result<T>, rhs:Result<T>) -> Bool{
@@ -178,13 +180,17 @@ extension Result{
 3.上面我们已经把Async和Result封装了map方法，所以他们也可以叫做**函子(Functor)**。接下来可以继续封装，把他们都封装成**适用函子(Applicative Functor)**和**单子(Monad)**
 
 **适用函子(Applicative Functor)**根据定义：  
+
 对于任意一个函子F，如果能支持以下运算，该函子就是一个适用函子：
+
 ```swift  
 func pure<A>(value:A) ->F<A>
 
 func <*><A,B>(f:F<A - > B>, x:F<A>) ->F<B>
 ```
+
 以Async为例，我们为它加上这两个方法
+
 ```swift  
 
 extension Async{
@@ -215,15 +221,18 @@ extension Async{
     }
 }
 ```
+
 unit和apply就是上面定义中的两个方法。接下来我们在看看Monad的定义。
 
 **单子(Monad)**根据定义：  
 对于任意一个类型构造体F定义了下面两个函数，它就是一个单子Monad：
+
 ```swift  
 func pure<A>(value:A) ->F<A>
 
 func flatMap<A,B>(x:F<A>)->(A->F<B>)->F<B>
 ```
+
 还是以Async为例，此时的Async已经有了unit和flatMap满足定义了，这个时候，就可以说Async已经是一个Monad了。
 
 至此，我们就把Async和Result都变成了**适用函子(Applicative Functor)**和**单子(Monad)**了。
@@ -266,6 +275,7 @@ func requestAsyncOperation(request : String ) -> Async <String>
 通过运算符，最终原来的40多行代码变成了最后一行了！当然，我们中间封装了一些操作。
 
 ## 三.总结
+
 经过上篇和本篇的讨论，优雅的处理"回调地狱Callback hell"的方法有以下几种:  
 1.使用PromiseKit
 2.使用Swift的map和flatMap封装异步操作(思想和promise差不多)
