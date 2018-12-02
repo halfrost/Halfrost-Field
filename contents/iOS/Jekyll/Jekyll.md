@@ -4,10 +4,10 @@
 ![](http://upload-images.jianshu.io/upload_images/1194012-da55e05ede63372b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-#### 前言
+## 前言
 我相信，每个程序员都有一个愿望，都想有一个属于自己的"家"——属于自己的博客，专属的网站。在自己的“家”中，可以和志同道合的兄弟一起分享和讨论任何技术，谈天说地。更重要的是可以当做自己的技术积累，提升自己实力。那么接下来就来说说我博客搭建过程。
 
-#### 目录：
+## 目录：
 1. 本地搭建Jekyll
 2. 开发或者选择Jekyll主题
 3. 使用Github Pages服务
@@ -16,7 +16,7 @@
 6. 申请"小绿锁"HTTPS
 7. 日后维护
 
-#### 一.本地搭建Kekyll
+## 一.本地搭建Kekyll
 Jekyll是什么？它是一个简单静态博客生成工具，相对于动态博客。  
 1. 简单。因为它是不需要数据库的，通过markdown编写静态文件，生成Html页面，它的优点是提升了页面的响应速度，并且让博主可以只专注于写文章，不用再去考虑如何排版。  
 2. 静态。Markdown（或 Textile）、Liquid 和 HTML & CSS 构建可发布的静态网站。  
@@ -90,15 +90,18 @@ Jekyll 的核心其实是一个文本转换引擎。它的概念其实就是：�
 └── index.html 		   (网站的index)
 ```
 
-#### 二.开发或者选择Jekyll主题
+## 二.开发或者选择Jekyll主题
+
 再来说说博客的外观，这可能是很多人很看重的，一个高逼格的博客里面看文章也是一种享受。这里就需要自定义主题了。你可以选择自己开发一套，也可以直接选择已有的，然后自己再更改css布局形成自己的。[jekyll主题](http://jekyllthemes.org/)在这里，你可以选择到你自己喜欢的主题。下载下来，改改css，或者借用一下，就会有很漂亮的blog就出炉了。
 
-#### 三.使用Github Pages服务
-##### 1.创建我们自己的仓库
+## 三.使用Github Pages服务
+
+### 1.创建我们自己的仓库
+
 以下用usename代替自己的用户名
 ![](http://upload-images.jianshu.io/upload_images/1194012-1609f73ca0242750.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-##### 2.配置我们的仓库
+### 2.配置我们的仓库
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-35e073b16f96a9aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -124,7 +127,7 @@ Jekyll 的核心其实是一个文本转换引擎。它的概念其实就是：�
 
 接下来我们要做的就是把我们的Jekyll生成的blog部署到Github Pages上去即可
 
-##### 3.部署blog
+### 3.部署blog
 
 我们先把刚刚新建的仓库git clone到本地，然后cd 到仓库的目录下，执行jekyll serve -B   
 
@@ -154,7 +157,7 @@ markdown: kramdown
 等待大概1-2分钟之后，再次刷新username.github.io，就能看到我们的blog了。  
 
 
-#### 四.申请个人域名
+## 四.申请个人域名
 
 现在很多地方都支持个性化域名，比如新浪微博，就可以自己申请一个个性域名，那么以后只要访问weibo.com/你的名字，这个网址就可以直达你的主页。同理，我们也希望有一个名字直达我们的博客首页，那么我们就需要先买一个域名。一般国内用的比较多的应该就是**万网**，国外的就是**Go Daddy**。选择一个你喜欢的用户名，如果没有人先买下那个域名，那就可以恭喜你了，可以去买下来了。
 
@@ -172,8 +175,10 @@ git push origin master
 
 如果是国内的域名，解析会很快，一般10分钟之内就能解析完成。我们就可以直接通过访问我们买的个性域名访问到我们的博客了。  
 
-#### 五.给博客增加访客评论功能
+## 五.给博客增加访客评论功能
+
 一般静态博客添加访客评论功能都是用[disqus](https://disqus.com/)来集成的。一般都是放在博客的一篇文章的最后，当然这个排版就看你自己怎么设计的了。我这里就贴一下我集成disqus的代码。大家估计都类似。  
+
 ```
 <section class="post-comments">
   {% if site.comment.disqus %}
@@ -215,7 +220,7 @@ git push origin master
 </section>
 
 ```
-#### 六.申请"小绿锁"HTTPS  
+## 六.申请"小绿锁"HTTPS  
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-fcbd290c62a45816.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 要想使用HTTPS开头，目前就2种做法，一是申请HTTPS证书，免费的就用Let’s Encrypt 提供的免费 SSL 证书，二是使用kloudsec提供的服务。申请SSL证书的做法我就不说了，我来说说第二种使用kloudsec提供的服务的做法。
@@ -263,10 +268,11 @@ git push origin master
 使用 GitLab 提供的 Pages 服务，那它直接支持添加自定义域名的 SSL 证书，可以配合免费申请的 SSL 证书一起使用。详情可见 [零成本打造安全博客的简单办法](https://www.figotan.org/2016/04/26/using-free-wosign-to-certificate-your-blog-on-gitlab/)。
 
 
-#### 七.日后维护
+## 七.日后维护
+
 至此，个人博客也绑定好域名成功上线了。以后的维护工作其实并没有多少。
 
-#####1. 本地编辑文章：
+### 1. 本地编辑文章：
 用markdown工具，先写好博文，注意，每篇博文前面题头都要带下面这些格式。
 
 ```
@@ -281,12 +287,12 @@ tag: Blog
 ```
 文章写完之后，通过jekyll build生成页面，jekyll serve -B 通过本地localhost:4000查看文章。
 
-#####2. 发布线上博客
+### 2. 发布线上博客
 本地确认文章无误，可以通过git add,git commit,git push
 等git命令推送文章到Github Pages服务器就可以啦。过1，2分钟，访问自己的域名就可以看到新的博文啦！
 
 
-#### 结尾
+## 结尾
 关于静态博客的搭建就到这里了，如果大家还有什么不清楚了，请直接给我留言就好。静态博客还有一个hexo，也是很优秀的静态博客，如果大家有兴趣，想折腾的，也可以去试试它。唐巧就是用这个搭建博客的。当然也有动态博客，ghost搭建的，搭建动态博客就需要自己买一个服务器，然后去安装node.js环境，日后的维护也都需要自己一个人去完成。有兴趣的同学一样可以去试试！
 
 
