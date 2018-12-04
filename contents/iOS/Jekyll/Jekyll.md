@@ -1,7 +1,8 @@
 # 如何快速给自己构建一个温馨的"家"——用Jekyll搭建静态博客
 
-
-![](http://upload-images.jianshu.io/upload_images/1194012-da55e05ede63372b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align="center"> 
+<img src="https://img.halfrost.com/Blog/ArticleTitleImage/12_0_.jpg">
+</p> 
 
 
 ## 前言
