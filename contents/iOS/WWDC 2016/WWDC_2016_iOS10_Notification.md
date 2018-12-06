@@ -5,7 +5,7 @@
 </p> 
 
 
-#### 前言
+## 前言
 在今年6月14号苹果WWDC开发者大会上，苹果带来了新的iOS系统——iOS 10。苹果为iOS 10带来了十大项更新。苹果高级副总裁Craig Federighi称此次对iOS的更新是“苹果史上最大的iOS更新”。
 
 
@@ -25,13 +25,13 @@
 
 以下是我关于关于iOS 10中变化比较大的推送通知的学习笔记。
 
-####目录
+##目录
 - 1.Notification User Interface
 - 2.Media Attachments
 - 3.Customize user interface
 - 4.Customize Actions
 
-#### 一. Notification User Interface
+## 一. Notification User Interface
 让我们先来看看用户推送在iOS X中的样子，如下图
 
 
@@ -64,7 +64,7 @@ iOS 8 中iMessage支持了快速回复功能，但是你只能看见一条信息
 以上就是iOS X的强大功能。以上的所有功能都能通过iOS X的新API来实现。所有的新特性都能在我们开发者开发的app里面有所体现。
 
 
-#### 二. Media Attachments
+## 二. Media Attachments
 
 
 
@@ -134,7 +134,7 @@ public class NotificationService: UNNotificationServiceExtension {
 
 接下来我们再来看看如何自定义推送的用户界面
 
-####三. Customize user interface  
+##三. Customize user interface  
 
 要想创建一个自定义的用户界面，需要用到Notification content extension。
 
@@ -146,7 +146,7 @@ Notification content extension允许开发者加入自定义的界面，在这�
 
 接下来我们就来说说如何自定义界面
 
-##### 1.   推送的四部分
+### 1.   推送的四部分
 
 先来看一个日历的推送例子：
 
@@ -161,7 +161,7 @@ content extension下面就是default content。这里是系统的界面。这里
 
 最下面一段就是notification action了。在这一段，用户可以触发一些操作。并且这些操作还会相应的反映到上面的自定义的推送界面content extension中。
 
-##### 2.创建Notification content extension  
+### 2.创建 Notification content extension  
 
 接下来我们就来看看如何创建一个Notification content extension
 
@@ -195,7 +195,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 UNNotificationContentExtension只有一个required的方法，就是didReceive方法。当推送到达你的设备之后，这个didReceive方法会随着ViewController的生命周期的方法 ，一起被调用。当开发者给推送加上expands的时候，一旦推送送达以后，这时会接到所有的ViewController生命周期的方法，和didReceive方法。这样，我们就可以接收notification object ，接着更新UI。
 
 
-##### 3. 配置target
+### 3. 配置target
 接下来，我们需要做的是，告诉iOS系统，推送送达之后，iOS系统如何找到你自定义的Notification content extension。
 
 
@@ -212,7 +212,7 @@ Notification content extension和我们注册notification actions一样，注册
 通过以上设置，iOS系统就知道了我们的target了。
 
 
-##### 4. 自定义用户UI界面  
+### 4. 自定义用户UI界面  
 
 接下来我们来自定义UI界面。
 ```
@@ -248,7 +248,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 代码完成之后就是如上的样子，中间就是我们自定义的UIView了。但是这样子会有2个问题。第一个问题就是这个自定义的View实在太大了。大量的空白不需要显示出来。第二个问题就是我们自定义的内容和下面默认的推送内容重复了。我们需要去掉一份。
 
 
-##### 5.改进
+### 5.改进
 
 我们先来改进上面说的第二个问题。
 这个问题很简单，其实就是一个plist的设置。我们可以在plist里面把默认的content隐藏。设置如下图。
@@ -306,7 +306,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 这个属性定义了宽和高的比例。当然设置了这个比例以后，也并不是万能的。因为你并不知道你会接受到多长的content。当你仅仅只设置比例，还是不能完整的展示所有的内容。有些时候如果我们可以知道最终的尺寸，那么我们固定尺寸会更好。
 
 
-#####6. 进一步美化 
+###6. 进一步美化 
 
 我们可以给这个extension加上Media Attachments。一旦我们加入Media Attachments，我们可以在content extension里面使用这些内容。
 
@@ -334,7 +334,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 ![](http://upload-images.jianshu.io/upload_images/1194012-4640a3c616c41b8e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
-#### 四.Customize Actions  
+## 四.Customize Actions  
 
 说道这里，我们不得不说一下iOS8开始引入的action的工作原理：
 默认系统的Action的处理是，当用户点击的按钮，就把action传递给app，与此同时，推送通知会立即消失。这种做法很方便。
@@ -446,7 +446,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 
 
 
-####总结  
+## 总结  
 以上就是iOS X中notification的所有新特性，通过上文，我们学到的以下的知识，总结一下：
 1. 什么是attachment
 2. 如何在service extension中使用attachment
