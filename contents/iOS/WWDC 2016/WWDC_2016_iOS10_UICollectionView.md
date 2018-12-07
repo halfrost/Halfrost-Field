@@ -1,10 +1,12 @@
 # WWDC2016 Session笔记 - iOS 10  UICollectionView新特性
 
-![](http://upload-images.jianshu.io/upload_images/1194012-520084e0dda3ed1e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-520084e0dda3ed1e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
 
 
 
-#### 前言 
+## 前言 
 关于 iOS 10  UICollectionView的新特性，主要还是体现在如下3个方面
 1. 顺滑的滑动体验
 现在基本上人人都离不开手机，手机的app也每天都有人在用。一个app的好坏由它的用户体验决定。在可以滑动的视图里面，必须要更加丝滑柔顺才能获得用户的青睐。这些UICollectionView的新特性可以让你们的app比原来更加顺滑，而且这些特性只需要你加入少量的代码即可达到目的。  
@@ -15,7 +17,7 @@ self-sizing的API在iOS8的时候被引进，iOS10中加入更多特性使cell�
 
 
 
-#### 目录
+## 目录
 - 1.UICollectionViewCell顺滑的滑动体验
 - 2.UICollectionViewCell的Pre-Fetching预加载
 - 3.UITableViewCell的Pre-Fetching预加载
@@ -23,7 +25,7 @@ self-sizing的API在iOS8的时候被引进，iOS10中加入更多特性使cell�
 - 5.Interactive Reordering
 - 6.UIRefreshControl
 
-#### 一. UICollectionViewCell顺滑的滑动体验 
+## 一. UICollectionViewCell顺滑的滑动体验 
 众所周知，iOS设备已良好的用户体验赢得了广大的用户群。iOS系统在用户点击屏幕会立即做出响应。而且很大一部分的操作是来自于用户的滑动操作。所以滑动的顺滑是使用户沉浸在app中享受的必要条件。接下来我们就谈谈iOS 10 中增加了那些新特性。
 
 我们先来看一下之前 UICollectionView 的体验，假设我们每个cell都是简单的蓝色，实际开发app中，cell会比这复杂很多。 我们先生成100个cell。当用户滑动不是很快的时候，还感觉不出来卡顿，当用户大幅度滑动，整个UICollectionView的卡顿就很明显了。如果整个cell的DataSource又是从网络加载的，那就更加卡顿了。效果如下图。
@@ -172,7 +174,8 @@ self-sizing的API在iOS8的时候被引进，iOS10中加入更多特性使cell�
 
 这是因为我们用了新的 UICollectionViewCell的生命周期。整个app完全没有加一行代码。现在iOS 10是丝滑的滑动体验实在是太棒了！！
 
-#### 二. UICollectionViewCell的Pre-Fetching预加载
+
+## 二. UICollectionViewCell的Pre-Fetching预加载
 
 当我们编译iOS 10的app的时候，这个Pre-Fetching默认是enable的。当然，如果有一些原因导致你必须用到iOS 10之前老的生命周期，你只需要给collectionView加入新的isPrefetchingEnabled属性即可。如果你不想用到Pre-Fetching，那么把这个属性变成false即可。
 ```
@@ -242,7 +245,7 @@ class UICollectionView : UIScrollView {
 综上所述，Pre-Fetching API对于提高UICollectionView的性能提升是很有帮助的，而且并不需要加入太多的代码。加入少量的代码就可以获得巨大的性能提升！  
 
 
-#### 三. UITableViewCell的Pre-Fetching预加载
+## 三. UITableViewCell的Pre-Fetching预加载
 
 在iOS 10中，UITableViewCell也跟着UICollectionView一起得到了性能的提升，一样拥有了Pre-Fetching API。
 
@@ -261,7 +264,7 @@ class UITableView : UIScrollView {
 
 
 
-#### 四. 针对self-sizing的改进  
+## 四. 针对self-sizing的改进  
 
 self-sizing API 第一次被引入是在iOS 8，然而现在在iOS 10中得到了一些改进。  
 
@@ -313,7 +316,7 @@ layout.estimatedItemSize = UICollectionViewFlowLayoutAutomaticSize
 以上就是iOS 10针对self-sizing的改进。
 
 
-#### 五. Interactive Reordering  
+## 五. Interactive Reordering  
 
 谈到重新排列，这是我们就需要类比一下UITableView了，UICollectionView的重新排列就如同UITableView 把cell上下移动，只不过UITableView的重排是针对垂直方向的。
 
@@ -372,7 +375,7 @@ collectionView.isPagingEnabled = true
 每次移动一次就会以页为单位的翻页。  
 
 
-#### 六.UIRefreshControl  
+## 六.UIRefreshControl  
 
 UIRefreshControl现在可以直接在CollectionView里面使用，同样的，也可以直接在UITableView里面使用，并且可以脱离UITableViewController。因为现在RefreshControl成为了ScrollView的一个属性了。
 
@@ -388,7 +391,7 @@ collectionView.refreshControl = refreshControl
 先创建一个refreshControl，再关联一个action事件，最后把这个新的refreshControl赋给想要的控件的对应的属性即可。
 
 
-#### 总结
+## 总结
 
 通过以上，我们谈到了以下的知识：
 1. UICollectionView cell pre-fetching预加载机制
