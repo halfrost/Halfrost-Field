@@ -1,16 +1,18 @@
 # WWDC2016 Session笔记 - Xcode 8 Auto Layout新特性
 
-![](http://upload-images.jianshu.io/upload_images/1194012-520084e0dda3ed1e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+<p align="center"> 
+<img src="http://upload-images.jianshu.io/upload_images/1194012-520084e0dda3ed1e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</p> 
 
 
-#### 目录
+## 目录
 - 1.Incrementally Adopting Auto Layout
 - 2.Design and Runtime Constraints
 - 3.NSGridView
 - 4.Layout Feedback Loop Debugging
 
 
-####一.Incrementally Adopting Auto Layout
+## 一.Incrementally Adopting Auto Layout
 Incrementally Adopting Auto Layout是什么意思呢？在我们IB里面布局我们的View的时候，我们并不需要一次性就添加好所有的constraints。我们可以一步步的增加constraints，简化我们的步骤，而且能让我们的设置起来更加灵活。 
 
 再谈新特性之前，先介绍一下这个特性对应的背景来源。  
@@ -163,13 +165,13 @@ Xocde 8在这个时候就变得更加智能了，会立即自动更新frame。
 
 
 
-####二.Design and Runtime Constraints  
+## 二.Design and Runtime Constraints  
 
 在我们开发过程中有这样一种情况，View的constraints会依据你所加载的数据来添加的。所以在app运行之前，我们是无法知道所有的constraints的。
 
 这里有3种方法可以对应以上的情况。
 
-##### 1.Placeholder Constraints
+### 1.Placeholder Constraints
 
 假设现在我们需要把一张图片放在View的垂直和水平的中间，并且距离左边的边缘有一个leading margin。并且还需要保持其长宽的比例。而这种图片的最终样子，我们并不知道。只有到运行时，我们才能知道这样图片的样子。
 
@@ -181,7 +183,7 @@ Xocde 8在这个时候就变得更加智能了，会立即自动更新frame。
 当我们在运行时拿到图片之后，这个是时候我们再给它加上适当的约束和长宽比例即可。
 
 
-##### 2.Intrinsic Content Size
+### 2.Intrinsic Content Size
 
 还是类似上面那种场景，我们有时候会自定义一些UIView或者NSView，这些View里面的content是动态的。Interface Builder并不会运行我们的代码，所以不到app运行的时候我们并不知道里面的大小。我们可以给它设置一个内在的content的大小。
 
@@ -196,7 +198,7 @@ Xocde 8在这个时候就变得更加智能了，会立即自动更新frame。
 override var intrinsicContentSize: CGSize
 ```
 
-##### 3.Turn Off Ambiguity Per View
+### 3.Turn Off Ambiguity Per View
 
 这个是Xcode 8的一个新特性。当上述2种方法都无法解决我们的需求的时候。这个时候就需要用到这种方法了。Xcode 8给了我们可以在constraints产生歧义的时候，可以动态调整警告级别的能力。
 
@@ -209,7 +211,7 @@ override var intrinsicContentSize: CGSize
 以上3种方法就是我们在运行时给view增加constraints的解决办法。
 
 
-####三.NSGridView  
+## 三.NSGridView  
 
 这是macOS给我们带来的一个新的layout容器。
 
@@ -382,7 +384,7 @@ cell.customPlacementConstraints = [centering]
 
 至此，我们就完成了需求。总结一下，NSGridView是一个新的控件，能很好的帮助我们进行网格似布局。它能很快很方便的把我们需要展示的content排列整齐。之后我们仅仅只需要调整一下padding和spacing这些信息即可。
 
-####四.Layout Feedback Loop Debugging
+## 四.Layout Feedback Loop Debugging
 
 有时候我们设置好了constraint之后，没有报任何错误，但是有些情况当我们运行起来的时候就有一堆constraint冲突在debug窗口里面，严重的还会使app直接崩溃。崩溃的情况就是遇到了layout feedback loop。
 
@@ -429,7 +431,7 @@ UIView是在iOS里面使用的，NSView是在macOS里面使用的。一旦我们
 
 接下来看2个实用的例子。
 
-#####1.Upstream Geometry Change
+### 1.Upstream Geometry Change
 
 
 ![](http://upload-images.jianshu.io/upload_images/1194012-68dca9ff105c7c61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -475,7 +477,7 @@ UIView是在iOS里面使用的，NSView是在macOS里面使用的。一旦我们
 
 这个时候我们就定位到了bug的根源了，只要想方设法在layout的时候，不要改变superview的bounds即可以去掉这个死循环。
 
-#####2.Ambiguous Layout From Constraints
+### 2.Ambiguous Layout From Constraints
 
 在我们设置constraints约束的时候，常常会产生一些歧义的constraints。歧义的constraints通常不可怕，我们只需要稍稍做些调整，然后update all frame即可。
 
@@ -510,7 +512,7 @@ UIView是在iOS里面使用的，NSView是在macOS里面使用的。一旦我们
 用debugger就可以解决上述的问题。
 
 
-#### 总结
+## 总结
 这个Xcode 8 给我们的Autolayout融合了之前Autoresizing masks的用法，使两个合并在一起使用，这样不同场景我们可以有更多的选择，可以更加灵活的处理布局的问题。还允许我们能手动调节constraints警告优先级别。
 
 针对macOS的布局问题，又给我们带来了新的控件NSGridView
