@@ -1,4 +1,4 @@
-# WWDC2016 Session笔记 - Xcode 8 Auto Layout新特性
+# WWDC2016 Session 笔记 - Xcode 8 Auto Layout 新特性
 
 <p align="center"> 
 <img src="http://upload-images.jianshu.io/upload_images/1194012-520084e0dda3ed1e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
