@@ -130,7 +130,7 @@ INTEGER，默认值为75
 在 Linux 上可用以下语句看了一下服务器的 TCP 状态(连接状态数量统计)： 
 
 ```http
-netstat -n | awk '/^tcp/ {++S[$NF]} END {for(a in S) print a， S[a]}' 
+netstat -n | awk '/^tcp/ {++S[$NF]} END {for(a in S) print a, S[a]}' 
 ```
 
 返回结果范例如下： 
