@@ -54,6 +54,19 @@
 
 ## 二. Random Number Generation and Seeding
 
+TLS 需要加密安全的伪随机数生成器(CSPRNG)。在大多数情况下，操作系统提供适当的工具，例如 /dev/urandom，应该在没有其他(例如性能)问题的情况下使用。建议使用现有的 CSPRNG 实现，而不是开发新的 CSPRNG 实现。许多合适的加密库已经在有利的许可条款下可用。如果还是不能令人满意，[[RFC4086]](https://tools.ietf.org/html/rfc4086) 提供了随机值生成的指导。
+
+TLS 在公共协议字段中使用随机值(1)，例如 ClientHello 和 ServerHello 中的公共随机值，以及(2)生成密钥材料。正确使用 CSPRNG，这不会带来安全问题，因为想从输出中确定 CSPRNG 的状态是不可行的。但是，如果 CSPRNG 损坏，攻击者可能会使用公共输出来确定 CSPRNG 内部状态，从而预测密钥材料，如 [[CHECKOWAY]](https://tools.ietf.org/html/rfc8446#ref-CHECKOWAY) 中所述。实现方可以针对通过使用单独的 CSPRNG 生成公共和私有值的这类攻击，提供额外的安全性。
+
+## 三. Certificates and Authentication
+
+实现方负责验证证书的完整性，并且通常应支持证书废除消息。如果没有来自应用程序配置文件的特定指示，则应始终验证证书以确保受信任的证书颁发机构(CA)正确签名。应非常谨慎地选择和添加信任锚。用户应该能够查看有关证书和信任锚的信息。 
+
+应用程序还应该强制限制最小和最大密钥大小。例如，证书路径中包含弱于 2048 位 RSA 或 224 位 ECDSA 的密钥或者签名，则它不适用于安全性比较高的应用程序。
+
+
+## 四. Implementation Pitfalls
+
 
 
 
