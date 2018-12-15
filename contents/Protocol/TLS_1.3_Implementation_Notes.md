@@ -67,8 +67,39 @@ TLS 在公共协议字段中使用随机值(1)，例如 ClientHello 和 ServerHe
 
 ## 四. Implementation Pitfalls
 
+经验表明，早期 TLS 规范的某些部分不易理解，并且是互操作性和安全性问题的根源。 本文件中澄清了其中许多方面，但本附录包含了一些需要实现者特别注意的重要事项的简短列表。
 
+TLS 协议问题：
 
+- 您是否正确处理了分散在多个 TLS 记录中的握手消息(参见第5.1节)？你是否正确处理了像 ClientHello 这样被分成几个小片段的边缘案例？您是否将超过最大片段大小的握手消息分段？特别是，Certificate 和 CertificateRequest 握手消息可能足够大，需要分段。
+
+- 您是否忽略了所有未加密的 TLS 记录中的 TLS 记录层版本号(参见附录D)？
+
+- 您是否确保了，为了支持 TLS 1.3 或更高版本的所有可能配置中已经完全删除了对 SSL，RC4，EXPORT 密码和 MD5(通过"signature\_algorithms"扩展)的所有支持，并且尝试使用这些过时功能的操作都会失败(请参阅附录D)？
+
+- 您是否正确处理 ClientHellos 中的 TLS 扩展，包括未知扩展？
+
+- 当 Server 请求了 Client 证书但没有合适的证书可用时，您是否正确发送了一个空的证书消息，而不是省略整个消息(参见第4.4.2节)？
+
+- 当处理由 AEAD-Decrypt 生成的纯文本片段并且从末尾开始扫描 ContentType 的时候，如果对端发送了全部为零的格式错误明文，您是否会避免扫描明文的开头？
+
+- 您是否正确忽略了 ClientHello 中无法识别的密码套件([第4.1.2节](https://tools.ietf.org/html/rfc8446#section-4.1.2))，hello 扩展([第4.2节](https://tools.ietf.org/html/rfc8446#section-4.2))，命名组([第4.2.7节](https://tools.ietf.org/html/rfc8446#section-4.2.7))，密钥共享([第4.2.8节](https://tools.ietf.org/html/rfc8446#section-4.2.8))，支持的版本([第4.2.1节](https://tools.ietf.org/html/rfc8446#section-4.2.1))和签名算法([第4.2.3节](https://tools.ietf.org/html/rfc8446#section-4.2.3))？
+
+- 作为 Server，您是否向支持兼容 (EC)DHE 组但是不能预测它在 "key\_share" 扩展中的 Client 发送 HelloRetryRequest？作为 Client，您是否正确地处理从 Server 发过来的 HelloRetryRequest？
+
+加密细节：
+
+- 您使用什么对策来防止定时攻击 [[TIMING]](https://tools.ietf.org/html/rfc8446#ref-TIMING)？
+
+- 使用 Diffie-Hellman 密钥交换时，是否正确保留了协商密钥中的前导零字节(参见第7.4.1节)？
+
+- 您的 TLS Client 是否检查过 Server 发送过来的 Diffie-Hellman 参数是否可接受(参见第4.2.8.1节)？
+
+- 在生成 Diffie-Hellman 私有值，ECDSA"k" 参数和其他安全关键值时，您是否使用了强大且最重要的正确选择种子随机数生成器(参见 [附录C.1](https://tools.ietf.org/html/rfc8446#appendix-C.1))？建议实现方实现 [[RFC6979]](https://tools.ietf.org/html/rfc6979)中规定的 "确定性ECDSA"。
+
+- 您是否将 Diffie-Hellman 公钥值和共享密钥归零到组大小（参见第4.2.8.1节和第7.4.1节）？
+
+您是否在制作签名后验证签名，以防止RSA-CRT密钥泄漏[FW15]？
 
 
 ------------------------------------------------------
