@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/95_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/114_0.png'>
 </p>
 
 
@@ -97,9 +97,25 @@ TLS 协议问题：
 
 - 在生成 Diffie-Hellman 私有值，ECDSA"k" 参数和其他安全关键值时，您是否使用了强大且最重要的正确选择种子随机数生成器(参见 [附录C.1](https://tools.ietf.org/html/rfc8446#appendix-C.1))？建议实现方实现 [[RFC6979]](https://tools.ietf.org/html/rfc6979)中规定的 "确定性ECDSA"。
 
-- 您是否将 Diffie-Hellman 公钥值和共享密钥归零到组大小（参见第4.2.8.1节和第7.4.1节）？
+- 您是否将 Diffie-Hellman 公钥值和共享密钥，用 0 填充到到组的大小(参见[第4.2.8.1节](https://tools.ietf.org/html/rfc8446#section-4.2.8.1)和[第7.4.1节](https://tools.ietf.org/html/rfc8446#section-7.4.1))？
 
-您是否在制作签名后验证签名，以防止RSA-CRT密钥泄漏[FW15]？
+- 您是否在制作签名后验证签名，以防止 RSA-CRT 密钥泄漏[FW15](https://tools.ietf.org/html/rfc8446#ref-FW15)？
+
+
+## 五. Client Tracking Prevention
+
+Client 不应该为多个连接重用一个 ticket。重用一个 ticket 会允许被动观察者关联不同的连接。发布 ticket 的 Server 至少应该提供与 Client 可能使用的连接数量一样多的 ticket;例如，使用 HTTP/1.1 [RFC7230](https://tools.ietf.org/html/rfc7230) 的 Web 浏览器可能会与 Server 建立六个连接。Server 应该为每个连接都发出新 ticket。这样可以确保 Client 始终能够在创建新连接时使用新的 ticket。
+
+
+## 六. Unauthenticated Operation
+
+TLS 之前的版本中提供了基于匿名 Diffie-Hellman 算法的明显未经过验证的密码套件。这些模式已在 TLS 1.3 中弃用。但是，仍然可以通过多种方法协商不提供可验证 Server 身份验证的参数，包括：
+
+- 原始公钥[RFC7250](https://tools.ietf.org/html/rfc7250)。
+
+- 使用证书中包含的公钥，但不验证证书链或其任何内容。
+
+单独使用这两种技术都容易受到中间人攻击，因此上述做法不安全。但是，也可以通过 Server 公钥的带外验证，首次使用时信任或通道绑定（尽管 [RFC5929](https://tools.ietf.org/html/rfc5929) 中描述了通道绑定，没有为TLS 1.3 定义)等机制将这些连接绑定到外部认证机制上。如果没有使用这种机制，则该连接无法防止主动的中间人攻击；应用程序禁止以没有显式配置或特定应用程序配置文件的这种方式使用 TLS。
 
 
 ------------------------------------------------------
