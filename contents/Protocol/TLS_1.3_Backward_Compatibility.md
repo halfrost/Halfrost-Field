@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/114_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/115_0.png'>
 </p>
 
 
@@ -10,7 +10,7 @@ TLS 协议为端点之间的版本协商提供了一个内置机制，让支持�
 
 TLS 1.x 和 SSL 3.0 使用兼容的 ClientHello 消息。只要 ClientHello 消息格式保持兼容并且 Client 和 Server 都至少共同能支持一个协议版本，Server 就可以尝试使用未来版本 TLS 来回应 Client。
 
-TLS 的早期版本使用记录层版本号(TLSPlaintext.legacy\_record\_version 和 TLSCiphertext.legacy\_record\_version)用于各种目的。从 TLS 1.3 开始，此字段被废弃了。所有实现都必须忽略 TLSPlaintext.legacy\_record\_version 的值。TLSCiphertext.legacy\_record\_version的值包含在不被保护的附加数据中，但可以忽略或者可以验证，以此匹配固定的常量值。只能使用握手版本执行版本协商(ClientHello.legacy\_version 和 ServerHello.legacy\_version 以及ClientHello，HelloRetryRequest 和 ServerHello 中的 "supported\_versions" 扩展名)。为了最大限度地提高与旧的端点的互操作性，协商使用 TLS 1.0-1.2 的实现方应该将记录层版本号设置为协商版本，这样做是为了 ServerHello 和以后的所有记录。
+TLS 的早期版本使用记录层版本号(TLSPlaintext.legacy\_record\_version 和 TLSCiphertext.legacy\_record\_version)用于各种目的。从 TLS 1.3 开始，此字段被废弃了。所有实现都必须忽略 TLSPlaintext.legacy\_record\_version 的值。TLSCiphertext.legacy\_record\_version 的值包含在不被保护的附加数据中，但可以忽略或者可以验证，以此匹配固定的常量值。只能使用握手版本执行版本协商(ClientHello.legacy\_version 和 ServerHello.legacy\_version 以及ClientHello，HelloRetryRequest 和 ServerHello 中的 "supported\_versions" 扩展名)。为了最大限度地提高与旧的端点的互操作性，协商使用 TLS 1.0-1.2 的实现方应该将记录层版本号设置为协商版本，这样做是为了 ServerHello 和以后的所有记录。
 
 
 为了最大限度地兼容以前的非标准行为和配置错误的部署，所有实现方都应该支持基于本文档中的期望验证认证的方法，即使在处理先前的 TLS 版本的握手时也是如此(参见 [第4.4.2.2节](https://tools.ietf.org/html/rfc8446#section-4.4.2.2))。
