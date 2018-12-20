@@ -56,10 +56,38 @@ TLS 当前不允许 Server 在不是基于证书的握手(例如，PSK)中发送
 
 对于所有握手模式，Finished 的 MAC(以及存在的签名)可防止降级攻击。此外，如 [第4.1.3节](https://tools.ietf.org/html/rfc8446#section-4.1.3) 所述，在随机 nonce 中使用某些字节可以检测出降级到 TLS 以前版本的情况。有关 TLS 1.3 和降级的更多详细信息，请参阅 [BBFGKZ16](https://tools.ietf.org/html/rfc8446#ref-BBFGKZ16)。
 
-一旦 Client 和 Server 交换了足够的信息建立了共享密钥，握手的剩余部分就会被加密，从而提供针对被动攻击者的防护，即使计算的共享密钥未经过身份验证也能提供加密保护。由于 Server 在 Client 之前进行身份验证，因此 Client 可以确保如果 Client  对 Server 进行身份验证，则只会向已经经过身份验证的 Server 显示其身份。请注意，实现方必须在握手期间使用提供的记录填充机制，(记录填充机制可以混淆长度信息)以避免由于长度而泄露有关身份的信息。Client 提议的 PSK 标识未加密，也不是 Server 选择的标识。
+一旦 Client 和 Server 交换了足够的信息建立了共享密钥，握手的剩余部分就会被加密，从而提供针对被动攻击者的防护，即使计算的共享密钥未经过身份验证也能提供加密保护。由于 Server 在 Client 之前进行身份验证，因此 Client 可以确保如果 Client  对 Server 进行身份验证，则只会向已经经过身份验证的 Server 显示其身份。请注意，实现方必须在握手期间使用提供的记录填充机制，(记录填充机制可以混淆长度信息)以避免由于长度而泄露有关身份的信息。Client 提议的 PSK 标识如果未加密，那么也不是 Server 选择的标识。
 
 
 ### 1. Key Derivation and HKDF
+
+TLS 1.3 中的密钥派生使用 [[RFC5869]](https://tools.ietf.org/html/rfc5869) 中定义的 HKDF 及其两个组件 HKDF-Extract 和 HKDF-Expand。HKDF 数据结构可以在 [[Kraw10]](https://tools.ietf.org/html/rfc8446#ref-Kraw10) 中找到，以及在 [[KW16]](https://tools.ietf.org/html/rfc8446#ref-KW16) 中说明了如何在 TLS 1.3 中合理使用的方式。在整个文档中，HKDF-Extract 的每个应用都会进行一次或多次 HKDF-Expand 的调用。应始终遵循此顺序(包括在本文档的未来修订版本中); 特别是，我们不应使用 HKDF-Extract 的输出直接作为 HKDF-Extract 的另一个应用程序的输入，而没有在中间进行一次 HKDF-Expand 调用。只要能通过密钥或标签区分这些输入，就允许多个 HKDF-Expand 应用使用相同的输入。
+
+请注意，HKDF-Expand 实现了具有可变长度的输入和输出的伪随机函数(PRF)。在本文中，HKDF 的一些用途(例如，用于生成 exporters 和 resumption\_master\_secret)，HKDF-Expand 的应用必须具有抗冲突性; 也就是说，两个不同的输入值，是不可能出现输出相同值的 HKDF-Expand。这要求底层散列函数具有抗冲突性，并且 HKDF-Expand 的输出长度至少为 256 位(或者其他为了防止发现冲突的哈希函数所需要的长度)。
+
+### 2. Client Authentication
+
+在握手期间或握手后身份验证期间，已将身份验证数据发送到 Server 的 Client 无法确定 Server 之后是否认为 Client 已经过身份验证。如果 Client 需要确定 Server 是否认为连接是单方面认证的或双方相互认证的，则必须由应用层进行配置。有关详细信息，请参见 [[CHHSV17]](https://tools.ietf.org/html/rfc8446#ref-CHHSV17)。 另外，来自 [[Kraw16]](https://tools.ietf.org/html/rfc8446#ref-Kraw16) 的握手后认证分析表明，在握手后阶段中发送的证书所识别的 Client 拥有流量密钥。因此，该方要么是参与原始握手的 Client ，要么是为原始 Client 代理流量密钥的 Client(假设流量密钥未被泄露)。
+
+
+### 3. 0-RTT
+
+0-RTT 操作模式通常提供类似于 1-RTT 数据的安全属性，但有两个例外，即 0-RTT 加密密钥不提供完全前向保密性，并且 Server 在不保留过多的状态的条件下，无法保证握手的唯一性(不可重复性)。有关限制重放风险的机制，请参阅 [第8节](https://tools.ietf.org/html/rfc8446#section-8)。
+
+
+### 4. Exporter Independence
+
+exporter\_master\_secret 和 early\_exporter\_master\_secret 的派生独立于流量密钥，因此不会对使用这些密钥加密的流量的安全性构成威胁。但是，因为这些密钥可以用来计算任何 exporter 的值，所以它们应该尽快删除。如果已知 exporter 标签的总集合，则实现方应该在计算 exporter 的期间，为所有这些标签预先计算内部的 Derive-Secret，然后只要知道删掉不再需要它，就可以立即删除紧跟在每个内部值后面的 [early\_] exporter\_master\_secret。
+
+
+### 5. Post-Compromise Security
+
+
+### 6. External References
+
+
+
+
 
 ------------------------------------------------------
 
