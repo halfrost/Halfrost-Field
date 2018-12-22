@@ -82,11 +82,91 @@ exporter\_master\_secret 和 early\_exporter\_master\_secret 的派生独立于�
 
 ### 5. Post-Compromise Security
 
+TLS 不提供在对等方的长期密钥(签名密钥或外部 PSK)泄露之后发生的握手的安全性。因此，它不提供泄露后的安全性 [[CCG16]](https://tools.ietf.org/html/rfc8446#ref-CCG16)，有时也称为后向或未来保密性。这与抗 KCI 性相反，抗 KCI 性描述的是通信的一方在其自身的长期密钥泄露之后所拥有的安全保障。
+
 
 ### 6. External References
 
+读者应参考以下参考文献来分析 TLS 握手：[[DFGS15]](https://tools.ietf.org/html/rfc8446#ref-DFGS15)，[[CHSV16]](https://tools.ietf.org/html/rfc8446#ref-CHSV16)，[[DFGS16]](https://tools.ietf.org/html/rfc8446#ref-DFGS16)，[[KW16]](https://tools.ietf.org/html/rfc8446#ref-KW16)，[[Kraw16]](https://tools.ietf.org/html/rfc8446#ref-Kraw16)，[[FGSW16]](https://tools.ietf.org/html/rfc8446#ref-FGSW16)，[[LXZFH16]](https://tools.ietf.org/html/rfc8446#ref-LXZFH16)，[[FG17]](https://tools.ietf.org/html/rfc8446#ref-FG17) 和 [[BBK17]](https://tools.ietf.org/html/rfc8446#ref-BBK17)。
 
 
+
+## 二. Record Layer
+
+
+
+
+
+
+
+这里还没有翻译！！！！！！！！！
+
+
+
+
+
+
+
+### 1. External References
+
+读者应参考以下参考文献分析TLS记录层：[[BMMRT15]](https://tools.ietf.org/html/rfc8446#ref-BMMRT15)，[[BT16]](https://tools.ietf.org/html/rfc8446#ref-BT16)，[[BDFKPPRSZZ16]](https://tools.ietf.org/html/rfc8446#ref-BDFKPPRSZZ16)，[[BBK17]](https://tools.ietf.org/html/rfc8446#ref-BBK17) 和 [[PS18]](https://tools.ietf.org/html/rfc8446#ref-PS18)
+
+## 三. Traffic Analysis
+
+基于观察加密数据包的长度和时间，TLS 易受各种流量分析攻击 [[CLINIC]](https://tools.ietf.org/html/rfc8446#ref-CLINIC) [[HCJC16]](https://tools.ietf.org/html/rfc8446#ref-HCJC16)。当存在一小组可能的消息要区分时，特别容易做到。例如托管固定内容集的视频服务器，甚至在更复杂的场景中仍然提供可用信息。
+
+TLS 不提供针对此类攻击的任何特定防御，但提供了一个供应用程序使用的填充机制：受 AEAD 功能保护的明文，由内容和可变长度填充组成，允许应用程序生成任意长度的加密记录，也允许仅仅只填充，目的是为了覆盖流量以隐藏传输周期和静默期之间的差异。由于填充是与实际内容一起加密的，所以攻击者无法直接确定填充的长度，但可以通过使用在记录处理期间暴露的定时通道间接测量填充(即，查看处理记录所需的时间长度或者在记录中 trickling，看看哪些引起服务器的响应)。通常，不知道如何删除所有的这些通道，因为即使是恒定时间填充删除功能也可能将内容提供给依赖于数据的功能。至少，完全恒定时间的 Server 或 Client 需要与应用层协议实现密切合作，包括使创造更高级别的协议保持恒定时间。
+
+注意：由于传输数据包的延迟和流量增加，强大的流量分析防御体系可能会导致性能下降。
+
+## 四. Side-Channel Attacks
+
+
+
+
+
+
+这里还没有翻译！！！！！！！！！
+
+
+
+
+
+
+
+## 五. Replay Attacks on 0-RTT
+
+
+
+
+
+
+这里还没有翻译！！！！！！！！！
+
+
+
+
+
+
+
+### 1. Replay and Exporters
+
+ClientHello 的重放产生了相同的早期 exporter，因此需要对使用这些 exporter 的应用程序进行额外的关注。特别地，如果这些 exporter 被用作认证通道绑定(例如，对 exporter 的输出进行签名)，则破解了 PSK 的攻击者可以在不破解认证密钥的条件下，在连接之间移植认证。
+
+此外，早期的 exporter 不应该用于生成 Server 到 Client 的加密密钥，因为这意味着重用这些密钥。这与仅在 Client 到 Server 方向上使用早期应用程序流量密钥相似。
+
+
+## 六. PSK Identity Exposure
+
+由于实现方通过中止握手来响应无效的 PSK 绑定器，因此攻击者可能会去验证给定的 PSK 身份是否有效。具体来说，如果 Server 同时接受外部 PSK 握手和基于证书的握手，则有效的 PSK 身份将导致握手失败，而只是被跳过的无效身份却可以证书握手成功。单独支持 PSK 握手的 Server 可以通过处理没有有效 PSK 身份的情况，和存在身份但却具有相同无效 binder 的这两种情况来抵抗这种形式的攻击。
+
+## 七. Sharing PSKs
+
+TLS 1.3 对 PSK 采取了保守的方法，具体做法是将 PSK 绑定到具体的 KDF。相比之下，TLS 1.2 允许 PSK 与任何散列函数和 TLS 1.2 PRF 一起使用。 因此，想在 TLS 1.2 和 TLS 1.3 中一起使用的任何 PSK 必须在 TLS 1.3 中仅使用一个散列，如果用户想要提供单个 PSK，则这不是最佳的方法。TLS 1.2 和 TLS 1.3 中的结构是不同的，尽管它们都基于 HMAC 的。虽然没有已知的方法可以在两个版本中使用相同的 PSK 产生相关输出，但只是进行了有限的分析。通过不在 TLS 1.3 和 TLS 1.2 之间重用 PSK，实现方可以确保跨协议相关输出的安全性。
+
+## 八. Attacks on Static RSA
+
+尽管 TLS 1.3 不使用 RSA 密钥传输，因此不会直接受到 Bleichenbacher 类型攻击 [[Blei98]](https://tools.ietf.org/html/rfc8446#ref-Blei98) 的影响，如果 TLS 1.3 Server 在早期版本的 TLS 环境中也支持静态 RSA，那么对于TLS 1.3连接可能会出现冒充的 Server [[JSS15]](https://tools.ietf.org/html/rfc8446#ref-JSS15)。TLS 1.3 实现方可以通过在所有版本的 TLS 上禁用对静态 RSA 的支持来防止此类攻击。原则上，实现方也可能能够将具有不同 keyUsage 位的证书分开用于静态 RSA 解密和 RSA 签名，但是该技术依赖于 Client 拒绝使用没有设置 digitalSignature 位的证书中的密钥来接受签名，并且许多 Client 不强制执行此限制。
 
 
 ------------------------------------------------------
