@@ -5,7 +5,7 @@
 <img src='https://img.halfrost.com/Blog/ArticleImage/112_0.png'>
 </p>
 
-如 [第2.3节](https://tools.ietf.org/html/rfc8446#section-2.3) 和 [附录 E.5](https://tools.ietf.org/html/rfc8446#appendix-E.5) 所述，TLS不为 0-RTT 数据提供固有的重放保护。有两个潜在的威胁值得关注:
+如 [第2.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#3-0-rtt-%E6%95%B0%E6%8D%AE) 和 [附录 E.5](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Security_Properties.md#%E4%BA%94-replay-attacks-on-0-rtt) 所述，TLS不为 0-RTT 数据提供固有的重放保护。有两个潜在的威胁值得关注:
 
 - 通过简单地复制 0-RTT 数据并发送来进行重放攻击的网络攻击者
 
@@ -37,13 +37,13 @@
 
 另一种反重放形式是记录从 ClientHello 派生的唯一值(通常是随机值或 PSK binder)并拒绝重复。记录所有 ClientHello 会导致状态无限制地增长，但 Server 可以在给定时间窗口内记录 ClientHellos 并使用 "obfuscated\_ticket\_age" 来确保不在该窗口外重用 ticket。
 
-为了实现这一点，当收到 ClientHello 时，Server 首先验证 PSK binder，如[4.2.11节](https://tools.ietf.org/html/rfc8446#section-4.2.11) 所述。然后它会计算 expected\_arrival\_time，如下一节所述，如果它在记录窗口之外，则拒绝 0-RTT，然后回到 1-RTT 握手。
+为了实现这一点，当收到 ClientHello 时，Server 首先验证 PSK binder，如[4.2.11节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#11-pre-shared-key-extension) 所述。然后它会计算 expected\_arrival\_time，如下一节所述，如果它在记录窗口之外，则拒绝 0-RTT，然后回到 1-RTT 握手。
 
 
 
 如果 expected\_arrival\_time 在窗口中，则 Server 检查它是否记录了匹配的ClientHello。如果找到一个，它将使用 "illegal\_parameter" alert 消息中止握手或接受 PSK 但拒绝 0-RTT。如果找不到匹配的 ClientHello，则它接受 0-RTT，然后只要 expected\_arrival\_time 在窗口内，就存储 ClientHello。Server 也可以实现具有误报的数据存储，例如布隆过滤器，在这种情况下，它们必须通过拒绝 0-RTT 来响应明显的重放，但绝不能中止握手。
 
-Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 ClientHello 包含多个 PSK 标识，则攻击者可以创建多个具有不同 binder 值的 ClientHellos，用于不太优选的标识，前提是 Server 不会对其进行验证(如 [第4.2.11节](https://tools.ietf.org/html/rfc8446#section-4.2.11) 所述)。即，如果 Client 发送PSK A 和 B 但 Server 选择了 A，那么攻击者可以更改 B 的 binder 而不影响 A 的 binder。如果 B 的 binder 是存储密钥的一部分，则此 ClientHello 将不会重复出现，这将导致该 ClientHello 被接受，并且可能导致副作用，例如重放缓存污染，尽管任何 0-RTT 数据都不会被解密，因为它使用的不同的密钥。如果使用经过验证的 binder 或 ClientHello.random 作为存储密钥，则无法进行此攻击。
+Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 ClientHello 包含多个 PSK 标识，则攻击者可以创建多个具有不同 binder 值的 ClientHellos，用于不太优选的标识，前提是 Server 不会对其进行验证(如 [第4.2.11节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#11-pre-shared-key-extension) 所述)。即，如果 Client 发送PSK A 和 B 但 Server 选择了 A，那么攻击者可以更改 B 的 binder 而不影响 A 的 binder。如果 B 的 binder 是存储密钥的一部分，则此 ClientHello 将不会重复出现，这将导致该 ClientHello 被接受，并且可能导致副作用，例如重放缓存污染，尽管任何 0-RTT 数据都不会被解密，因为它使用的不同的密钥。如果使用经过验证的 binder 或 ClientHello.random 作为存储密钥，则无法进行此攻击。
 
 
 因为这种机制不需要存储所有未完成的 ticket，所以可能更容易在具有高恢复率和 0-RTT 的分布式系统中实现，代价可能是较弱的反重放防御，因为难以可靠地存储和检索收到 ClientHello 消息。在许多这样的系统中，对所有接收的 ClientHellos 进行全局一致的存储是不切实际的。在这种情况下，最好的反重放攻击的方法是，单个存储 zone 具有一个权威性的 ticket，并且不接受来自其他 zone 的 0-RTT 的 ticket。此方法可防止攻击者进行简单重放，因为只有一个 zone 可接受 0-RTT 数据。较弱的设计是为每个 zone 实现单独存储，但允许在任何 zone 中使用 0-RTT。此方法将每个 zone 的重放次数限制为一次。当然，上述的设计仍然可能导致应用程序消息重复。
@@ -51,13 +51,13 @@ Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 Clien
 当实现方刚刚启动的时候，只要其记录窗口的任何部分与启动时间重叠，它们就应该拒绝 0-RTT。否则，接收最初在这段时间内发送的重放是会有风险的。
 
 
-注意：如果 Client 的时钟运行速度比 Server 快，那么将来在窗口外可能会收到一个 ClientHello，在这种情况下，它可能被 1-RTT 接受，导致 Client 重试，然后再接受  0-RTT。这是 [第 8 节](https://tools.ietf.org/html/rfc8446#section-8) 中描述的第二种攻击形式的另一种变体。
+注意：如果 Client 的时钟运行速度比 Server 快，那么将来在窗口外可能会收到一个 ClientHello，在这种情况下，它可能被 1-RTT 接受，导致 Client 重试，然后再接受  0-RTT。这是 [第 8 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#tls-13-0-rtt-and-anti-replay) 中描述的第二种攻击形式的另一种变体。
 
 
 ## 三. Freshness Checks
 
 
-因为 ClientHello 中包含了 Client 发送它的时间，所以可以有效地确定 ClientHello 是否是最近合理地发送，是否仅接受这样的 ClientHello 的 0-RTT，如果不符合规则，就回退到 1-RTT 握手。这对于 [8.2节](https://tools.ietf.org/html/rfc8446#section-8.2) 中描述的 ClientHello 存储机制是必要的，否则 Server 需要存储无限数量的 ClientHellos，并且这个存储机制对于自包含的一次性 ticket 是非常有用的优化，因为它可以有效拒绝不能用于 0-RTT 的 ClientHellos。
+因为 ClientHello 中包含了 Client 发送它的时间，所以可以有效地确定 ClientHello 是否是最近合理地发送，是否仅接受这样的 ClientHello 的 0-RTT，如果不符合规则，就回退到 1-RTT 握手。这对于 [8.2节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#%E4%BA%8C-client-hello-recording) 中描述的 ClientHello 存储机制是必要的，否则 Server 需要存储无限数量的 ClientHellos，并且这个存储机制对于自包含的一次性 ticket 是非常有用的优化，因为它可以有效拒绝不能用于 0-RTT 的 ClientHellos。
 
 为了实现这种机制，Server 需要存储 Server 生成 session ticket 的时间，并通过估计 Client 和 Server 之间的往返时间来抵消。例如:
 
