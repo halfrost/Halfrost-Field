@@ -13,7 +13,7 @@ TLS 1.x 和 SSL 3.0 使用兼容的 ClientHello 消息。只要 ClientHello 消�
 TLS 的早期版本使用记录层版本号(TLSPlaintext.legacy\_record\_version 和 TLSCiphertext.legacy\_record\_version)用于各种目的。从 TLS 1.3 开始，此字段被废弃了。所有实现都必须忽略 TLSPlaintext.legacy\_record\_version 的值。TLSCiphertext.legacy\_record\_version 的值包含在不被保护的附加数据中，但可以忽略或者可以验证，以此匹配固定的常量值。只能使用握手版本执行版本协商(ClientHello.legacy\_version 和 ServerHello.legacy\_version 以及ClientHello，HelloRetryRequest 和 ServerHello 中的 "supported\_versions" 扩展名)。为了最大限度地提高与旧的端点的互操作性，协商使用 TLS 1.0-1.2 的实现方应该将记录层版本号设置为协商版本，这样做是为了 ServerHello 和以后的所有记录。
 
 
-为了最大限度地兼容以前的非标准行为和配置错误的部署，所有实现方都应该支持基于本文档中的期望验证认证的方法，即使在处理先前的 TLS 版本的握手时也是如此(参见 [第4.4.2.2节](https://tools.ietf.org/html/rfc8446#section-4.4.2.2))。
+为了最大限度地兼容以前的非标准行为和配置错误的部署，所有实现方都应该支持基于本文档中的期望验证认证的方法，即使在处理先前的 TLS 版本的握手时也是如此(参见 [第4.4.2.2节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-server-certificate-selection))。
 
 TLS 1.2 和之前版本支持 "Extended Master Secret" [RFC7627](https://tools.ietf.org/html/rfc7627) 扩展，它将握手记录的大部分内容消化为主密钥。因为 TLS 1.3 总是从转录开始到 Server Finish 都在计算哈希，所以同时支持 TLS 1.3 和早期版本的实现方，无论是否使用了 TLS 1.3，都应该表明在其 API 中使用了Extended Master Secret extension。
 
@@ -21,7 +21,7 @@ TLS 1.2 和之前版本支持 "Extended Master Secret" [RFC7627](https://tools.i
 
 一个 TLS 1.3 的 Client 希望与不支持 TLS 1.3 的 Server 协商，Client 将在ClientHello.legacy\_version 中发送包含 0x0303(TLS 1.2) 的普通 TLS 1.3 ClientHello，但在 "supported\_versions" 扩展中使用正确的版本。如果 Server 不支持 TLS 1.3，它将使用包含旧版本号的 ServerHello 进行响应。如果 Client 同意使用此版本，则协商将根据协商协议进行。使用 ticket 恢复会话的 Client 应该使用先前协商的版本发起连接。
 
-请注意，0-RTT 数据与旧的 Server 不兼容，并且在不知道 Server 支持TLS 1.3的情况下就不应该发送 0-RTT。见 [附录D.3](https://tools.ietf.org/html/rfc8446#appendix-D.3)。
+请注意，0-RTT 数据与旧的 Server 不兼容，并且在不知道 Server 支持TLS 1.3的情况下就不应该发送 0-RTT。见 [附录D.3](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Backward_Compatibility.md#%E4%B8%89-0-rtt-backward-compatibility)。
 
 如果 Client 不支持 Server 选择的版本(或者不可接受)，Client 必须通过 "protocol\_version" alert 消息中止握手。
 
@@ -29,7 +29,7 @@ TLS 1.2 和之前版本支持 "Extended Master Secret" [RFC7627](https://tools.i
 
 ## 二. Negotiating with an Older Client
 
-TLS Server 可以接收 ClientHello，说明版本号小于其支持的最高版本。如果存在 "supported\_versions"扩展，则 Server 必须使用该扩展进行协商，如 [第4.2.1节](https://tools.ietf.org/html/rfc8446#section-4.2.1) 所述。 如果  "supported\_versions" 扩展名不存在，则 Server 必须协商 ClientHello.legacy\_version 和 TLS 1.2 的最小值。例如，如果 Server 支持 TLS 1.0,1.1 和 1.2，并且 legacy\_version 是 TLS 1.0，则 Server 将使用 TLS 1.0 进行 ServerHello。如果 "supported\_versions" 扩展名不存在且 Server 仅支持大于 ClientHello.legacy\_version 的版本，则 Server 必须使用 "protocol\_version" alert 消息中止握手。
+TLS Server 可以接收 ClientHello，说明版本号小于其支持的最高版本。如果存在 "supported\_versions"扩展，则 Server 必须使用该扩展进行协商，如 [第4.2.1节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-supported-versions) 所述。 如果  "supported\_versions" 扩展名不存在，则 Server 必须协商 ClientHello.legacy\_version 和 TLS 1.2 的最小值。例如，如果 Server 支持 TLS 1.0,1.1 和 1.2，并且 legacy\_version 是 TLS 1.0，则 Server 将使用 TLS 1.0 进行 ServerHello。如果 "supported\_versions" 扩展名不存在且 Server 仅支持大于 ClientHello.legacy\_version 的版本，则 Server 必须使用 "protocol\_version" alert 消息中止握手。
 
 
 请注意，早期版本的 TLS 并未在所有情况下明确指定记录层版本号值(TLSPlaintext.legacy\_record\_version)。Server 将在此字段中接收到各种 TLS 1.x 版本，但必须始终忽略它的值。
@@ -48,7 +48,7 @@ TLS Server 可以接收 ClientHello，说明版本号小于其支持的最高版
 现场测试 [Ben17a](https://tools.ietf.org/html/rfc8446#ref-Ben17a) [Ben17b](https://tools.ietf.org/html/rfc8446#ref-Ben17b) [Res17a](https://tools.ietf.org/html/rfc8446#ref-Res17a) [Res17b](https://tools.ietf.org/html/rfc8446#ref-Res17b) 发现当 TLS 客户端/服务器对协商 TLS 1.3 时，大量中间件行为表现不正确。实现方通过使 TLS 1.3 握手看起来更像是 TLS 1.2 握手，来增加通过这些中间件建立连接的机会。
 
 
-- Client 始终在 ClientHello 中提供非空的 session ID，如 [第4.1.2节](https://tools.ietf.org/html/rfc8446#section-4.1.2) 的 legacy\_session\_id 部分所述。
+- Client 始终在 ClientHello 中提供非空的 session ID，如 [第4.1.2节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-client-hello) 的 legacy\_session\_id 部分所述。
 
 - 如果不提供 early data，Client 会在第二次发送数据之前立即发送虚拟的 change\_cipher\_spec 记录(参见第5节第3段)。这可能在其第二个 ClientHello 之前或在其加密的发送握手数据之前。如果提供 early data，则 record 会立即放在第一个 ClientHello 之后。
 
