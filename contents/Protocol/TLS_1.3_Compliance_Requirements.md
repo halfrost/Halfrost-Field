@@ -24,17 +24,17 @@ TLS 1.3 中有一些扩展是强制必须实现的。
 
 如果没有另外指定的应用程序配置文件标准，符合 TLS 标准的应用程序必须实现以下 TLS 扩展：
 
-- 支持的版本（"supported\_versions"; [第 4.2.1 节](https://tools.ietf.org/html/rfc8446#section-4.2.1)）
+- 支持的版本（"supported\_versions"; [第 4.2.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-supported-versions)）
 
-- Cookie（"cookie";[第 4.2.2 节](https://tools.ietf.org/html/rfc8446#section-4.2.2)）
+- Cookie（"cookie";[第 4.2.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-cookie)）
 
-- 签名算法（"signature\_algorithms"; [第 4.2.3 节](https://tools.ietf.org/html/rfc8446#section-4.2.3)）
+- 签名算法（"signature\_algorithms"; [第 4.2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-signature-algorithms)）
 
-- 签名算法证书("signature\_algorithms\_cert"; [第4.2.3节](https://tools.ietf.org/html/rfc8446#section-4.2.3))
+- 签名算法证书("signature\_algorithms\_cert"; [第 4.2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-signature-algorithms))
 
-- 协商组（"supported\_groups"; [第 4.2.7 节](https://tools.ietf.org/html/rfc8446#section-4.2.7)）
+- 协商组（"supported\_groups"; [第 4.2.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#7-supported-groups)）
 
-- 密钥共享（"key\_share"; [第 4.2.8 节](https://tools.ietf.org/html/rfc8446#section-4.2.8)）
+- 密钥共享（"key\_share"; [第 4.2.8 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#8-key-share)）
 
 - 服务器名称标识（"server\_name"; [[RFC6066]的第 3 节](https://tools.ietf.org/html/rfc6066#section-3)）
 
