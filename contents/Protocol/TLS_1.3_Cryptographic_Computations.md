@@ -36,7 +36,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 
 - PSK(外部建立的预共享密钥，或从先前连接的 resumption\_master\_secret 值派生的)
 
-- (EC)DHE 共享 secret ([Section 7.4](https://tools.ietf.org/html/rfc8446#section-7.4))
+- (EC)DHE 共享 secret ([Section 7.4](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Cryptographic_Computations.md#%E5%9B%9B-ecdhe-shared-secret-calculation))
 
 
 这将生成一个完整的密钥推导计划，如下图所示。在此图中，约定以下的格式：
@@ -112,7 +112,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 
 ## 二. Updating Traffic Secrets
 
-一旦握手完成后，任何一方都可以使用[第 4.6.3 节](https://tools.ietf.org/html/rfc8446#section-4.6.3)中定义的 KeyUpdate 握手消息更新其发送流量密钥。 下一代流量密钥的计算方法是，如本节所述，从 client\_ / server\_application\_traffic\_secret\_N 生成出 client\_ / server\_application\_traffic\_secret\_N + 1，然后按 [7.3 节](https://tools.ietf.org/html/rfc8446#section-7.3)所述方法重新导出流量密钥。
+一旦握手完成后，任何一方都可以使用[第 4.6.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-key-and-initialization-vector-update)中定义的 KeyUpdate 握手消息更新其发送流量密钥。 下一代流量密钥的计算方法是，如本节所述，从 client\_ / server\_application\_traffic\_secret\_N 生成出 client\_ / server\_application\_traffic\_secret\_N + 1，然后按 [7.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Cryptographic_Computations.md#%E4%B8%89-traffic-key-calculation)所述方法重新导出流量密钥。
 
 下一代 application\_traffic\_secret 计算方法如下：
 
