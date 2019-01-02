@@ -45,7 +45,7 @@
 协议消息必须按照一定顺序发送(顺序见下文)。如果对端发现收到的握手消息顺序不对，必须使用 “unexpected\_message” alert 消息来中止握手。
 
 
-另外 IANA 分配了新的握手消息类型，见[第 11 章]()
+另外 IANA 分配了新的握手消息类型，见[第 11 章](https://tools.ietf.org/html/rfc8446#section-11)
 
 ## 一. Key Exchange Messages
 
@@ -85,7 +85,7 @@
 - 如果存在 “early\_data” 扩展则将其移除。 “early\_data” 不允许出现在 HelloRetryRequest 之后。
 - 如果 HelloRetryRequest 中包含了 cookie 扩展，则需要包含一个。
 - 如果重新计算了 "obfuscated\_ticket\_age" 和绑定值，同时(可选地)删除了任何不兼容 Server 展示的密码族的 PSK，则更新 "pre\_shared\_key" 扩展。
-- 选择性地增加，删除或更改 ”padding” 扩展[RFC 7685]()的长度。
+- 选择性地增加，删除或更改 ”padding” 扩展[RFC 7685](https://tools.ietf.org/html/rfc7685)的长度。
 - 可能被允许的一些其他的修改。例如未来指定的一些扩展定义和 HelloRetryRequest 。
 
 由于 TLS 1.3 **严禁重协商**，如果 Server 已经完成了 TLS 1.3 的协商了，在未来某一时刻又收到了 ClientHello ，Server 不应该理会这条消息，必须立即断开连接，并发送 "unexpected\_message" alert 消息。
@@ -201,7 +201,7 @@ D  O  W  N  G  R  D
 	
 TLS 1.3 Client 接收到 TLS 1.2 或者 TLS 更老的版本的 ServerHello 消息以后，必须要检查 ServerHello 中的 Random 字段的最后 8 字节不等于上面 2 个值猜对。TLS 1.2 的 Client 也需要检查最后 8 个字节，如果协商的是 TLS 1.1 或者是更老的版本，那么 Random 值也不应该等于上面第二个值。如果都没有匹配上，那么 Client 必须用 "illegal\_parameter" alert 消息中止握手。这种机制提供了有限的保护措施，抵御降级攻击。通过 Finished exchange ，能超越保护机制的保护范围：因为在 TLS 1.2 或更低的版本上，ServerKeyExchange 消息包含 2 个随机值的签名。只要使用了临时的加密方式，攻击者就不可能在不被发现的情况下，修改随机值。所以对于静态的 RSA，是无法提供降级攻击的保护。
 
->请注意，上面这些改动在 [RFC5246]() 中说明的，实际上许多 TLS 1.2 的 Client 和 Server 都没有按照上面的规定来实践。
+>请注意，上面这些改动在 [RFC5246](https://tools.ietf.org/html/rfc5246) 中说明的，实际上许多 TLS 1.2 的 Client 和 Server 都没有按照上面的规定来实践。
 
 如果 Client 在重新协商 TLS 1.2 或者更老的版本的时候，协商过程中收到了 TLS 1.3 的 ServerHello，这个时候 Client 必须立即发送 “protocol\_version” alert 中止握手。请注意，**一旦 TLS 1.3 协商完成，就无法再重新协商了，因为 TLS 1.3 严禁重新协商**。
 
@@ -444,19 +444,19 @@ enum {
 
 
 - RSASSA-PKCS1-v1\_5 algorithms:
-	表示使用 RSASSA-PKCS1-v1\_5 [RFC8017]() 和定义在 [SHS]() 中对应的哈希算法的签名算法。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。
+	表示使用 RSASSA-PKCS1-v1\_5 [RFC8017](https://tools.ietf.org/html/rfc8017) 和定义在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中对应的哈希算法的签名算法。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。
 	
 - ECDSA algorithms:
-	表示签名算法使用 ECDSA，对应的曲线在 ANSI X9.62 [ECDSA]() 和 FIPS 186-4 [DSS]() 中定义了，对应的哈希算法在 [SHS]() 中定义了。签名被表示为 DER 编码的 ECDSA-Sig-Value 结构。
+	表示签名算法使用 ECDSA，对应的曲线在 ANSI X9.62 [ECDSA](https://tools.ietf.org/html/rfc8446#ref-ECDSA) 和 FIPS 186-4 [DSS](https://tools.ietf.org/html/rfc8446#ref-DSS) 中定义了，对应的哈希算法在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义了。签名被表示为 DER 编码的 ECDSA-Sig-Value 结构。
 	
 - RSASSA-PSS RSAE algorithms:
-	表示使用带有掩码生成函数 1 的 RSASSA-PSS 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS]() 中定义的相应的哈希算法。盐的长度必须等于摘要算法输出的长度。如果公钥在 X.509 证书中，则必须使用 rsaEncryption OID [RFC5280]()。
+	表示使用带有掩码生成函数 1 的 RSASSA-PSS 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义的相应的哈希算法。盐的长度必须等于摘要算法输出的长度。如果公钥在 X.509 证书中，则必须使用 rsaEncryption OID [RFC5280](https://tools.ietf.org/html/rfc5280)。
 	
 - EdDSA algorithms:
-	表示使用定义在 [RFC 8032]() 中的 EdDSA 算法或者其后续改进算法。请注意，这些相应算法是 "PureEdDSA" 算法，而不是 "prehash" 变种算法。
+	表示使用定义在 [RFC 8032](https://tools.ietf.org/html/rfc8032) 中的 EdDSA 算法或者其后续改进算法。请注意，这些相应算法是 "PureEdDSA" 算法，而不是 "prehash" 变种算法。
 
 - RSASSA-PSS PSS algorithms:
-	表示使用带有掩码生成函数 1 的 RSASSA-PSS [RFC 8017]() 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS]() 中定义的相应的哈希算法。盐的长度必须等于摘要算法的长度。如果公钥在 X.509 证书中，则必须使用 RSASSA-PSS OID [RFC5756]()。当它被用在证书签名中，算法参数必须是 DER 编码。如果存在相应的公钥参数，则签名中的参数必须与公钥中的参数相同。
+	表示使用带有掩码生成函数 1 的 RSASSA-PSS [RFC 8017](https://tools.ietf.org/html/rfc8017) 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义的相应的哈希算法。盐的长度必须等于摘要算法的长度。如果公钥在 X.509 证书中，则必须使用 RSASSA-PSS OID [RFC5756](https://tools.ietf.org/html/rfc5756)。当它被用在证书签名中，算法参数必须是 DER 编码。如果存在相应的公钥参数，则签名中的参数必须与公钥中的参数相同。
 	
 - Legacy algorithms:
 	表示使用正在被废弃中的算法，因为这些算法有已知的缺点。特别是 SHA-1 配合上文提到的 RSASSA-PKCS1-v1\_5 和 ECDSA 算法一起使用。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。终端不应该协商这些算法，但允许这样做只是为了向后兼容。提供这些值的 Client 必须把他们列在最低优先级的位置上(在 SignatureSchemeList 中的所有其他算法之后列出)。TLS 1.3 Server 绝不能提供 SHA-1 签名证书，除非没有它就无法生成有效的证书链。
@@ -464,7 +464,7 @@ enum {
 	
 自签名证书上的签名或信任锚的证书不能通过校验，因为它们开始了一个认证路径(见 [RFC 5280](https://tools.ietf.org/html/rfc5280#section-3.2))。开始认证路径的证书可以使用 "signature\_algorithms" 扩展中不建议支持的签名算法。
 	
-请注意，TLS 1.2 中这个扩展的定义和 TLS 1.3 的定义不同。在协商 TLS 1.2 版本时，愿意协商 TLS 1.2 的 TLS 1.3 实现必须符合 [RFC5246]() 的要求，尤其是：
+请注意，TLS 1.2 中这个扩展的定义和 TLS 1.3 的定义不同。在协商 TLS 1.2 版本时，愿意协商 TLS 1.2 的 TLS 1.3 实现必须符合 [RFC5246](https://tools.ietf.org/html/rfc5246) 的要求，尤其是：
 
 - TLS 1.2 ClientHellos 可以忽略此扩展。	
 
@@ -735,7 +735,7 @@ Early Data Indication 扩展中的 "extension\_data" 字段包含了一个 Early
       } EarlyDataIndication;
 ```
 
-有关 max\_early\_data\_size 字段的使用请看 [New Session Ticket Message]() 章节。
+有关 max\_early\_data\_size 字段的使用请看 [New Session Ticket Message](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-new-session-ticket-message) 章节。
 
 
 0-RTT 数据(版本，对称加密套件，应用层协议协商协议[[RFC7301]](https://tools.ietf.org/html/rfc7301)，等等)的参数与使用中的 PSK 参数相关。对于外部配置的 PSK，关联值是由密钥提供的。对于通过 NewSessionTicket 消息建立的 PSK，关联值是在建立 PSK 连接时协商的值。PSK 用来加密 early data 必须是 Client 在 "pre\_shared\_key" 扩展中列出的第一个 PSK。
@@ -810,7 +810,7 @@ TLS 的实现不应该自动重新发送 early data；应用程序可以很好�
 	key 的标签。例如，一个 ticket 或者是一个外部建立的预共享密钥的标签。
 	
 - obfuscated\_ticket\_age:
-	age of the key 的混淆版本。[这一章节]()描述了通过 NewSessionTicket 消息建立，如何为标识(identities)生成这个值。对于外部建立的标识(identities)，应该使用 0 的 obfuscated\_ticket\_age，并且 Server 也必须忽略这个值。
+	age of the key 的混淆版本。[这一章节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-ticket-age)描述了通过 NewSessionTicket 消息建立，如何为标识(identities)生成这个值。对于外部建立的标识(identities)，应该使用 0 的 obfuscated\_ticket\_age，并且 Server 也必须忽略这个值。
 
 
 - identities:
@@ -826,13 +826,13 @@ TLS 的实现不应该自动重新发送 early data；应用程序可以很好�
 每一个 PSK 都和单个哈希算法相关联。对于通过 ticket 建立的 PSK，当 ticket 在连接中被建立，这时候用的哈希算法是 KDF 哈希算法。对于外部建立的 PSK，当 PSK 建立的时候，哈希算法必须设置，如果没有设置，默认算法是 SHA-256。Server 必须确保它选择的是兼容的 PSK (如果有的话) 和密钥套件。
 
 
-在 TLS 1.3 之前的版本中，Server Name Identification (SNI) 的值旨在与会话相关联。Server 被强制要求，与会话关联的 SNI 值要和恢复握手中指定的 SNI 值相互匹配。然而事实上，实现方和他们使用的两个提供的 SNI 值是不一致的，这样就会导致 Client 需要执行一致性的要求。**在 TLS 1.3 版本中，SNI 的值始终在恢复握手中被明确的指出，并且 Server 不需要将 SNI 值和 ticket 相关联**。不过 Client 需要将 SNI 和 PSK 一起存储，以满足 [[4.6.1 章节]](https://tools.ietf.org/html/rfc8446#section-4.6.1) 的要求。
+在 TLS 1.3 之前的版本中，Server Name Identification (SNI) 的值旨在与会话相关联。Server 被强制要求，与会话关联的 SNI 值要和恢复握手中指定的 SNI 值相互匹配。然而事实上，实现方和他们使用的两个提供的 SNI 值是不一致的，这样就会导致 Client 需要执行一致性的要求。**在 TLS 1.3 版本中，SNI 的值始终在恢复握手中被明确的指出，并且 Server 不需要将 SNI 值和 ticket 相关联**。不过 Client 需要将 SNI 和 PSK 一起存储，以满足 [[4.6.1 章节]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-new-session-ticket-message) 的要求。
 
 
 实现者请注意：会话恢复是 PSK 最主要的用途，实现 PSK/密钥套件 匹配要求的最直接的方法是先协商密码套件，然后再排除任何不兼容的 PSK。任何未知的 PSK (例如：不在 PSK 数据库中，或者用未知的 key 进行编码的)都必须忽略。如果找不到可接受的 PSK，如果可能，Server 应该执行 non-PSK 握手。如果向后兼容性很重要，Client 提供的，外部建立的 PSK 应该影响密码套件的选择。
 
 
-在接受PSK密钥建立之前，Server 必须先验证相应的 binder 值(见 [[4.2.11.2 节]](https://tools.ietf.org/html/rfc8446#section-4.2.11.2))。如果这个值不存在或着未验证，则 Server 必须立即中止握手。Server 不应该尝试去验证多个 binder，而应该选择单个 PSK 并且仅验证对应于该 PSK 的 binder。见 [Appendix E.6](https://tools.ietf.org/html/rfc8446#appendix-E.6) 和 [[8.2 节]](https://tools.ietf.org/html/rfc8446#section-8.2) 描述了针对这个要求的安全性解释。为了接受 PSK 密钥建立连接，Server 发送 "pre\_shared\_key" 扩展，标明它所选择的 identity。
+在接受PSK密钥建立之前，Server 必须先验证相应的 binder 值(见 [[4.2.11.2 节]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-psk-binder))。如果这个值不存在或着未验证，则 Server 必须立即中止握手。Server 不应该尝试去验证多个 binder，而应该选择单个 PSK 并且仅验证对应于该 PSK 的 binder。见 [Appendix E.6](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Security_Properties.md#%E5%85%AD-psk-identity-exposure) 和 [[8.2 节]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#%E4%BA%8C-client-hello-recording) 描述了针对这个要求的安全性解释。为了接受 PSK 密钥建立连接，Server 发送 "pre\_shared\_key" 扩展，标明它所选择的 identity。
 
 
 Client 必须验证 Server 的 selected\_identity 是否在 Client 提供的范围之内。Server 选择的加密套件标明了与 PSK 关联的哈希算法，如果 ClientHello "psk\_key\_exchange\_modes" 有需要，Server 还应该发送 "key\_share" 扩展。如果这些值不一致，Client 必须立即用 "illegal\_parameter" alert 消息中止握手。
@@ -922,7 +922,7 @@ EncryptedExtensions 消息包含应该被保护的扩展。即，任何不需要
 
 
 - certificate_request_context:
-	一个不透明的字符串，这个字符串用来标识证书请求，并在 Client 的 Certificate 消息中回显。certificate\_request\_context 必须在本次连接中必须是唯一的(从而防止 Client 的 CertificateVerify 重放攻击)。这个字段一般情况下都是 0 长度，除非用于 [[4.6.2]]() 中描述的握手后身份验证交换。当请求握手后身份验证以后，Server 应该发送不可预测的上下文给 Client (例如，用随机数生成)，这样是为了防止攻击者破解。攻击者可以预先计算有效的 CertificateVerify 消息，从而获取临时的 Client 私钥的权限。
+	一个不透明的字符串，这个字符串用来标识证书请求，并在 Client 的 Certificate 消息中回显。certificate\_request\_context 必须在本次连接中必须是唯一的(从而防止 Client 的 CertificateVerify 重放攻击)。这个字段一般情况下都是 0 长度，除非用于 [[4.6.2]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-post-handshake-authentication) 中描述的握手后身份验证交换。当请求握手后身份验证以后，Server 应该发送不可预测的上下文给 Client (例如，用随机数生成)，这样是为了防止攻击者破解。攻击者可以预先计算有效的 CertificateVerify 消息，从而获取临时的 Client 私钥的权限。
 
 
 - extensions:
@@ -939,7 +939,7 @@ EncryptedExtensions 消息包含应该被保护的扩展。即，任何不需要
 
 ## 四. Authentication Messages
 
-正如我们在 [section-2](https://tools.ietf.org/html/rfc8446#section-2) 中讨论的，TLS 使用一组通用的消息用于身份验证，密钥确认和握手的正确性：Certificate, CertificateVerify 和 Finished。(PSK binders 也以类似的方式进行密钥确认)。这三条消息总是作为握手消息的最后三条消息。Certificate 和 CertificateVerify 消息如下面描述的那样，只在某些情况才会发送。Finished 的消息总是作为认证块的一部分发送。这些消息使用从 sender\_handshake\_traffic\_secret 派生出来的密钥进行加密。
+正如我们在 [section-2](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#%E4%BA%94tls-13-%E5%8D%8F%E8%AE%AE%E6%A6%82%E8%A7%88) 中讨论的，TLS 使用一组通用的消息用于身份验证，密钥确认和握手的正确性：Certificate, CertificateVerify 和 Finished。(PSK binders 也以类似的方式进行密钥确认)。这三条消息总是作为握手消息的最后三条消息。Certificate 和 CertificateVerify 消息如下面描述的那样，只在某些情况才会发送。Finished 的消息总是作为认证块的一部分发送。这些消息使用从 sender\_handshake\_traffic\_secret 派生出来的密钥进行加密。
 
 Authentication 消息的计算统一采用以下的输入方式：
 
@@ -1048,7 +1048,7 @@ Certificate 消息的结构体是：
 	这是一个 CertificateEntry 结构的序列(链)，每个结构包含单个证书和一组扩展。
 
 - extensions:
-	CertificateEntry 的一组扩展值。"Extension" 的格式在 [[Section 4.2]](https://tools.ietf.org/html/rfc8446#section-4.2) 中定义了。有效的扩展包括 OCSP 状态扩展 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 SignedCertificateTimestamp [[RFC6962]](https://tools.ietf.org/html/rfc6962) 扩展。未来可以为此消息定义一些新的扩展。Server 的 Certificate 消息中的扩展必须对应于 ClientHello 消息中的扩展。Client 的 Certificate 消息中的扩展必须对应于 Server 的 CertificateRequest 消息中的扩展。如果一个扩展适应用于整个链，它应该被包括在第一个 CertificateEntry 中。
+	CertificateEntry 的一组扩展值。"Extension" 的格式在 [[Section 4.2]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#%E4%BA%8C-extensions) 中定义了。有效的扩展包括 OCSP 状态扩展 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 SignedCertificateTimestamp [[RFC6962]](https://tools.ietf.org/html/rfc6962) 扩展。未来可以为此消息定义一些新的扩展。Server 的 Certificate 消息中的扩展必须对应于 ClientHello 消息中的扩展。Client 的 Certificate 消息中的扩展必须对应于 Server 的 CertificateRequest 消息中的扩展。如果一个扩展适应用于整个链，它应该被包括在第一个 CertificateEntry 中。
 	
 
 如果没有在 EncryptedExtensions 中协商相应的证书类型扩展名 ("server\_certificate\_type" 或 "client\_certificate\_type")，或者协商了 X.509 证书类型，则每个 CertificateEntry 都要包含 DER 编码的 X.509 证书。发件者的证书必须位于列表中的第一个 CertificateEntry 中。之后的每个证书都应该直接证明其前面的证书。由于证书验证要求信任锚独立分发，因此可以从链中省略指定信任锚的证书(前提是已知支持的对等方拥有可省略的证书)。
@@ -1212,7 +1212,7 @@ Finished 消息的收件人必须验证内容是否正确，如果不正确，�
 
 一旦一方已发送其 Finished 消息并已收到并验证来自其对端的 Finished 消息，它就可以开始通过该连接发送和接收应用数据。有两种设置允许在接收对端的 Finished 之前发送数据:
 
-1. 如 [Section 4.2.10](https://tools.ietf.org/html/rfc8446#section-4.2.10) 中所述，Client 可以发送 0-RTT 数据。
+1. 如 [Section 4.2.10](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#10-early-data-indication) 中所述，Client 可以发送 0-RTT 数据。
 2. Server 可以在第一个 flight 之后就发送数据，但是因为握手还没有完成，所以不能保证对端的身份正确性，以及对端是否还在线。(ClientHello 可能重播)
 
 用于计算 Finished 消息的密钥是使用 HKDF，它是从第 4.4 节中定义的 Base Key 计算而来的(参见第7.1节)。特别的:
