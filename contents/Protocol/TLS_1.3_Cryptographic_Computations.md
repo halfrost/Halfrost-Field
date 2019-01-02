@@ -30,7 +30,7 @@ TLS 握手建立一个或多个输入的 secrets，如下文所述，将这些 s
 
 Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash.length 是其输出长度(以字节为单位)。消息是表示的握手消息的串联，包括握手消息类型和长度字段，但不包括记录层头。请注意，在某些情况下，零长度 context（由 "" 表示）传递给 HKDF-Expand-Label。本文档中指定的 labels 都是 ASCII 字符串，不包括尾随 NUL 字节。
 
-注意：对于常见的哈希函数，任何超过 12 个字符的 label 都需要额外迭代哈希函数才能计算。所有标准都已选择符合此限制。
+注意：对于常见的哈希函数，任何超过 12 个字符的 label 都需要额外迭代哈希函数才能计算。所有标准都已选择遵守此限制。
 
 密钥是从使用 HKDF-Extract 和 Derive-Secret 函数的两个输入 secrets 中派生出来的。添加新 secret 的一般模式是使用 HKDF-Extract，其中 Salt 是当前的 secret 状态，输入密钥材料(IKM)是要添加的新 secret 。在此版本的 TLS 1.3 中，两个输入 secrets 是:  
 
