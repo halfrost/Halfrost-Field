@@ -83,7 +83,7 @@ TLS 协议问题：
 
 - 当处理由 AEAD-Decrypt 生成的纯文本片段并且从末尾开始扫描 ContentType 的时候，如果对端发送了全部为零的格式错误明文，您是否会避免扫描明文的开头？
 
-- 您是否正确忽略了 ClientHello 中无法识别的密码套件([第4.1.2节](https://tools.ietf.org/html/rfc8446#section-4.1.2))，hello 扩展([第4.2节](https://tools.ietf.org/html/rfc8446#section-4.2))，命名组([第4.2.7节](https://tools.ietf.org/html/rfc8446#section-4.2.7))，密钥共享([第4.2.8节](https://tools.ietf.org/html/rfc8446#section-4.2.8))，支持的版本([第4.2.1节](https://tools.ietf.org/html/rfc8446#section-4.2.1))和签名算法([第4.2.3节](https://tools.ietf.org/html/rfc8446#section-4.2.3))？
+- 您是否正确忽略了 ClientHello 中无法识别的密码套件([第 4.1.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-client-hello))，hello 扩展([第 4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#%E4%BA%8C-extensions))，命名组([第 4.2.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#7-supported-groups))，密钥共享([第 4.2.8 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#8-key-share))，支持的版本([第 4.2.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-supported-versions))和签名算法([第 4.2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-signature-algorithms))？
 
 - 作为 Server，您是否向支持兼容 (EC)DHE 组但是不能预测它在 "key\_share" 扩展中的 Client 发送 HelloRetryRequest？作为 Client，您是否正确地处理从 Server 发过来的 HelloRetryRequest？
 
@@ -95,9 +95,9 @@ TLS 协议问题：
 
 - 您的 TLS Client 是否检查过 Server 发送过来的 Diffie-Hellman 参数是否可接受(参见第4.2.8.1节)？
 
-- 在生成 Diffie-Hellman 私有值，ECDSA"k" 参数和其他安全关键值时，您是否使用了强大且最重要的正确选择种子随机数生成器(参见 [附录C.1](https://tools.ietf.org/html/rfc8446#appendix-C.1))？建议实现方实现 [[RFC6979]](https://tools.ietf.org/html/rfc6979)中规定的 "确定性ECDSA"。
+- 在生成 Diffie-Hellman 私有值，ECDSA"k" 参数和其他安全关键值时，您是否使用了强大且最重要的正确选择种子随机数生成器(参见 [附录C.1](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Implementation_Notes.md#%E4%BA%8C-random-number-generation-and-seeding))？建议实现方实现 [[RFC6979]](https://tools.ietf.org/html/rfc6979)中规定的 "确定性ECDSA"。
 
-- 您是否将 Diffie-Hellman 公钥值和共享密钥，用 0 填充到到组的大小(参见[第4.2.8.1节](https://tools.ietf.org/html/rfc8446#section-4.2.8.1)和[第7.4.1节](https://tools.ietf.org/html/rfc8446#section-7.4.1))？
+- 您是否将 Diffie-Hellman 公钥值和共享密钥，用 0 填充到到组的大小(参见[第 4.2.8.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-diffie-hellman-parameters)和[第 7.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Cryptographic_Computations.md#1-finite-field-diffie-hellman))？
 
 - 您是否在制作签名后验证签名，以防止 RSA-CRT 密钥泄漏[FW15](https://tools.ietf.org/html/rfc8446#ref-FW15)？
 
