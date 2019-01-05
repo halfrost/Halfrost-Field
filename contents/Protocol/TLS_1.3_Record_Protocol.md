@@ -72,7 +72,7 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 本文档描述了使用版本 0x0304 的 TLS 1.3。此版本的值是历史的，源自对 TLS 1.0 使用 0x0301 和对 SSL 3.0 使用 0x0300。为了最大化向后兼容性，包含初始 ClientHello 的记录应该具有版本 0x0301(对应 TLS 1.0)，包含第二个 ClientHello 或 ServerHello 的记录必须具有版本 0x0303(对应 TLS 1.2)。在协商 TLS 的早期版本时，端点需要遵循附录 D 中提供的过程和要求。
 
 
-当尚未使用记录保护时，TLSPlaintext 结构是直接写入线路中的。一旦记录保护开始，TLSPlaintext 记录将受到保护并按照下节部分描述的那样进行发送。请注意，应用程序数据记录不得写入未受保护的连接中。(有关详细信息，请参阅[第2节](https://tools.ietf.org/html/rfc8446#section-2))
+当尚未使用记录保护时，TLSPlaintext 结构是直接写入线路中的。一旦记录保护开始，TLSPlaintext 记录将受到保护并按照下节部分描述的那样进行发送。请注意，应用程序数据记录不得写入未受保护的连接中。(有关详细信息，请参阅[第 2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#%E4%BA%94tls-13-%E5%8D%8F%E8%AE%AE%E6%A6%82%E8%A7%88))
 
 
 
@@ -103,7 +103,7 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 	TLSPlaintext.type 值，包含记录的内容类型。
 
 - zeros:  
-	在类型字段之后的明文中可以出现任意长度的零值字节。只要总数保持在记录大小限制范围内，这个字段为发件人提供了按所选的量去填充任何 TLS 记录的机会。更多详细信息，请参见[[第 5.4 节]](https://tools.ietf.org/html/rfc8446#section-5.4)
+	在类型字段之后的明文中可以出现任意长度的零值字节。只要总数保持在记录大小限制范围内，这个字段为发件人提供了按所选的量去填充任何 TLS 记录的机会。更多详细信息，请参见[[第 5.4 节]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E5%9B%9B-record-padding)
 
 - opaque\_type:  
 	TLSCiphertext 记录外部的 opaque\_type 字段始终设置为值23(application\_data)，以便与解析以前版本的 TLS 的中间件向外兼容。解密后，在 TLSInnerPlaintext.type 中找到记录的实际内容类型。
@@ -119,7 +119,7 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 - encrypted\_record:  
 	AEAD 加密形式的序列化 TLSInnerPlaintext 结构。
 
-AEAD 算法将单个密钥，随机数，明文和要包含在认证检查中的“附加数据”作为输入，如[[RFC5116的第2.1节]](https://tools.ietf.org/html/rfc5116#section-2.1)所述。key 是 client\_write\_key 或 server\_write\_key，nonce 是从序列号和 client\_write\_iv 或 server\_write\_iv 中派生出来的(参见[[第5.3节]](https://tools.ietf.org/html/rfc8446#section-5.3))，附加数据的输入是记录头，例如：
+AEAD 算法将单个密钥，随机数，明文和要包含在认证检查中的“附加数据”作为输入，如[[RFC5116的第2.1节]](https://tools.ietf.org/html/rfc5116#section-2.1)所述。key 是 client\_write\_key 或 server\_write\_key，nonce 是从序列号和 client\_write\_iv 或 server\_write\_iv 中派生出来的(参见[[第5.3节]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E4%B8%89-per-record-nonce))，附加数据的输入是记录头，例如：
 
 ```c
       additional_data = TLSCiphertext.opaque_type ||
@@ -127,7 +127,7 @@ AEAD 算法将单个密钥，随机数，明文和要包含在认证检查中的
                         TLSCiphertext.length
 ```
 
-作为输入 AEAD 算法的明文是编码后的 TLSInnerPlaintext 结构。[第7.3节](https://tools.ietf.org/html/rfc8446#section-7.3)定义了流量密钥的派生。
+作为输入 AEAD 算法的明文是编码后的 TLSInnerPlaintext 结构。[第7.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Cryptographic_Computations.md#%E4%B8%89-traffic-key-calculation)定义了流量密钥的派生。
 
 AEAD 输出包括 AEAD 加密操作的密文输出。由于包含 TLSInnerPlaintext.type 和发送方提供的任何填充，明文的长度大于相应的 TLSPlaintext.length。AEAD 输出的长度通常大于明文，但是其中一部分也会随着 AEAD 算法的变化而变化。
 
@@ -157,10 +157,10 @@ TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展�
 
 分别维护 64 位序列号以读取和写入记录。在读取或写入每个记录之后，适当的序列号加 1。每个序列号在连接开始时和每次更改密钥时都设置为零; 在特定流量密钥下传输的第一条记录必须使用序列号 0。
 
-因为序列号的大小是 64 位，所以它们不应该 wrap。如果 TLS 实现方需要 wrap 序列号，它必须重新生成密钥([第4.6.3节](https://tools.ietf.org/html/rfc8446#section-4.6.3))或终止连接。
+因为序列号的大小是 64 位，所以它们不应该 wrap。如果 TLS 实现方需要 wrap 序列号，它必须重新生成密钥([第4.6.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-key-and-initialization-vector-update))或终止连接。
 
 
-每个 AEAD 算法将为 per-record 的随机数指定一系列可能的长度，从 N\_MIN 字节到输入的 N\_MAX 字节[[RFC5116]]()。 对于 AEAD 算法，TLS 的 per-record 随机数(iv\_length)的长度设置为 8 字节和 N\_MIN 中的较大者(参见[[RFC5116]](https://tools.ietf.org/html/rfc5116#section-4)，第4节)。 其中 N\_MAX 小于 8 个字节的 AEAD 算法不得与 TLS 一起使用。AEAD 结构的 per-record 随机数形成如下:
+每个 AEAD 算法将为 per-record 的随机数指定一系列可能的长度，从 N\_MIN 字节到输入的 N\_MAX 字节[[RFC5116]](https://tools.ietf.org/html/rfc5116)。 对于 AEAD 算法，TLS 的 per-record 随机数(iv\_length)的长度设置为 8 字节和 N\_MIN 中的较大者(参见[[RFC5116]](https://tools.ietf.org/html/rfc5116#section-4)，第4节)。 其中 N\_MAX 小于 8 个字节的 AEAD 算法不得与 TLS 一起使用。AEAD 结构的 per-record 随机数形成如下:
 
 
 1. 64 位的记录序列号是按网络字节顺序编码，并在左边用零填充到 iv\_length。
@@ -194,7 +194,7 @@ TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展�
 
 ## 五. Limits on Key Usage
 
-明文数量存在一些加密限制，这些限制可以在给定的一组密钥下安全加密。[[AEAD-LIMITS]](https://tools.ietf.org/html/rfc8446#ref-AEAD-LIMITS) 在假设基础原语(AES 或 ChaCha20)没有弱点的情况下提供了对这些限制的分析。在达到这些限制之前，实现方应该按照[第 4.6.3 节](https://tools.ietf.org/html/rfc8446#section-4.6.3)中的描述进行密钥更新。
+明文数量存在一些加密限制，这些限制可以在给定的一组密钥下安全加密。[[AEAD-LIMITS]](https://tools.ietf.org/html/rfc8446#ref-AEAD-LIMITS) 在假设基础原语(AES 或 ChaCha20)没有弱点的情况下提供了对这些限制的分析。在达到这些限制之前，实现方应该按照[第 4.6.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-key-and-initialization-vector-update)中的描述进行密钥更新。
 
 对于 AES-GCM，在给定连接上可以加密多达 2 ^ 24.5 个全尺寸记录(大约 2400 万个)，同时为认证加密(AE)安全性保持大约 2 ^ -57 的安全余量。对于 ChaCha20 / Poly1305，记录序列号将在达到安全限制之前就会 wrap。
 
