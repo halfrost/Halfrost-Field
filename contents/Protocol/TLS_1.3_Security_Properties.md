@@ -45,7 +45,7 @@ TLS 握手是经过身份验证的密钥交换(AKE，Authenticated Key Exchange)
 
 外部 PSK 和恢复 PSK 使长期共享密钥转换为每个连接唯一的短期会话密钥集。这个密钥可能是在之前的握手中建立的。如果是使用由 (EC)DHE 密钥建立的 PSK，则这些会话密钥也将是前向保密的。已经设计了恢复 PSK，使得由 N 个连接计算出来的并且形成 N + 1 个连接所需的恢复主密钥与 N 个连接使用的流量密钥分开，从而在连接之间提供前向保密性。 此外，如果在同一连接上建立了多个 ticket，则它们与不同的密钥相关联，因此与一个 ticket 相关联的 PSK 的泄密不会导致与其他 ticket 相关联的 PSK 建立的连接也泄密。如果 ticket 存储在数据库中(因此可以删除)而不是它们是自加密的，则此属性最有趣。
 
-PSK 绑定器的值使得 PSK 与当前握手之间构成绑定关系，以及在建立 PSK 的会话与当前会话之间构成绑定关系。这种绑定传递性地包含了原始握手记录，因为该记录被用来产生恢复主密钥的值。这要求用于产生恢复主密钥的 KDF 和用于计算 binder 的 MAC 都是防碰撞的。有关详细信息，请参阅[附录 E.1.1](https://tools.ietf.org/html/rfc8446#appendix-E.1.1)。注意：binder 不包括其他 PSK 的 binder 的值，但它们包含在 Finished 的 MAC 中。
+PSK 绑定器的值使得 PSK 与当前握手之间构成绑定关系，以及在建立 PSK 的会话与当前会话之间构成绑定关系。这种绑定传递性地包含了原始握手记录，因为该记录被用来产生恢复主密钥的值。这要求用于产生恢复主密钥的 KDF 和用于计算 binder 的 MAC 都是防碰撞的。有关详细信息，请参阅[附录 E.1.1](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Security_Properties.md#1-key-derivation-and-hkdf)。注意：binder 不包括其他 PSK 的 binder 的值，但它们包含在 Finished 的 MAC 中。
 
 
 TLS 当前不允许 Server 在不是基于证书的握手(例如，PSK)中发送 certificate\_request 消息。如果未来放宽此限制，Client 的签名将不会直接覆盖 Server 的证书。但是，如果 PSK 是通过 NewSessionTicket 建立的，则 Client 的签名将通过 PSK binder 传递并覆盖 Server 的证书。[PSK-FINISHED](https://tools.ietf.org/html/rfc8446#ref-PSK-FINISHED) 描述了对未绑定到 Server 证书的结构的具体攻击（另请参阅 [Kraw16](https://tools.ietf.org/html/rfc8446#ref-Kraw16)）。当 Client 与两个不同的端点共享相同的 PSK / 密钥ID对时，在这种情况下，使用基于证书的 Client 身份验证是不安全的。实现方绝不能将外部 PSK 与 Client 或 Server 的基于证书的身份验证方式相结合，除非通过某些扩展协商。
@@ -54,7 +54,7 @@ TLS 当前不允许 Server 在不是基于证书的握手(例如，PSK)中发送
 如果使用 exporter，则它会生成唯一且保密的值(因为它们是从唯一的会话密钥生成的)。使用不同标签和不同上下文进行计算的 exporter 在计算上是独立的，因此根据 exporter 反推算会话密钥是不可行的，根据一个 exporter 计算另外一个 exporter 也是不可行的。注意：exporter 可以生成任意长度的值; 如果要将 exporter 被用作通道绑定，则导出的值必须足够大以提供防碰撞性。TLS 1.3 中提供的 exporter 分别来自与早期流量密钥和应用程序流量密钥相同的握手上下文，因此具有类似的安全属性。请注意，它们不包括 Client 的证书;未来希望绑定到 Client 的证书的应用程序可能需要定义包含完整握手记录的新的 exporter。
 
 
-对于所有握手模式，Finished 的 MAC(以及存在的签名)可防止降级攻击。此外，如 [第4.1.3节](https://tools.ietf.org/html/rfc8446#section-4.1.3) 所述，在随机 nonce 中使用某些字节可以检测出降级到 TLS 以前版本的情况。有关 TLS 1.3 和降级的更多详细信息，请参阅 [BBFGKZ16](https://tools.ietf.org/html/rfc8446#ref-BBFGKZ16)。
+对于所有握手模式，Finished 的 MAC(以及存在的签名)可防止降级攻击。此外，如 [第4.1.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-server-hello) 所述，在随机 nonce 中使用某些字节可以检测出降级到 TLS 以前版本的情况。有关 TLS 1.3 和降级的更多详细信息，请参阅 [BBFGKZ16](https://tools.ietf.org/html/rfc8446#ref-BBFGKZ16)。
 
 一旦 Client 和 Server 交换了足够的信息建立了共享密钥，握手的剩余部分就会被加密，从而提供针对被动攻击者的防护，即使计算的共享密钥未经过身份验证也能提供加密保护。由于 Server 在 Client 之前进行身份验证，因此 Client 可以确保如果 Client  对 Server 进行身份验证，则只会向已经经过身份验证的 Server 显示其身份。请注意，实现方必须在握手期间使用提供的记录填充机制，(记录填充机制可以混淆长度信息)以避免由于长度而泄露有关身份的信息。Client 提议的 PSK 标识如果未加密，那么也不是 Server 选择的标识。
 
@@ -72,7 +72,7 @@ TLS 1.3 中的密钥派生使用 [[RFC5869]](https://tools.ietf.org/html/rfc5869
 
 ### 3. 0-RTT
 
-0-RTT 操作模式通常提供类似于 1-RTT 数据的安全属性，但有两个例外，即 0-RTT 加密密钥不提供完全前向保密性，并且 Server 在不保留过多的状态的条件下，无法保证握手的唯一性(不可重复性)。有关限制重放风险的机制，请参阅 [第8节](https://tools.ietf.org/html/rfc8446#section-8)。
+0-RTT 操作模式通常提供类似于 1-RTT 数据的安全属性，但有两个例外，即 0-RTT 加密密钥不提供完全前向保密性，并且 Server 在不保留过多的状态的条件下，无法保证握手的唯一性(不可重复性)。有关限制重放风险的机制，请参阅 [第8节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#tls-13-0-rtt-and-anti-replay)。
 
 
 ### 4. Exporter Independence
@@ -94,7 +94,7 @@ TLS 不提供在对等方的长期密钥(签名密钥或外部 PSK)泄露之后�
 ## 二. Record Layer
 
 
-记录层依赖于握手产生强大的流量密钥，流量密钥可用于导出双向加密密钥和随机数。假设这是真的，并且密钥不再用于 [第5.5节](https://tools.ietf.org/html/rfc8446#section-5.5) 中所示的数据，那么记录层应该提供以下保证:
+记录层依赖于握手产生强大的流量密钥，流量密钥可用于导出双向加密密钥和随机数。假设这是真的，并且密钥不再用于 [第5.5节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E4%BA%94-limits-on-key-usage) 中所示的数据，那么记录层应该提供以下保证:
 
 
 - 保密性：攻击者不应该能够推测出给定记录的明文内容。
@@ -105,13 +105,13 @@ TLS 不提供在对等方的长期密钥(签名密钥或外部 PSK)泄露之后�
 
 - 长度隐藏：针对一条具有给定外部长度的记录，攻击者不应该能够确定内容与填充的记录量。
 
-- 密钥更改后的前向保密：如果使用了 [第4.6.3节](https://tools.ietf.org/html/rfc8446#section-4.6.3) 中描述的流量密钥更新机制并删除了上一代密钥，则打算破坏端点的攻击者不应该能够解密使用旧密钥加密的密文。
+- 密钥更改后的前向保密：如果使用了 [第4.6.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#3-key-and-initialization-vector-update) 中描述的流量密钥更新机制并删除了上一代密钥，则打算破坏端点的攻击者不应该能够解密使用旧密钥加密的密文。
 
 
-非正式地，TLS 1.3 通过 AEAD 提供安全属性 - 用强密钥保护明文。AEAD 加密 [[RFC5116]](https://tools.ietf.org/html/rfc5116) 为数据提供机密性和完整性。通过对每个记录使用单独的随机数来提供不可重放性，其中随机数来自记录序列号([第5.3节](https://tools.ietf.org/html/rfc8446#section-5.3))，序列号在两侧独立维护; 因此，无序传送的记录导致 AEAD 脱保护失败。不同用户在同一密钥下重复加密相同的明文时(通常是HTTP的情况)，为了在这种情况下防止大量的密码分析，通过将序列号与随着流量密钥一起导出的每个连接初始化向量的密钥相互混合来形成随机数。有关此结构的分析，请参见 [[BT16]](https://tools.ietf.org/html/rfc8446#ref-BT16)。
+非正式地，TLS 1.3 通过 AEAD 提供安全属性 - 用强密钥保护明文。AEAD 加密 [[RFC5116]](https://tools.ietf.org/html/rfc5116) 为数据提供机密性和完整性。通过对每个记录使用单独的随机数来提供不可重放性，其中随机数来自记录序列号([第5.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E4%B8%89-per-record-nonce))，序列号在两侧独立维护; 因此，无序传送的记录导致 AEAD 脱保护失败。不同用户在同一密钥下重复加密相同的明文时(通常是HTTP的情况)，为了在这种情况下防止大量的密码分析，通过将序列号与随着流量密钥一起导出的每个连接初始化向量的密钥相互混合来形成随机数。有关此结构的分析，请参见 [[BT16]](https://tools.ietf.org/html/rfc8446#ref-BT16)。
 
 
-TLS 1.3 中的密钥更新技术(参见 [第7.2节](https://tools.ietf.org/html/rfc8446#section-7.2))遵循 [[REKEY]](https://tools.ietf.org/html/rfc8446#ref-REKEY) 中讨论的串行生成器的构造，它表明密钥更新可以允许密钥用于大量加密而不需要重新加密。这依赖于作为伪随机函数(PRF) —— HKDF-Expand-Label 函数的安全性。此外，只要这个函数是真正的一种方式，就不可能在密钥更改之前计算流量密钥(前向保密性)。
+TLS 1.3 中的密钥更新技术(参见 [第7.2节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Cryptographic_Computations.md#%E4%BA%8C-updating-traffic-secrets))遵循 [[REKEY]](https://tools.ietf.org/html/rfc8446#ref-REKEY) 中讨论的串行生成器的构造，它表明密钥更新可以允许密钥用于大量加密而不需要重新加密。这依赖于作为伪随机函数(PRF) —— HKDF-Expand-Label 函数的安全性。此外，只要这个函数是真正的一种方式，就不可能在密钥更改之前计算流量密钥(前向保密性)。
 
 在该连接的流量密钥被泄露之后，TLS 不为在连接上传送的数据提供安全性。也就是说，TLS 不提供泄露后关于流量密钥的安全性/未来保密性/后向保密性。实际上，了解流量密钥的攻击者可以计算该连接上的所有未来的流量密钥。需要防御此类攻击的系统需要进行新的握手并用 (EC)DHE 交换建立新连接。
 
@@ -161,9 +161,9 @@ TLS 不提供针对此类攻击的任何特定防御，但提供了一个供应�
 
 
 
-最终，Server 有责任保护自己免受使用 0-RTT 数据复制的攻击。[第8节](https://tools.ietf.org/html/rfc8446#section-8) 中描述的机制旨在防止在 TLS 层重放，但不提供对防止接收到 Client 数据的多个副本这种情况的完全保护。当 Server 没有关于 Client 的任何信息时，TLS 1.3 会回退到 1-RTT 握手，例如，如[第8.1节](https://tools.ietf.org/html/rfc8446#section-8.1)所述，因为 Client 位于不共享状态的不同集群中，或者因为 ticket 已被删除。如果应用层协议在此设置中重新传输数据，则攻击者可能通过将 ClientHello 发送到原始群集(这个集群会立即处理数据)和另一个将回退到 1-RTT 的群集来引发消息重复，造成了应用层重放时需要处理数据。此攻击的规模受到 Client 重试事务意愿的限制，因此只允许有限量的重复，Server 会把每个重复的副本视为一个新的连接。
+最终，Server 有责任保护自己免受使用 0-RTT 数据复制的攻击。[第8节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#tls-13-0-rtt-and-anti-replay) 中描述的机制旨在防止在 TLS 层重放，但不提供对防止接收到 Client 数据的多个副本这种情况的完全保护。当 Server 没有关于 Client 的任何信息时，TLS 1.3 会回退到 1-RTT 握手，例如，如[第8.1节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#%E4%B8%80-single-use-tickets)所述，因为 Client 位于不共享状态的不同集群中，或者因为 ticket 已被删除。如果应用层协议在此设置中重新传输数据，则攻击者可能通过将 ClientHello 发送到原始群集(这个集群会立即处理数据)和另一个将回退到 1-RTT 的群集来引发消息重复，造成了应用层重放时需要处理数据。此攻击的规模受到 Client 重试事务意愿的限制，因此只允许有限量的重复，Server 会把每个重复的副本视为一个新的连接。
 
-如果实现方实现的正确的话，[第8.1](https://tools.ietf.org/html/rfc8446#section-8.1) 和 8.2 节中描述的机制会阻止 ClientHello 重放及其关联的 0-RTT 数据被具有一致状态的任何群集接受多次;对于将 0-RTT 的使用范围限制为一个集群一个 ticket 的 Server，那么给定的 ClientHello 及其关联的 0-RTT 数据将仅被接受一次。但是，如果状态不完全一致，则攻击者可能能够在复制窗口期间接受多个数据副本。由于 Client 不知道 Server 行为的具体细节，因此它们不得在 early data 中发送不安全的重放消息，并且他们也不愿意在多个 1-RTT 连接中重试这些消息。
+如果实现方实现的正确的话，[第 8.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#%E4%B8%80-single-use-tickets) 和 [第 8.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_0-RTT.md#%E4%BA%8C-client-hello-recording)中描述的机制会阻止 ClientHello 重放及其关联的 0-RTT 数据被具有一致状态的任何群集接受多次;对于将 0-RTT 的使用范围限制为一个集群一个 ticket 的 Server，那么给定的 ClientHello 及其关联的 0-RTT 数据将仅被接受一次。但是，如果状态不完全一致，则攻击者可能能够在复制窗口期间接受多个数据副本。由于 Client 不知道 Server 行为的具体细节，因此它们不得在 early data 中发送不安全的重放消息，并且他们也不愿意在多个 1-RTT 连接中重试这些消息。
 
 
 如果没有定义其用途的配置文件，应用程序协议绝不能使用 0-RTT 数据。该配置文件需要确定哪些消息或哪些交互可以安全地与 0-RTT 一起使用，以及在 Server 拒绝 0-RTT 并回退到 1-RTT 时如何处理这种情况。
