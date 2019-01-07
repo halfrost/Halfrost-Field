@@ -63,8 +63,12 @@
 除去 4 是无论如何都无法省掉的以外，剩下的就是 TCP 和 TLS 握手了。 TCP 想要减至 0-RTT，目前来看有点难。那 TLS 呢？目前 TLS 1.2 完整一次握手需要 2-RTT，能再减少一点么？答案是可以的。
 
 
+## 四、TLS/SSL 协议概述
 
-## 四、TLS 1.2 首次握手流程
+
+
+
+## 五、TLS 1.2 首次握手流程
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_2.png)
 
@@ -92,7 +96,7 @@
 
 
 
-## 五、TLS 1.2 第二次握手流程
+## 六、TLS 1.2 第二次握手流程
 
 为何会出现再次握手呢？这个就牵扯到了会话复用机制。
 
@@ -110,7 +114,7 @@
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_26.png)
 
-## 六、TLS 1.3 首次握手流程
+## 七、TLS 1.3 首次握手流程
 
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_15.png)
@@ -131,7 +135,7 @@
 
 
 
-## 七、TLS 1.3 第二次握手流程
+## 八、TLS 1.3 第二次握手流程
 
 这里网上很多文章对 TLS 1.3 第二次握手有误解。经过自己实践以后发现了“真理”。
 
