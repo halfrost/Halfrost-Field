@@ -91,6 +91,8 @@
 
 ## 九、密码技术的实质
 
+![](https://img.halfrost.com/Blog/ArticleImage/95_5.png)
+
 密码学家的工具箱中的内容完整整理如下：
 
 ![](https://img.halfrost.com/Blog/ArticleImage/96_6.png)
