@@ -102,7 +102,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 
 苹果为了推广HTTPS，在 WWDC 2017 上也宣布新的 App 必须要开启 APS (App Transport Security)安全特性。
 
-## 三、加密
+## 三、HTTPS 中的密码学
 
 ### 1. 对称密钥加密
 
@@ -140,9 +140,9 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 
 
-## 认证
+### 4. 认证
 
-通过使用  **证书**  来对通信方进行认证。
+HTTPS 通过使用  **证书**  来对通信方进行认证。
 
 数字证书认证机构（CA，Certificate Authority）是客户端与服务器双方都可信赖的第三方机构。服务器的运营人员向 CA 提出公开密钥的申请，CA 在判明提出申请者的身份之后，会对已申请的公开密钥做数字签名，然后分配这个已签名的公开密钥，并将该公开密钥放入公开密钥证书后绑定在一起。
 
@@ -156,25 +156,58 @@ HTTPS 采用混合的加密机制，使用公开密钥加密用于传输对称�
 
 使用 OpenSSL 这套开源程序，每个人都可以构建一套属于自己的认证机构，从而自己给自己颁发服务器证书。浏览器在访问该服务器时，会显示“无法确认连接安全性”或“该网站的安全证书存在问题”等警告消息。
 
-## 完整性
+### 5. 完整性
 
-SSL 提供报文摘要功能来验证完整性。
+TLS / SSL 提供报文摘要功能来验证完整性。
 
-<p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/95_5.png'>
-</p>
-
-## 四、握手流程
+## 四、HTTPS 中的 TLS / SSL 协议
 
 
 <p align='center'>
 <img src='../images/HTTPS_guide.png'>
 </p>
 
+能让 HTTPS 带来安全性的是其背后的 TLS 协议。它源于九十年代中期在 Netscape 上开发的称为安全套接字层(SSL)的协议。到 20 世纪 90 年代末，Netscape 将 SSL 移交给了 IETF，IETF 将其重命名为 TLS，并从此成为该协议的管理者。许多人仍将 Web 加密称作 SSL，即使绝大多数服务已切换到仅支持 TLS。
 
 <p align='center'>
-<img src='../images/http_https.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_10.png'>
 </p>
+
+- 1995: SSL 2.0. 由 Netscape 提出，这个版本由于设计缺陷，并不安全，很快被发现有严重漏洞，已经废弃。
+
+- 1996: SSL 3.0. 写成 RFC，开始流行。目前（2015年）已经不安全，必须禁用。
+
+- 1999: TLS 1.0. 互联网标准化组织 ISOC 接替 NetScape 公司，发布了 SSL 的升级版 TLS 1.0 版。
+
+- 2006: TLS 1.1. 作为 RFC 4346 发布。主要 fix 了 CBC 模式相关的如 BEAST 攻击等漏洞。
+
+- 2008: TLS 1.2. 作为 RFC 5246 发布。增进安全性。目前（2015 年）应该主要部署的版本，请确保你使用的是这个版本。
+
+- 2018：8月10日 RFC8446 TLS 1.3 协议正式发布，它剔除了 TLS 1.2 协议中不安全的因素，极大地增强了协议的安全性和性能。
+
+在 IETF 中，协议被称为 RFC。TLS 1.0 是 RFC 2246，TLS 1.1 是 RFC 4346，TLS 1.2 是 RFC 5246。现在，TLS 1.3 为 RFC 8446。从 TLS 1.2 到 TLS 1.3，前前后后花了快 10 年的时间。RFC 通常按顺序发布，TLS 正式规范都是以 46 作为 RFC 编号的一部分更像是计划好的，并非巧合。
+
+
+TLS/SSL 协议位于应用层和传输层 TCP 协议之间。TLS 粗略的划分又可以分为 2 层：
+
+- 靠近应用层的握手协议 TLS Handshaking Protocols
+- 靠近 TCP 的记录层协议 TLS Record Protocol
+
+TLS 握手协议还能细分为 5 个子协议：
+
+- change\_cipher\_spec
+- alert
+- handshake
+- application_data
+- heartbeat (这个是 TLS 1.3 新加的，TLS 1.3 之前的版本没有这个协议)
+
+这些子协议之间的关系可以用下图来表示：
+
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_11_.png'>
+</p>
+
 
 ------------------------------------------------------
 
