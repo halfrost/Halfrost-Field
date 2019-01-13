@@ -115,6 +115,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 <img src='https://img.halfrost.com/Blog/ArticleImage/95_6.png'>
 </p>
 
+> 关于对称加密更加详细的内容，可以看笔者之前写的 [《漫游对称加密算法》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-symmetric-encryption.md)
 
 ### 2. 公开密钥加密
 
@@ -127,7 +128,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 <img src='https://img.halfrost.com/Blog/ArticleImage/95_7.png'>
 </p>
 
-
+> 关于公开密钥加密更加详细的内容，可以看笔者之前写的 [《翱游公钥密码算法》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-asymmetric-encryption.md)
 
 ### 3. HTTPS 采用的加密方式
 
@@ -153,6 +154,7 @@ HTTPS 通过使用  **证书**  来对通信方进行认证。
 <img src='https://img.halfrost.com/Blog/ArticleImage/95_9.png'>
 </p>
 
+> 关于证书更加详细的内容，可以看笔者之前写的 [《随处可见的公钥证书》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-digital-certificate.md)
 
 使用 OpenSSL 这套开源程序，每个人都可以构建一套属于自己的认证机构，从而自己给自己颁发服务器证书。浏览器在访问该服务器时，会显示“无法确认连接安全性”或“该网站的安全证书存在问题”等警告消息。
 
@@ -164,7 +166,7 @@ TLS / SSL 提供报文摘要功能来验证完整性。
 
 
 <p align='center'>
-<img src='../images/HTTPS_guide.png'>
+<img src='../images/https_guide.png'>
 </p>
 
 能让 HTTPS 带来安全性的是其背后的 TLS 协议。它源于九十年代中期在 Netscape 上开发的称为安全套接字层(SSL)的协议。到 20 世纪 90 年代末，Netscape 将 SSL 移交给了 IETF，IETF 将其重命名为 TLS，并从此成为该协议的管理者。许多人仍将 Web 加密称作 SSL，即使绝大多数服务已切换到仅支持 TLS。
@@ -442,9 +444,107 @@ TLS 1.3 比 TLS 1.2 新增了 9 个警告描述信息：
 
 ```
 
+
+
 ### 4. TLS 握手协议
 
+握手协议是整个 TLS 协议簇中最最核心的协议，HTTPS 能保证安全也是因为它的功劳。
 
+握手协议由多个子消息构成，服务端和客户端第一次完成一次握手需要 2-RTT。
+
+握手协议的目的是为了双方协商出密码块，这个密码块会交给 TLS 记录层进行密钥加密。也就是说握手协议达成的“共识”(密码块)是整个 TLS 和 HTTPS 安全的基础。
+
+握手协议在 TLS 1.2 和 TLS 1.3 中发生了很大的变化。TLS 1.3 的 0-RTT 是一个全新的概念。两个版本在密钥协商上，密码套件选择上都有很大不同。
+
+TLS 1.2 协议数据结构如下：
+
+```c
+   enum {
+       hello_request(0), 
+       client_hello(1), 
+       server_hello(2),
+       certificate(11), 
+       server_key_exchange (12),
+       certificate_request(13), 
+       server_hello_done(14),
+       certificate_verify(15), 
+       client_key_exchange(16),
+       finished(20)
+       (255)
+   } HandshakeType;
+
+   struct {
+       HandshakeType msg_type;
+       uint24 length;
+       select (HandshakeType) {
+           case hello_request:       HelloRequest;
+           case client_hello:        ClientHello;
+           case server_hello:        ServerHello;
+           case certificate:         Certificate;
+           case server_key_exchange: ServerKeyExchange;
+           case certificate_request: CertificateRequest;
+           case server_hello_done:   ServerHelloDone;
+           case certificate_verify:  CertificateVerify;
+           case client_key_exchange: ClientKeyExchange;
+           case finished:            Finished;
+       } body;
+   } Handshake;
+```
+
+TLS 1.3 协议数据结构如下：
+
+```c
+      enum {
+          hello_request_RESERVED(0),
+          client_hello(1),
+          server_hello(2),
+          hello_verify_request_RESERVED(3),
+          new_session_ticket(4),
+          end_of_early_data(5),
+          hello_retry_request_RESERVED(6),
+          encrypted_extensions(8),
+          certificate(11),
+          server_key_exchange_RESERVED(12),
+          certificate_request(13),
+          server_hello_done_RESERVED(14),
+          certificate_verify(15),
+          client_key_exchange_RESERVED(16),
+          finished(20),
+          certificate_url_RESERVED(21),
+          certificate_status_RESERVED(22),
+          supplemental_data_RESERVED(23),
+          key_update(24),
+          message_hash(254),
+          (255)
+      } HandshakeType;
+
+      struct {
+          HandshakeType msg_type;    /* handshake type */
+          uint24 length;             /* bytes in message */
+          select (Handshake.msg_type) {
+              case client_hello:          ClientHello;
+              case server_hello:          ServerHello;
+              case end_of_early_data:     EndOfEarlyData;
+              case encrypted_extensions:  EncryptedExtensions;
+              case certificate_request:   CertificateRequest;
+              case certificate:           Certificate;
+              case certificate_verify:    CertificateVerify;
+              case finished:              Finished;
+              case new_session_ticket:    NewSessionTicket;
+              case key_update:            KeyUpdate;
+          };
+      } Handshake;
+```
+
+经过 TLS 记录层包装以后，结构如下:
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_17.png'>
+</p>
+
+握手消息类型虽然有很多种，但是最终传到 TLS 记录层，有些会被合并到一条消息。
+
+>关于 TLS 握手协议更多细节将在接下来的文章中详细分析。也会对 TLS 1.2 和 TLS 1.3 展开对比。
 
 ### 5. TLS 应用数据协议
 
@@ -461,14 +561,53 @@ TLS 记录层会根据加密模式的不同在应用数据的末尾加上 MAC �
 
 ### 6. TLS 心跳协议
 
+这个协议是 TLS 1.3 新增的。更加细节可以看这篇文章[《TLS & DTLS Heartbeat Extension》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_Heartbeat.md)，这篇文章是笔者根据 [[RFC 6520]](https://tools.ietf.org/html/rfc6520) 翻译的。感兴趣的可以去看看这篇文章。这篇文章还涉及到了 DTLS 和 PMTU 发现。
+
+协议数据结构如下：
+
+```c
+   enum {
+      heartbeat_request(1),
+      heartbeat_response(2),
+      (255)
+   } HeartbeatMessageType;
+   
+   struct {
+      HeartbeatMessageType type;
+      uint16 payload_length;
+      opaque payload[HeartbeatMessage.payload_length];
+      opaque padding[padding_length];
+   } HeartbeatMessage;
+```
+
+经过 TLS 记录层包装以后，结构如下:
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/95_16.png'>
+</p>
+
+根据 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 中的定义，在协商的时候，HeartbeatMessage 的总长度不得超过 2 ^ 14 或 max\_fragment\_length。
+
+HeartbeatMessage 的长度为 TLS 的TLSPlaintext.length 和 DTLS 的 DTLSPlaintext.length。此外，类型 type 字段的长度是 1 个字节，并且 payload\_length 的长度是 2 个字节。因此，padding\_length 是TLSPlaintext.length  -  payload\_length  -  3 用于 TLS，DTLSPlaintext.length  -  payload\_length  -  3 用于 DTLS。padding\_length 必须至少为 16。
+
+HeartbeatMessage 的发送方必须使用至少 16 个字节的随机填充。必须忽略收到的HeartbeatMessage 消息的填充。
+
+
+## 五. 接下来
+
+本篇文章作为 HTTPS 的开篇文章，分析了 HTTTPS 协议存在的必要性，HTTPS 带来的好处，HTTPS 安全的本质，以及 TLS 各个子协议之间的关系和作用。
+
+接下来的几篇文章将会详细的对比 TLS 1.2 和 TLS 1.3 在握手协议上的差别，在记录层上的差别，在密钥导出上的差别，以及 TLS 1.3 新增的 0-RTT 到底是怎么回事。
+
+
 ------------------------------------------------------
 
 Reference：
   
 《图解 HTTP》    
-《HTTP 权威指南》  
 《深入浅出 HTTPS》  
-[How to Migrate from HTTP to HTTPS – Complete Tutorial](https://woorkup.com/http-to-https/)
+[TLS 1.3 规范 [RFC 8446]](https://tools.ietf.org/html/rfc8446)  
+[TLS 1.2 规范 [RFC 5246]](https://tools.ietf.org/html/rfc5246)
 
 > GitHub Repo：[Halfrost-Field](HTTPS://github.com/halfrost/Halfrost-Field)
 > 
