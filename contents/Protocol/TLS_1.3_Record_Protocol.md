@@ -33,7 +33,7 @@ TLS 记录允许同一层记录层上复用多个更高层的协议。本文档�
 
 Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得合并为单个 TLSPlaintext 记录。换句话说，具有 alert 类型的记录必须只包含一条消息。
 
-应用程序数据消息包含对 TLS 不透明的数据。应用程序数据消息始终受到保护。可以发送应用程序数据的零长度片段，因为它们可能作为流量分析对策使用。应用程序数据片段可以拆分为多个记录，也可以合并为一个记录。
+应用数据消息包含对 TLS 不透明的数据。应用数据消息始终受到保护。可以发送应用数据的零长度片段，因为它们可能作为流量分析对策使用。应用数据片段可以拆分为多个记录，也可以合并为一个记录。
 
 
 ```c
@@ -72,7 +72,7 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 本文档描述了使用版本 0x0304 的 TLS 1.3。此版本的值是历史的，源自对 TLS 1.0 使用 0x0301 和对 SSL 3.0 使用 0x0300。为了最大化向后兼容性，包含初始 ClientHello 的记录应该具有版本 0x0301(对应 TLS 1.0)，包含第二个 ClientHello 或 ServerHello 的记录必须具有版本 0x0303(对应 TLS 1.2)。在协商 TLS 的早期版本时，端点需要遵循附录 D 中提供的过程和要求。
 
 
-当尚未使用记录保护时，TLSPlaintext 结构是直接写入线路中的。一旦记录保护开始，TLSPlaintext 记录将受到保护并按照下节部分描述的那样进行发送。请注意，应用程序数据记录不得写入未受保护的连接中。(有关详细信息，请参阅[第 2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#%E4%BA%94tls-13-%E5%8D%8F%E8%AE%AE%E6%A6%82%E8%A7%88))
+当尚未使用记录保护时，TLSPlaintext 结构是直接写入传输线路中的。一旦记录保护开始，TLSPlaintext 记录将受到保护并按照下节部分描述的那样进行发送。请注意，应用数据记录不得写入未受保护的连接中。(有关详细信息，请参阅[第 2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#%E4%BA%94tls-13-%E5%8D%8F%E8%AE%AE%E6%A6%82%E8%A7%88))
 
 
 
@@ -97,7 +97,7 @@ Alert 消息禁止在记录之间进行分段，并且多条 alert 消息不得�
 ```
 
 - content:  
-	TLSPlaintext.fragment 值，包含握手或警报消息的字节编码，或要发送的应用程序数据的原始字节。
+	TLSPlaintext.fragment 值，包含握手或警报消息的字节编码，或要发送的应用数据的原始字节。
 	
 - type:  
 	TLSPlaintext.type 值，包含记录的内容类型。
@@ -178,7 +178,7 @@ TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展�
 生成 TLSCiphertext 记录时，实现方可以选择填充。未填充的记录只是填充长度为零的记录。填充是在加密之前附加到 ContentType 字段的一串零值字节。实现方必须在加密之前将填充的八位字节全部设置为零。
 
 
-如果发送者需要，应用程序数据记录可以包含零长度 TLSInnerPlaintext.content。 这允许在对 activity 存在或者不存在敏感的情况下，产生合理大小的覆盖流量。实现绝不能发送具有零长度 TLSInnerPlaintext.content 的握手和 alert 记录; 如果收到这样的消息，接收实现必须用 "unexpected\_message" alert 消息终止连接。
+如果发送者需要，应用数据记录可以包含零长度 TLSInnerPlaintext.content。 这允许在对 activity 存在或者不存在敏感的情况下，产生合理大小的覆盖流量。实现绝不能发送具有零长度 TLSInnerPlaintext.content 的握手和 alert 记录; 如果收到这样的消息，接收实现必须用 "unexpected\_message" alert 消息终止连接。
 
 
 发送的填充由记录保护机制自动验证;在成功解密 TLSCiphertext.encrypted\_record后，接收实现方从末端向前开始扫描字段，直到找到非零八位字节。该非零八位字节是消息的内容类型。选择此填充方案是因为它允许以任意大小(从零到 TLS 记录大小限制)填充任何加密的 TLS 记录，而不引入新的内容类型。该设计还强制执行全零填充八位字节，以便快速检测填充错误。
