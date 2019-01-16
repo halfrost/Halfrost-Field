@@ -166,7 +166,7 @@ TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展�
 1. 64 位的记录序列号是按网络字节顺序编码，并在左边用零填充到 iv\_length。
 2. 填充的序列号要和 client\_write\_iv 或者 server\_write\_iv 进行异或(取决于角色)
 
-得到的数量(长度为 iv\_length)被用作 per-record 的随机数。
+得到的值(长度为 iv\_length)被用作 per-record 的随机数。
 
 注意：这与 TLS 1.2 中的结构不同了，TLS 1.2 指定了部分显式的随机数。
 
@@ -178,7 +178,7 @@ TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展�
 生成 TLSCiphertext 记录时，实现方可以选择填充。未填充的记录只是填充长度为零的记录。填充是在加密之前附加到 ContentType 字段的一串零值字节。实现方必须在加密之前将填充的八位字节全部设置为零。
 
 
-如果发送者需要，应用数据记录可以包含零长度 TLSInnerPlaintext.content。 这允许在对 activity 存在或者不存在敏感的情况下，产生合理大小的覆盖流量。实现绝不能发送具有零长度 TLSInnerPlaintext.content 的握手和 alert 记录; 如果收到这样的消息，接收实现必须用 "unexpected\_message" alert 消息终止连接。
+如果发送者需要，应用数据记录可以包含零长度 TLSInnerPlaintext.content。 这允许在对 activity 存在或者不存在敏感的情况下，产生合理大小的覆盖流量。实现方绝不能发送具有零长度 TLSInnerPlaintext.content 的握手和 alert 记录; 如果收到这样的消息，接收实现方必须用 "unexpected\_message" alert 消息终止连接。
 
 
 发送的填充由记录保护机制自动验证;在成功解密 TLSCiphertext.encrypted\_record后，接收实现方从末端向前开始扫描字段，直到找到非零八位字节。该非零八位字节是消息的内容类型。选择此填充方案是因为它允许以任意大小(从零到 TLS 记录大小限制)填充任何加密的 TLS 记录，而不引入新的内容类型。该设计还强制执行全零填充八位字节，以便快速检测填充错误。
