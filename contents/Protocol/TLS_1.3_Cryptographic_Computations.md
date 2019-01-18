@@ -161,7 +161,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 ```
 
 
-每当底层 Secret 更改时(例如，从握手更改为应用程序数据密钥或密钥更新时)，将重新计算所有流量密钥材料。
+每当底层 Secret 更改时(例如，从握手更改为应用数据密钥或密钥更新时)，将重新计算所有流量密钥材料。
 
 ## 四. (EC)DHE Shared Secret Calculation
 
