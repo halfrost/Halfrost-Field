@@ -200,7 +200,7 @@ TLS 握手协议还能细分为 5 个子协议：
 - change\_cipher\_spec (在 TLS 1.3 中这个协议已经删除，为了兼容 TLS 老版本，可能还会存在)
 - alert
 - handshake
-- application_data
+- application\_data
 - heartbeat (这个是 TLS 1.3 新加的，TLS 1.3 之前的版本没有这个协议)
 
 这些子协议之间的关系可以用下图来表示：
@@ -244,7 +244,7 @@ TLS 握手协议还能细分为 5 个子协议：
 - type:  
 用于处理 TLS 握手层的高级协议。
 
-```
+```c
       enum {
           invalid(0),
           change_cipher_spec(20),
