@@ -146,11 +146,11 @@ TLS 握手协议会填充好上述的加密参数，然后 TLS 记录层会使�
 TLS 记录层协议处理上层传来的消息，处理步骤主要分为 4 步：
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/119_1.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/119_1_1.png'>
 </p>
 
 - 数据分块
-- 数据压缩
+- 数据压缩/数据填充(在 TLS 1.2 中是数据压缩，在 TLS 1.3 中是数据填充，数据压缩和填充这一步都是可选的)
 - 加密和完整性保护(在 TLS 1.2 中主要分三种模式：流加密模式、分组模式、AEAD 模式，在 TLS 1.3 中**只有** AEAD 模式)
 - 添加消息头
 
@@ -290,7 +290,42 @@ TLS 1.3 中，相同协议的多个子消息也可以合并成单个 TLSPlaintex
 
 #### (2) TLS 1.3
 
-在 TLS 1.3 中完全删除了这一块部分，消息验证码都是由 AEAD 承担。
+在 TLS 1.3 中完全删除了数据压缩这一块，因为之前出现过安全问题。在 TLS 1.3 中，在 TLS 记录层加密和完整性保护之前新增加了一个可选的操作，数据填充。
+
+数据填充允许所有 TLS 记录都可以被填充，从而扩大 TLSCiphertext 的大小。这种做法允许发送者隐藏来自观察者的流量大小。
+
+生成 TLSCiphertext 记录时，实现方可以选择填充。**未填充的记录只是填充长度为零的记录**。填充是在加密之前附加到 ContentType 字段的一串零值字节。实现方必须在加密之前将填充的八位字节全部设置为零。
+
+如果发送者需要，应用数据记录可以包含零长度 TLSInnerPlaintext.content。 这允许在对 activity 存在或者不存在敏感的情况下，产生合理大小的覆盖流量。实现方绝不能发送具有零长度 TLSInnerPlaintext.content 的握手和 alert 记录; 如果收到这样的消息，接收实现方必须用 "unexpected\_message" alert 消息终止连接。
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/119_5_.png'>
+</p>
+
+```c
+      struct {
+          opaque content[TLSPlaintext.length];
+          ContentType type;
+          uint8 zeros[length_of_padding];
+      } TLSInnerPlaintext;
+```
+
+- content:  
+	TLSPlaintext.fragment 值，包含握手或警报消息的字节编码，或要发送的应用数据的原始字节。
+	
+- type:  
+	TLSPlaintext.type 值，包含记录的内容类型。
+
+- zeros:  
+	在类型字段之后的明文中可以出现任意长度的零值字节。只要总数保持在记录大小限制范围内，这个字段为发件人提供了按所选的量去填充任何 TLS 记录的机会。
+	
+
+发送的填充由记录保护机制自动验证;在成功解密 TLSCiphertext.encrypted\_record后，接收实现方从末端向前开始扫描字段，直到找到非零八位字节。该非零八位字节是消息的内容类型 type 字段。选择此填充方案是因为它允许以任意大小(从零到 TLS 记录大小限制)填充任何加密的 TLS 记录，而不引入新的内容类型。该设计还强制执行全零填充八位字节，以便快速检测填充错误。**去掉 Padding 的步骤是 TLSInnerPlaintext 还原成 TLSPlaintext 主要流程**。
+
+实现方必须将扫描范围限制为只扫描从 AEAD 解密返回的明文。如果接收实现方在明文中没有找到非零八位字节，它必须以 "unexpected\_message" alert 消息终止连接。
+
+填充并不会改变整体记录大小限制：完整编码的 TLSInnerPlaintext 不得超过 2 ^ 14 + 1 个八位字节。如果最大片段长度减少 - 例如，来自 [RFC8449] 的 record\_size\_limit 扩展 - 那么减少的限制适用于完整的纯文本，包括内容类型和填充。
+
 
 
 ### 3. 加密和完整性保护
@@ -495,7 +530,7 @@ AEAD 加密的完整流程画出来如下图：
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/119_4_.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/119_4_0.png'>
 </p>
 
 相比较流加密，AEAD 加密只多了 Nonce。
@@ -506,27 +541,12 @@ AEAD 加密的完整流程画出来如下图：
 
 ```c
       struct {
-          opaque content[TLSPlaintext.length];
-          ContentType type;
-          uint8 zeros[length_of_padding];
-      } TLSInnerPlaintext;
-
-      struct {
           ContentType opaque_type = application_data; /* 23 */
           ProtocolVersion legacy_record_version = 0x0303; /* TLS v1.2 */
           uint16 length;
           opaque encrypted_record[TLSCiphertext.length];
       } TLSCiphertext;
 ```
-
-- content:  
-	TLSPlaintext.fragment 值，包含握手或警报消息的字节编码，或要发送的应用数据的原始字节。
-	
-- type:  
-	TLSPlaintext.type 值，包含记录的内容类型。
-
-- zeros:  
-	在类型字段之后的明文中可以出现任意长度的零值字节。只要总数保持在记录大小限制范围内，这个字段为发件人提供了按所选的量去填充任何 TLS 记录的机会。
 
 - opaque\_type:  
 	TLSCiphertext 记录外部的 opaque\_type 字段始终设置为值23(application\_data)，以便与解析以前版本的 TLS 的中间件向外兼容。解密后，在 TLSInnerPlaintext.type 中找到记录的实际内容类型。
@@ -542,6 +562,58 @@ AEAD 加密的完整流程画出来如下图：
 - encrypted\_record:  
   AEAD 加密形式的序列化 TLSInnerPlaintext 结构。
 
+AEAD 加密的完整流程画出来如下图：
+
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/119_6.png'>
+</p>
+
+TLS 1.3 中 AEAD 算法将单个密钥，随机数，明文和要包含在认证检查中的“附加数据”作为输入。key 是 client\_write\_key 或 server\_write\_key，nonce 是从序列号和 client\_write\_iv 或 server\_write\_iv 中派生出来的，附加数据的输入是记录头：
+
+```c
+      additional_data = TLSCiphertext.opaque_type ||
+                        TLSCiphertext.legacy_record_version ||
+                        TLSCiphertext.length
+```
+
+作为输入 AEAD 算法的明文是编码后的 TLSInnerPlaintext 结构。
+
+**TLS 1.2 的 AEAD 和 TLS 1.3 的 AEAD 最大的区别在于 nonce 的生成方式不同。序列号在 TLS 1.2 中是算做 additional\_data，但是在 TLS 1.3 中是被算进了 nonce 中。并且 TLS 1.3 中的 additional\_data 中的 2 个参与计算的字段值是固定死的**。
+
+TLS 1.3 中 AEAD 结构的 per-record nonce 随机数形成如下:
+
+1. 64 位的记录序列号是按网络字节顺序编码，并在左边用零填充到 iv\_length。
+2. 填充的序列号要和 client\_write\_iv 或者 server\_write\_iv 进行异或(取决于角色)
+
+得到的值(长度为 iv\_length)被用作 per-record 的随机数 nonce。
+
+>注意：这与 TLS 1.2 中的结构不同了，TLS 1.2 指定了部分显式的随机数。
+
+
+AEAD 输出包括 AEAD 加密操作的密文输出。由于包含 TLSInnerPlaintext.type 和发送方提供的任何填充，明文的长度大于相应的 TLSPlaintext.length。AEAD 输出的长度通常大于明文，但是其中一部分也会随着 AEAD 算法的变化而变化。
+
+由于密码可能包含填充，因此开销量可能随着明文的不同长度而变化。
+
+```c
+      AEADEncrypted =
+          AEAD-Encrypt(write_key, nonce, additional_data, plaintext)
+```
+
+TLSCiphertext 的 encrypted\_record 字段设置为 AEADEncrypted。
+
+为了解密和验证，密码会把密钥，随机数，附加数据和 AEADEncrypted 值作为输入。输出的是明文或表示解密失败的错误。这里没有单独的完整性检查。
+
+```c
+      plaintext of encrypted_record =
+          AEAD-Decrypt(peer_write_key, nonce,
+                       additional_data, AEADEncrypted)
+```
+
+如果解密失败，接收方必须使用 "bad\_record\_mac" alert 消息终止连接。
+
+TLS 1.3 中使用的 AEAD 算法不得产生大于 255 个八位字节的扩展。从对端的 TLSCiphertext.length 接收记录，如果 TLSCiphertext.length 大于 2 ^ 14 + 256 个八位字节，则必须用 "record\_overflow" 消息终止连接。这个限制源自于：TLSInnerPlaintext 长度的最大值是 2 ^ 14 个八位字节 + 1 个八字节的 ContentType + 255 个八位字节的最大 AEAD 扩展。
+
 
 ### 4. 添加消息头
 
@@ -555,7 +627,7 @@ AEAD 加密的完整流程画出来如下图：
           uint16 length;
 ```
 
-由于为了兼容 TLS 1.3 之前的版本，ProtocolVersion 还是需要保留，但是实际上在 TLS 1.3 的规范中已经不再使用了。在 TLS 1.3 中，消息头字段月有下面这 3 个。
+由于为了兼容 TLS 1.3 之前的版本，ProtocolVersion 还是需要保留，但是实际上在 TLS 1.3 的规范中已经不再使用了。在 TLS 1.3 中，消息头字段还有下面这 3 个。
 
 
 ```c
@@ -584,7 +656,7 @@ TLS 记录协议需要一个算法从握手协议提供的安全参数中生成�
                       SecurityParameters.client_random);
 ```
 
->这里用到了 PRF 算法，关于这个算法笔者会单独写一篇文章来对比 TLS 1.2 和 TLS 1.3 在这个算法上的不同。
+> 这里用到了 PRF 算法，关于这个算法笔者会单独写一篇文章来对比 TLS 1.2 和 TLS 1.3 在这个算法上的不同。
 
 直到产生足够的输出。然后，key\_block 会按照如下方式分开：
 
@@ -605,15 +677,16 @@ TLS 记录协议需要一个算法从握手协议提供的安全参数中生成�
 ### 2. TLS 1.3 中的密钥计算
 
 
+关于 TLS 1.3 的密钥计算比较复杂，因为还会牵扯到 0-RTT，这块笔者打算专门写一篇文章来说明。TLS 1.2/1.1/1.0 都是用的 PRF 算法进行密钥计算的，但是到了 TLS 1.3，这块完全被更改了，换成了 HKDF 算法来进行密钥计算的。
 
+针对 TLS 1.2 和 TLS 1.3 密钥计算，笔者在 0-RTT 的文章写完以后会单独来写一篇文章来对比一下它们的异同点。
 
 
 ------------------------------------------------------
 
 Reference：  
-
-《深入浅出 HTTPS》      
-[TLS\_1.3\_Record\_Protocol](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E4%B8%80-record-layer)  
+     
+[TLS 1.3 The TLS Record Protocol](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Record_Protocol.md#%E4%B8%80-record-layer)  
 [TLS 1.2 The TLS Record Protocol](https://tools.ietf.org/html/rfc5246#page-15)
 
 
