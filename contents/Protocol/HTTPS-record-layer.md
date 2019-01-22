@@ -579,7 +579,7 @@ TLS 1.3 中 AEAD 算法将单个密钥，随机数，明文和要包含在认证
 
 作为输入 AEAD 算法的明文是编码后的 TLSInnerPlaintext 结构。
 
-**TLS 1.2 的 AEAD 和 TLS 1.3 的 AEAD 最大的区别在于 nonce 的生成方式不同。序列号在 TLS 1.2 中是算做 additional\_data，但是在 TLS 1.3 中是被算进了 nonce 中。并且 TLS 1.3 中的 additional\_data 中的 2 个参与计算的字段值是固定死的**。
+**TLS 1.2 的 AEAD 和 TLS 1.3 的 AEAD 最大的区别在于 nonce 的生成方式不同。序列号在 TLS 1.2 中是算做 additional\_data，但是在 TLS 1.3 中是被算进了 nonce 中。并且 TLS 1.3 中的 additional\_data 中的 2 个参与计算的字段值是固定死的(opaque\_type = 23、legacy\_record\_version = 0x0303)**。
 
 TLS 1.3 中 AEAD 结构的 per-record nonce 随机数形成如下:
 
