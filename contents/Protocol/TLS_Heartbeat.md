@@ -89,7 +89,7 @@ Heartbeat 协议消息由它们的类型和任意有效 payload 和填充 paddin
 	payload 有效载荷由任意内容组成。
 
 - padding:  
-	padding 填充是随机内容，接收方必须忽略。HeartbeatMessage 的长度为 TLS 的TLSPlaintext.length 和 DTLS 的 DTLSPlaintext.length。此外，类型字段的长度是 1 个字节，并且 payload\_length 的长度是 2 个字节。因此，padding\_length 是TLSPlaintext.length  -  payload\_length  -  3 用于 TLS，DTLSPlaintext.length  -  payload\_length  -  3 用于 DTLS。padding\_length 必须至少为 16。
+	padding 填充是随机内容，接收方必须忽略。HeartbeatMessage 的长度为 TLS 的 TLSPlaintext.length 和 DTLS 的 DTLSPlaintext.length。此外，类型 type 字段的长度是 1 个字节，并且 payload\_length 的长度是 2 个字节。因此，padding\_length 是TLSPlaintext.length  -  payload\_length  -  3 用于 TLS，DTLSPlaintext.length  -  payload\_length  -  3 用于 DTLS。padding\_length 必须至少为 16。
 
 HeartbeatMessage 的发送方必须使用至少 16 个字节的随机填充。必须忽略收到的HeartbeatMessage 消息的填充。
 
