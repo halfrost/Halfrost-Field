@@ -6,15 +6,11 @@
 </p>
 
 
-## 一、为什么需要 TLS
+在 HTTPS 开篇的文章中，笔者分析了 HTTPS 之所以安全的原因是因为 TLS 协议的存在。TLS 能保证信息安全和完整性的协议是记录层协议。(记录层协议在上一篇文章中详细分析了)。看完上篇文章的读者可能会感到疑惑，TLS 协议层加密的密钥是哪里来的呢？客户端和服务端究竟是如何协商 Security Parameters 加密参数的？这篇文章就来详细的分析一下 TLS 1.2 和 TLS 1.3 在 TLS 握手层上的异同点。
 
+TLS 1.3 在 TLS 1.2 的基础上，针对 TLS 握手协议最大的改进在于提升速度和安全性。本篇文章会重点分析这两块。
 
-
-
-## 二、TLS 的好处
-
-
-## 三、TLS 对速度的影响
+## 一、TLS 对网络请求速度的影响
 
 由于部署了 HTTPS，传输层增加了 TLS，对一个完成的请求耗时又会多增加一些。具体会增加几个 RTT 呢？
 
@@ -63,12 +59,251 @@
 除去 4 是无论如何都无法省掉的以外，剩下的就是 TCP 和 TLS 握手了。 TCP 想要减至 0-RTT，目前来看有点难。那 TLS 呢？目前 TLS 1.2 完整一次握手需要 2-RTT，能再减少一点么？答案是可以的。
 
 
-## 四、TLS/SSL 协议概述
+## 二、TLS/SSL 协议概述
+
+TLS 握手协议运行在 TLS 记录层之上，目的是为了让服务端和客户端就协议版本达成一致, 选择加密算法, 选择性的彼此相互验证对方, 使用公钥加密技术生成共享密钥——即协商出 TLS 记录层加密和完整性保护需要用到的 Security Parameters 加密参数。协商的过程中还必须要保证网络中传输的信息不能被篡改，伪造。由于协商需要在网络上来来回回花费几个来回，所以 TLS 的网络耗时基本上很大一部分花费在网络 RTT 上了。
+
+和加密参数关系最大的是密码套件。客户端和服务端在协商过程中需要匹配双方的密码套件。然后双方握手成功以后，基于密码套件协商出所有的加密参数，加密参数中最重要的就是主密钥(master secret)。
+
+握手协议主要负责协商一个会话，这个会话由以下元素组成:
+
+- session identifier:  
+  由服务端选取的一个任意字节的序列用于辨识一个活动的或可恢复的连接状态。
+
+- peer certificate:  
+  对端的 X509v3 [[PKIX]](https://tools.ietf.org/html/rfc5246#ref-PKIX)证书。这个字段可以为空。
+
+- compression method:  
+  加密之前的压缩算法。这个字段在 TLS 1.2 中用的不多。在 TLS 1.3 中这个字段被删除。
+
+- cipher spec:  
+  指定用于产生密钥数据的伪随机函数(PRF)，块加密算法(如：空，AES 等)，和 MAC 算法(如：HMAC-SHA1)。它也定义了密码学属性如 mac\_length。这个字段在 TLS 1.3 标准规范中已经删除，但是为了兼容老的 TLS 1.2 之前的协议，实际使用中还可能存在。在 TLS 1.3 中，密钥导出用的是 HKDF 算法。具体 PRF 和 HKDF 的区别会在之后的一篇文章中详细分析。
+
+- master secret:  
+  client 和 server 之间共享的 48 字节密钥。
+  
+- is resumable:  
+   一个用于标识会话是否能被用于初始化新连接的标签。
+
+上面这些字段随后会被用于产生安全参数并由记录层在保护应用数据时使用。利用TLS握手协议的恢复特性，使用相同的会话可以实例化许多连接。
+
+TLS 握手协议包含如下几步:
+
+- 交换 Hello 消息, 交换随机数和支持的密码套件列表, 以协商出密码套件和对应的算法。检查会话是否可恢复
+- 交换必要的密码参数以允许 client 和 server 协商预备主密钥 premaster secret
+- 交换证书和密码信息以允许 client 和 server 进行身份认证
+- 从预备主密钥 premaster secret 和交换的随机数中生成主密钥 master secret
+- 为 TLS 记录层提供安全参数(主要是密码块)
+- 允许 client 和 server 验证它们的对端已经计算出了相同的安全参数, 而且握手过程不被攻击者篡改
 
 
+下面行文思路会按照 TLS 首次握手，会话恢复的顺序，依次对比 TLS 1.2 和 TLS 1.3 在握手上的不同，并且结合 Wireshark 抓取实际的网络包进行分析讲解。最后分析一下 TLS 1.3 新出的 0-RTT 是怎么回事。
 
 
-## 五、TLS 1.2 首次握手流程
+## 三、TLS 1.2 首次握手流程
+
+TLS 1.2 握手协议主要流程如下：
+
+Client 发送一个 ClientHello 消息, Server 必须回应一个 ServerHello 消息或产生一个验证的错误并且使连接失败。ClientHello 和 ServerHello 用于在 Client 和 Server 之间建立安全性增强的能力。ClientHello 和 ServerHello 建立了如下的属性: 协议版本, 会话 ID, 密码套件, 压缩算法。此外, 产生并交换两个随机数: ClientHello.random 和 ServerHello.random。
+
+密钥交换中使用的最多4个消息: Server Certificate, ServerKeyExchange, Client Certificate 和 ClientKeyExchange。新的密钥交换方法可以通过这些方法产生:为这些消息指定一个格式, 并定义这些消息的用法以允许 Client 和 Server 就一个共享密钥达成一致。这个密钥必须很长；当前定义的密钥交换方法交换的密钥大于 46 字节。
+
+在 hello 消息之后, Server 会在 Certificate 消息中发送它自己的证书，如果它即将被认证。此外，如果需要的话，一个 ServerKeyExchange 消息会被发送(例如, 如果 Server 没有证书, 或者它的证书只用于签名，RSA 密码套件就不会出现 ServerKeyExchange 消息)。如果 Server 被认证过了，如果对于已选择的密码协议族来说是合适的话，它可能会要求 Client 发送证书。接下来，Server 会发送 ServerHelloDone 消息，至此意味着握手的 hello 消息阶段完成。Server 将会等待 Client 的响应。如果 Server 发送了一个 CertificateRequest 消息，Client 必须发送 Certificate 消息。现在 ClientKeyExchange 消息需要发送, 这个消息的内容取决于 ClientHello 和 ServerHello 之间选择的公钥算法。如果 Client 发送了一个带签名能力的证书, 则需要发送以一个数字签名的 CertificateVerify 消息，以显式验证证书中私钥的所有权。
+
+这时，Client 发送一个 ChangeCipherSpec 消息，并且复制 pending 的 Cipher Spec 到当前的 Cipher Spec 中. 然后 Client 在新算法, 密钥确定后立即发送 Finished 消息。作为回应，Server 会发送它自己的 ChangeCipherSpec 消息, 将 pending 的 Cipher Spec 转换为当前的 Cipher Spec，在新的 Cipher Spec 下发送 Finished 消息。这时，握手完成，Client 和 Server 可以开始交换应用层数据。应用数据一定不能在第一个握手完成前(在一个非TLS\_NULL\_WITH\_NULL\_NULL 类型的密码套件建立之前)发送。
+
+用经典的图表示一次完成的握手就是下图：
+
+```c
+      Client                                               Server
+
+      ClientHello                  -------->
+                                                      ServerHello
+                                                     Certificate*
+                                               ServerKeyExchange*
+                                              CertificateRequest*
+                                   <--------      ServerHelloDone
+      Certificate*
+      ClientKeyExchange
+      CertificateVerify*
+      [ChangeCipherSpec]
+      Finished                     -------->
+                                               [ChangeCipherSpec]
+                                   <--------             Finished
+      Application Data             <------->     Application Data
+```
+
+\* 号意味着可选择的或者并不会一直被发送的条件依赖形消息。
+
+**为了防止 pipeline stalls，ChangeCipherSpec 是一种独立的 TLS 协议内容类型，并且事实上它不是一种 TLS 消息**。所以图上 "[]" 代表的是，ChangeCipherSpec 并不是 TLS 的消息的意思。
+
+TLS 握手协议是 TLS 记录协议的一个已定义的高层客户端。这个协议用于协商一个会话的安全属性。握手消息封装传递给 TLS 记录层，这里它们会被封装在一个或多个 TLSPlaintext 结构中，这些结构按照当前活动会话状态所指定的方式被处理和传输。
+
+```c
+      enum {
+          hello_request(0), 
+          client_hello(1), 
+          server_hello(2),
+          certificate(11), 
+          server_key_exchange (12),
+          certificate_request(13), 
+          server_hello_done(14),
+          certificate_verify(15), 
+          client_key_exchange(16),
+          finished(20), 
+          (255)
+      } HandshakeType;
+
+      struct {
+          HandshakeType msg_type;    /* handshake type */
+          uint24 length;             /* bytes in message */
+          select (HandshakeType) {
+              case hello_request:       HelloRequest;
+              case client_hello:        ClientHello;
+              case server_hello:        ServerHello;
+              case certificate:         Certificate;
+              case server_key_exchange: ServerKeyExchange;
+              case certificate_request: CertificateRequest;
+              case server_hello_done:   ServerHelloDone;
+              case certificate_verify:  CertificateVerify;
+              case client_key_exchange: ClientKeyExchange;
+              case finished:            Finished;
+          } body;
+      } Handshake;
+```
+
+握手协议消息在下文中会以发送的顺序展现；没有按照期望的顺序发送握手消息会导致一个致命错误，握手失败。然而，不需要的握手消息会被忽略。需要注意的是例外的顺序是：证书消息在握手（从 Server 到 Client，然后从 Client到 Server）过程中会使用两次。不被这些顺序所约束的一个消息是 HelloRequest 消息，它可以在任何时间发送，但如果在握手中间收到这条消息，则应该被 Client 忽略。
+
+### 1. Hello 子消息
+
+Hello 阶段的消息用于在 Client 和 Server 之间交换安全增强能力。当一个新的会话开始时，记录层连接状态加密，hash，和压缩算法被初始化为空。当前连接状态被用于重协商消息。
+
+
+### (1) Hello Request
+
+HelloRequest 消息可以在任何时间由 Server 发送。
+
+这个消息的含义: HelloRequest 是一个简单的通知，告诉 Client 应该开始重协商流程。在响应过程中，Client 应该在方便的时候发送一个 ClientHello 消息。这个消息并不是意图确定哪端是 Client 或 Server，而仅仅是发起一个新的协商。Server 不应该在 Client 发起连接后立即发送一个 HelloRequest。
+
+如果 Client当前正在协商一个会话时，HelloRequest 这个消息会被 Client忽略。如果 Client 不想重新协商一个会话，或 Client 希望响应一个 no\_renegotiation alert 消息，那么也可能忽略 HelloRequest 消息。因为握手消息意图先于应用数据被传送，它希望协商会在少量记录消息被 Client 接收之前开始。如果 Server 发送了一个 HelloRequest 但没有收到一个 ClientHello 响应，它应该用一个致命错误 alert 消息关闭连接。在发送一个 HelloRequest 之后，Server 不应该重复这个请求直到随后的握手协商完成。
+
+HelloRequest 消息的结构:
+
+```c
+              struct { } HelloRequest;
+```
+
+这个消息不能被包含在握手消息中维护的消息 hash 中, 也不能用于结束的消息和证书验证消息。
+
+### (2) Client Hello
+
+当一个 Client 第一次连接一个 Server 时，发送的第一条消息必须是 ClientHello。Client 也能发送一个 ClientHello 作为对 HelloRequest 的响应，或用于自身的初始化以便在一个已有连接中重新协商安全参数。
+
+```c
+         struct {
+             uint32 gmt_unix_time;
+             opaque random_bytes[28];
+         } Random;
+         
+      struct {
+          ProtocolVersion client_version;
+          Random random;
+          SessionID session_id;
+          CipherSuite cipher_suites<2..2^16-2>;
+          CompressionMethod compression_methods<1..2^8-1>;
+          select (extensions_present) {
+              case false:
+                  struct {};
+              case true:
+                  Extension extensions<0..2^16-1>;
+          };
+      } ClientHello;         
+```
+
+- gmt\_unix\_time
+  依据发送者内部时钟以标准 UNIX 32 位格式表示的当前时间和日期(从1970年1月1日UTC午夜开始的秒数, 忽略闰秒)。基本 TLS 协议不要求时钟被正确设置；更高层或应用层协议可以定义额外的需求. 需要注意的是，出于历史原因，该字段使用格林尼治时间命名，而不是 UTC 时间。
+
+- random\_bytes
+  由一个安全的随机数生成器产生的 28 个字节数据。
+
+- client\_version
+  Client 愿意在本次会话中使用的 TLS 协议的版本. 这个应当是 Client 所能支持的最新版本(值最大), TLS 1.2 是 3.3，TLS 1.3 是 3.4。
+
+- random
+  一个 Client 所产生的随机数结构 Random。随机数的结构体 Random 在上面展示出来了。
+
+- session\_id
+  Client 希望在本次连接中所使用的会话 ID。如果没有 session\_id 或 Client 想生成新的安全参数，则这个字段为空。
+
+- cipher\_suites
+  Client 所支持的密码套件列表，Client最倾向使用的排在最在最前面。如果 session\_id 字段不空(意味着是一个会话恢复请求)，这个向量必须至少包含那条会话中的 cipher\_suite。cipher\_suites 字段可以取的值如下：
+
+```c
+      CipherSuite TLS_NULL_WITH_NULL_NULL               = { 0x00,0x00 };
+      CipherSuite TLS_RSA_WITH_NULL_MD5                 = { 0x00,0x01 };
+      CipherSuite TLS_RSA_WITH_NULL_SHA                 = { 0x00,0x02 };
+      CipherSuite TLS_RSA_WITH_NULL_SHA256              = { 0x00,0x3B };
+      CipherSuite TLS_RSA_WITH_RC4_128_MD5              = { 0x00,0x04 };
+      CipherSuite TLS_RSA_WITH_RC4_128_SHA              = { 0x00,0x05 };
+      CipherSuite TLS_RSA_WITH_3DES_EDE_CBC_SHA         = { 0x00,0x0A };
+      CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA          = { 0x00,0x2F };
+      CipherSuite TLS_RSA_WITH_AES_256_CBC_SHA          = { 0x00,0x35 };
+      CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA256       = { 0x00,0x3C };
+      CipherSuite TLS_RSA_WITH_AES_256_CBC_SHA256       = { 0x00,0x3D };
+      CipherSuite TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA      = { 0x00,0x0D };
+      CipherSuite TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA      = { 0x00,0x10 };
+      CipherSuite TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA     = { 0x00,0x13 };
+      CipherSuite TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA     = { 0x00,0x16 };
+      CipherSuite TLS_DH_DSS_WITH_AES_128_CBC_SHA       = { 0x00,0x30 };
+      CipherSuite TLS_DH_RSA_WITH_AES_128_CBC_SHA       = { 0x00,0x31 };
+      CipherSuite TLS_DHE_DSS_WITH_AES_128_CBC_SHA      = { 0x00,0x32 };
+      CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA      = { 0x00,0x33 };
+      CipherSuite TLS_DH_DSS_WITH_AES_256_CBC_SHA       = { 0x00,0x36 };
+      CipherSuite TLS_DH_RSA_WITH_AES_256_CBC_SHA       = { 0x00,0x37 };
+      CipherSuite TLS_DHE_DSS_WITH_AES_256_CBC_SHA      = { 0x00,0x38 };
+      CipherSuite TLS_DHE_RSA_WITH_AES_256_CBC_SHA      = { 0x00,0x39 };
+      CipherSuite TLS_DH_DSS_WITH_AES_128_CBC_SHA256    = { 0x00,0x3E };
+      CipherSuite TLS_DH_RSA_WITH_AES_128_CBC_SHA256    = { 0x00,0x3F };
+      CipherSuite TLS_DHE_DSS_WITH_AES_128_CBC_SHA256   = { 0x00,0x40 };
+      CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA256   = { 0x00,0x67 };
+      CipherSuite TLS_DH_DSS_WITH_AES_256_CBC_SHA256    = { 0x00,0x68 };
+      CipherSuite TLS_DH_RSA_WITH_AES_256_CBC_SHA256    = { 0x00,0x69 };
+      CipherSuite TLS_DHE_DSS_WITH_AES_256_CBC_SHA256   = { 0x00,0x6A };
+      CipherSuite TLS_DHE_RSA_WITH_AES_256_CBC_SHA256   = { 0x00,0x6B };
+```  
+
+- compression\_methods
+  这是 Client 所支持的压缩算法的列表，按照 Client所倾向的顺序排列。如果 session\_id 字段不空(意味着是一个会话恢复请求)，它必须包含那条会话中的 compression\_method。这个向量中必须包含, 所有的实现也必须支持 CompressionMethod.null。因此，一个 Client 和 Server 将能就压缩算法协商打成一致。
+
+- extensions
+  Clients 可以通过在扩展域中发送数据来请求 Server 的扩展功能。
+
+如果一个 Client 使用扩展来请求额外的功能, 并且这个功能 Server 并不支持, 则 Client可以中止握手。一个 Server 必须接受带有或不带扩展域的 ClientHello 消息，并且(对于其它所有消息也是一样)它必须检查消息中数据的数量是否精确匹配一种格式；如果不是，它必须发送一个致命"decode\_error" alert 消息。
+
+发送 ClientHello 消息之后，Client 会等待 ServerHello 消息。Server 返回的任何握手消息，除 HelloRequest 外, 均被作为一个致命的错误。
+
+TLS 允许在 compression\_methods 字段之后的 extensions 块中添加扩展。通过查看在 ClientHello 结尾处，compression\_methods 后面是否有多余的字节就能检测到扩展是否存在。需要注意的是这种检测可选数据的方法与正常的 TLS 变长域不一样，但它可以用于与扩展还没有定义之前的 TLS 相互兼容。
+
+
+ClientHello 消息包含一个变长的 Session ID 会话标识符。如果非空，这个值标识了同一对 Client 和 Server 之间的会话，Client 希望重新使用这个会话中 Server 的安全参数。
+
+Session ID 会话标识符可能来自于一个早期的连接，本次连接，或来自另一个当前活动的连接。第二个选择是有用的，如果 Client 只是希望更新随机数据结构并且从一个连接中导出数值；第三个选择使得在无需重复全部握手协议的情况下就能够建立若干独立的安全连接。这些独立的连接可能先后顺序建立或同时建立。一个 Session ID 在双方交换 Finished 消息，握手协商完成是开始有效，并持续到由于过期或在一个与会话相关联的连接上遭遇致命错误导致它被删除为止。Session ID 的实际内容由 Server 定义。
+
+```c
+       opaque SessionID<0..32>;
+```
+
+由于 Session ID 在传输时没有加密或直接的 MAC 保护，Server 一定不能将机密信息放在 Session ID 会话标识符中或使用伪造的会话标识符的内容，都是违背安全原则。(需要注意的是握手的内容作为一个整体, 包括 SessionID, 是由在握手结束时交换的 Finished 消息再进行保护的)。
+
+密码族列表, 在 ClientHello 消息中从 Client 传递到 Server，以 Client 所倾向的顺序(最推荐的在最先)包含了 Client 所支持的密码算法。每个密码族定义了一个密钥交互算法，一个块加密算法(包括密钥长度)，一个 MAC 算法，和一个随机数生成函数 PRF。Server 将选择一个密码协议族，如果没有可以接受的选择，在返回一个握手失败 alert 消息然后关闭连接。如果列表包含了 Server 不能识别，支持或希望使用的密码协议族，Server 必须忽略它们，并正常处理其余的部分。
+
+```c
+      uint8 CipherSuite[2];    /* Cryptographic suite selector */
+```
+
+ClientHello 保护了 Client 所支持的压缩算法列表，按照 Client 的倾向进行排序。
+
+
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_2.png)
 
@@ -96,9 +331,28 @@
 
 
 
-## 六、TLS 1.2 第二次握手流程
+## 四、TLS 1.2 第二次握手流程
 
 为何会出现再次握手呢？这个就牵扯到了会话复用机制。
+
+
+当 Client 和 Server 决定继续一个以前的会话或复制一个现存的会话(取代协商新的安全参数)时，消息流如下:
+
+Client 使用需要恢复的当前会话的 ID 发送一个 ClientHello。Server 检查它的会话缓存以进行匹配。如果匹配成功，并且 Server 愿意在指定的会话状态下重建连接，它将会发送一个带有相同会话 ID 值的 ServerHello 消息。这时，Client 和 Server 必须都发送 ChangeCipherSpec 消息并且直接发送 Finished 消息。一旦重建立完成，Client 和 Server 可以开始交换应用层数据(见下面的流程图)。如果一个会话 ID 不匹配，Server 会产生一个新的会话 ID，然后 TLS Client 和 Server 需要进行一次完整的握手。
+        
+```c
+      Client                                                Server
+
+      ClientHello                   -------->
+                                                       ServerHello
+                                                [ChangeCipherSpec]
+                                    <--------             Finished
+      [ChangeCipherSpec]
+      Finished                      -------->
+      Application Data              <------->     Application Data
+      
+```
+
 
 在 TLS 1.2 中，会话复用机制，一种是 session id 复用，一种是 session ticket 复用。session id 复用存在于服务端，session ticket 复用存在于客户端。
 
@@ -114,7 +368,7 @@
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_26.png)
 
-## 七、TLS 1.3 首次握手流程
+## 五、TLS 1.3 首次握手流程
 
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_15.png)
@@ -135,7 +389,7 @@
 
 
 
-## 八、TLS 1.3 第二次握手流程
+## 六、TLS 1.3 第二次握手流程
 
 这里网上很多文章对 TLS 1.3 第二次握手有误解。经过自己实践以后发现了“真理”。
 
@@ -174,13 +428,12 @@ TLS 1.3 再次握手其实是分两种：会话恢复模式、0-RTT 模式
 
 目前最新草案是 draft-28，从历史来看，人们从功能问题讨论到性能问题，最后讨论到安全问题。
 
+
 ------------------------------------------------------
 
 Reference：
-  
-《图解 HTTP》    
-《HTTP 权威指南》  
-《深入浅出 HTTPS》    
+   
+《深入浅出 HTTPS》      
 [TLS1.3 draft-28](https://tools.ietf.org/html/draft-ietf-tls-tls13-28)  
 [Keyless SSL: The Nitty Gritty Technical Details](https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/)  
 [大型网站的 HTTPS 实践（二）-- HTTPS 对性能的影响](https://developer.baidu.com/resources/online/doc/security/https-pratice-2.html)
