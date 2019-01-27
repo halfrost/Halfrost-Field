@@ -67,22 +67,22 @@ TLS 握手协议运行在 TLS 记录层之上，目的是为了让服务端和�
 
 握手协议主要负责协商一个会话，这个会话由以下元素组成:
 
-- session identifier:  
+- session identifier:    
   由服务端选取的一个任意字节的序列用于辨识一个活动的或可恢复的连接状态。
 
-- peer certificate:  
+- peer certificate:    
   对端的 X509v3 [[PKIX]](https://tools.ietf.org/html/rfc5246#ref-PKIX)证书。这个字段可以为空。
 
-- compression method:  
+- compression method:    
   加密之前的压缩算法。这个字段在 TLS 1.2 中用的不多。在 TLS 1.3 中这个字段被删除。
 
-- cipher spec:  
+- cipher spec:    
   指定用于产生密钥数据的伪随机函数(PRF)，块加密算法(如：空，AES 等)，和 MAC 算法(如：HMAC-SHA1)。它也定义了密码学属性如 mac\_length。这个字段在 TLS 1.3 标准规范中已经删除，但是为了兼容老的 TLS 1.2 之前的协议，实际使用中还可能存在。在 TLS 1.3 中，密钥导出用的是 HKDF 算法。具体 PRF 和 HKDF 的区别会在之后的一篇文章中详细分析。
 
-- master secret:  
+- master secret:    
   client 和 server 之间共享的 48 字节密钥。
   
-- is resumable:  
+- is resumable:    
    一个用于标识会话是否能被用于初始化新连接的标签。
 
 上面这些字段随后会被用于产生安全参数并由记录层在保护应用数据时使用。利用TLS握手协议的恢复特性，使用相同的会话可以实例化许多连接。
@@ -108,7 +108,7 @@ Client 发送一个 ClientHello 消息, Server 必须回应一个 ServerHello �
 
 密钥交换中使用的最多4个消息: Server Certificate, ServerKeyExchange, Client Certificate 和 ClientKeyExchange。新的密钥交换方法可以通过这些方法产生:为这些消息指定一个格式, 并定义这些消息的用法以允许 Client 和 Server 就一个共享密钥达成一致。这个密钥必须很长；当前定义的密钥交换方法交换的密钥大于 46 字节。
 
-在 hello 消息之后, Server 会在 Certificate 消息中发送它自己的证书，如果它即将被认证。此外，如果需要的话，一个 ServerKeyExchange 消息会被发送(例如, 如果 Server 没有证书, 或者它的证书只用于签名，RSA 密码套件就不会出现 ServerKeyExchange 消息)。如果 Server 被认证过了，如果对于已选择的密码协议族来说是合适的话，它可能会要求 Client 发送证书。接下来，Server 会发送 ServerHelloDone 消息，至此意味着握手的 hello 消息阶段完成。Server 将会等待 Client 的响应。如果 Server 发送了一个 CertificateRequest 消息，Client 必须发送 Certificate 消息。现在 ClientKeyExchange 消息需要发送, 这个消息的内容取决于 ClientHello 和 ServerHello 之间选择的公钥算法。如果 Client 发送了一个带签名能力的证书, 则需要发送以一个数字签名的 CertificateVerify 消息，以显式验证证书中私钥的所有权。
+在 hello 消息之后, Server 会在 Certificate 消息中发送它自己的证书，如果它即将被认证。此外，如果需要的话，一个 ServerKeyExchange 消息会被发送(例如, 如果 Server 没有证书, 或者它的证书只用于签名，RSA 密码套件就不会出现 ServerKeyExchange 消息)。如果 Server 被认证过了，如果对于已选择的密码套件来说是合适的话，它可能会要求 Client 发送证书。接下来，Server 会发送 ServerHelloDone 消息，至此意味着握手的 hello 消息阶段完成。Server 将会等待 Client 的响应。如果 Server 发送了一个 CertificateRequest 消息，Client 必须发送 Certificate 消息。现在 ClientKeyExchange 消息需要发送, 这个消息的内容取决于 ClientHello 和 ServerHello 之间选择的公钥算法。如果 Client 发送了一个带签名能力的证书, 则需要发送以一个数字签名的 CertificateVerify 消息，以显式验证证书中私钥的所有权。
 
 这时，Client 发送一个 ChangeCipherSpec 消息，并且复制 pending 的 Cipher Spec 到当前的 Cipher Spec 中. 然后 Client 在新算法, 密钥确定后立即发送 Finished 消息。作为回应，Server 会发送它自己的 ChangeCipherSpec 消息, 将 pending 的 Cipher Spec 转换为当前的 Cipher Spec，在新的 Cipher Spec 下发送 Finished 消息。这时，握手完成，Client 和 Server 可以开始交换应用层数据。应用数据一定不能在第一个握手完成前(在一个非TLS\_NULL\_WITH\_NULL\_NULL 类型的密码套件建立之前)发送。
 
@@ -220,22 +220,22 @@ HelloRequest 消息的结构:
       } ClientHello;         
 ```
 
-- gmt\_unix\_time
+- gmt\_unix\_time  
   依据发送者内部时钟以标准 UNIX 32 位格式表示的当前时间和日期(从1970年1月1日UTC午夜开始的秒数, 忽略闰秒)。基本 TLS 协议不要求时钟被正确设置；更高层或应用层协议可以定义额外的需求. 需要注意的是，出于历史原因，该字段使用格林尼治时间命名，而不是 UTC 时间。
 
-- random\_bytes
+- random\_bytes  
   由一个安全的随机数生成器产生的 28 个字节数据。
 
-- client\_version
-  Client 愿意在本次会话中使用的 TLS 协议的版本. 这个应当是 Client 所能支持的最新版本(值最大), TLS 1.2 是 3.3，TLS 1.3 是 3.4。
+- client\_version  
+  Client 愿意在本次会话中使用的 TLS 协议的版本. 这个应当是 Client 所能支持的最新版本(值最大)，TLS 1.2 是 3.3，TLS 1.3 是 3.4。
 
-- random
-  一个 Client 所产生的随机数结构 Random。随机数的结构体 Random 在上面展示出来了。
+- random  
+  一个 Client 所产生的随机数结构 Random。随机数的结构体 Random 在上面展示出来了。**客户端的随机数，这个值非常有用，生成预备主密钥的时候，在使用 PRF 算法计算导出主密钥和密钥块的时候，校验完整的消息都会用到，随机数主要是避免重放攻击**。
 
-- session\_id
-  Client 希望在本次连接中所使用的会话 ID。如果没有 session\_id 或 Client 想生成新的安全参数，则这个字段为空。
+- session\_id  
+  Client 希望在本次连接中所使用的会话 ID。如果没有 session\_id 或 Client 想生成新的安全参数，则这个字段为空。**这个字段主要用在会话恢复中**。
 
-- cipher\_suites
+- cipher\_suites  
   Client 所支持的密码套件列表，Client最倾向使用的排在最在最前面。如果 session\_id 字段不空(意味着是一个会话恢复请求)，这个向量必须至少包含那条会话中的 cipher\_suite。cipher\_suites 字段可以取的值如下：
 
 ```c
@@ -272,11 +272,11 @@ HelloRequest 消息的结构:
       CipherSuite TLS_DHE_RSA_WITH_AES_256_CBC_SHA256   = { 0x00,0x6B };
 ```  
 
-- compression\_methods
+- compression\_methods  
   这是 Client 所支持的压缩算法的列表，按照 Client所倾向的顺序排列。如果 session\_id 字段不空(意味着是一个会话恢复请求)，它必须包含那条会话中的 compression\_method。这个向量中必须包含, 所有的实现也必须支持 CompressionMethod.null。因此，一个 Client 和 Server 将能就压缩算法协商打成一致。
 
-- extensions
-  Clients 可以通过在扩展域中发送数据来请求 Server 的扩展功能。
+- extensions  
+  Clients 可以通过在扩展域中发送数据来请求 Server 的扩展功能。**和证书中的扩展一样，TLS/SSL 协议中也支持扩展，可以在不用修改协议的基础上提供更多的可扩展性**。
 
 如果一个 Client 使用扩展来请求额外的功能, 并且这个功能 Server 并不支持, 则 Client可以中止握手。一个 Server 必须接受带有或不带扩展域的 ClientHello 消息，并且(对于其它所有消息也是一样)它必须检查消息中数据的数量是否精确匹配一种格式；如果不是，它必须发送一个致命"decode\_error" alert 消息。
 
@@ -295,13 +295,138 @@ Session ID 会话标识符可能来自于一个早期的连接，本次连接，
 
 由于 Session ID 在传输时没有加密或直接的 MAC 保护，Server 一定不能将机密信息放在 Session ID 会话标识符中或使用伪造的会话标识符的内容，都是违背安全原则。(需要注意的是握手的内容作为一个整体, 包括 SessionID, 是由在握手结束时交换的 Finished 消息再进行保护的)。
 
-密码族列表, 在 ClientHello 消息中从 Client 传递到 Server，以 Client 所倾向的顺序(最推荐的在最先)包含了 Client 所支持的密码算法。每个密码族定义了一个密钥交互算法，一个块加密算法(包括密钥长度)，一个 MAC 算法，和一个随机数生成函数 PRF。Server 将选择一个密码协议族，如果没有可以接受的选择，在返回一个握手失败 alert 消息然后关闭连接。如果列表包含了 Server 不能识别，支持或希望使用的密码协议族，Server 必须忽略它们，并正常处理其余的部分。
+密码族列表, 在 ClientHello 消息中从 Client 传递到 Server，以 Client 所倾向的顺序(最推荐的在最先)包含了 Client 所支持的密码算法。每个密码族定义了一个密钥交互算法，一个块加密算法(包括密钥长度)，一个 MAC 算法，和一个随机数生成函数 PRF。Server 将选择一个密码套件，如果没有可以接受的选择，在返回一个握手失败 alert 消息然后关闭连接。如果列表包含了 Server 不能识别，支持或希望使用的密码套件，Server 必须忽略它们，并正常处理其余的部分。
 
 ```c
       uint8 CipherSuite[2];    /* Cryptographic suite selector */
 ```
 
 ClientHello 保护了 Client 所支持的压缩算法列表，按照 Client 的倾向进行排序。
+
+
+### (3) Server Hello
+
+
+当 Server 能够找到一个可接受的算法集时，Server 发送这个消息作为对 ClientHello 消息的响应。如果不能找到这样的算法集, 它会发送一个握手失败 alert 消息作为响应。
+
+Server Hello 消息的结构是:
+
+```c
+      struct {
+          ProtocolVersion server_version;
+          Random random;
+          SessionID session_id;
+          CipherSuite cipher_suite;
+          CompressionMethod compression_method;
+          select (extensions_present) {
+              case false:
+                  struct {};
+              case true:
+                  Extension extensions<0..2^16-1>;
+          };
+      } ServerHello;
+```
+
+通过查看 compression\_methods 后面是否有多余的字节在 ServerHello 结尾处就能探测到扩展是否存在。
+
+- server\_version  
+  这个字段将包含 Client 在 Client hello 消息中建议的较低版本和 Server 所能支持的最高版本。TLS 1.2 版本是 3.3，TLS 1.3 是 3.4 。
+
+
+- random    
+  这个结构由 Server 产生并且必须独立于 ClientHello.random 。**这个随机数值和 Client 的随机数一样，这个值非常有用，生成预备主密钥的时候，在使用 PRF 算法计算导出主密钥和密钥块的时候，校验完整的消息都会用到，随机数主要是避免重放攻击**。
+
+- session\_id    
+  这是与本次连接相对应的会话的标识。如果 ClientHello.session\_id 非空，Server 将在它的会话缓存中进行匹配查询。如果匹配项被找到，且 Server 愿意使用指定的会话状态建立新的连接，Server 会将与 Client 所提供的相同的值返回回去。这意味着恢复了一个会话并且规定双方必须在 Finished 消息之后继续进行通信。否则这个字段会包含一个不同的值以标识新会话。Server 会返回一个空的 session\_id 以标识会话将不再被缓存从而不会被恢复。如果一个会话被恢复了，它必须使用原来所协商的密码套件。需要注意的是没有要求 Server 有义务恢复任何会话，即使它之前提供了一个 session\_id。Client 必须准备好在任意一次握手中进行一次完整的协商，包括协商新的密码套件。
+  
+- cipher\_suite  
+  由 Server 在 ClientHello.cipher\_suites 中所选择的单个密码套件。对于被恢复的会话, 这个字段的值来自于被恢复的会话状态。**从安全性考虑，应该以服务器配置为准**。
+
+- compression\_method  
+  由 Server 在 ClientHello.compression\_methods 所选择的单个压缩算法。对于被恢复的会话，这个字段的值来自于被恢复的会话状态。
+
+- extensions  
+  扩展的列表. 需要注意的是只有由 Client 给出的扩展才能出现在 Server 的列表中。
+
+
+### 2. Server Certificate
+
+无论何时经过协商一致以后的密钥交换算法需要使用证书进行认证的，Server 就必须发送一个 Certificate。**Server Certificate 消息紧跟着 ServerHello 之后，通常他们俩者在同一个网络包中，即同一个 TLS 记录层消息中**。
+
+如果协商出的密码套件是 DH\_anon 或者 ECDH\_annon，则 Server 不应该发送该消息，因为可能会遇到中间人攻击。其他的情况，只要不是需要证书进行认证的，Server 都可以选择不发送此条子消息。
+
+这个消息的作用是：  
+
+这个消息把 Server 的证书链传给 Client。
+
+证书必须适用于已协商的密码套件的密钥交互算法和任何已协商的扩展。
+
+这个消息的结构是：  
+
+```c
+      opaque ASN.1Cert<1..2^24-1>;
+
+      struct {
+          ASN.1Cert certificate_list<0..2^24-1>;
+      } Certificate;
+```
+
+- certificate\_list:  
+  这是一个证书序列(链)。发送者的证书必须在列表的第一个位置。每个随后的证书必须直接证明它前面的证书。假设远端必须已经拥有它以便在任何情况下验证它，在这个假设下，因为证书验证要求根密钥是独立分发的，所以可以从链中省略指定根证书颁发机构的自签名证书。
+
+相同的消息类型和结果将用于 Client 端对一个证书请求消息的响应。需要注意的是一个 Client 可能不发送证书, 如果它没有合适的证书来发送以响应 Server 的认证请求。
+
+
+如下的规则会被应用于server发送的证书:
+
+-  证书类型必须是 X.509v3, 除非显式协商了其它的类型(如, [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。
+-  终端实体证书的公钥(和相关的限制)必须与选择的密钥交互算法兼容。
+-  "server\_name"和"trusted_ca_keys"扩展[TLSEXT]被用于指导证书选择。
+
+|密钥交换算法|证书类型|
+|:------:|:-------:|
+|RSA <br> RSA\_PSK |    RSA 公钥；证书必须允许密钥用于加密(如果密钥使用扩展存在的话，则 keyEncipherment 位必须被设置) 注:RSA\_PSK 定义于 [[TLSPSK]](https://tools.ietf.org/html/rfc5246#ref-TLSPSK)|
+|DHE\_RSA<br>ECDHE\_RSA   |  RSA公钥；证书必须允许密钥使用 Server 密钥交互消息中的签名机制和 hash 算法进行签名 (如果密钥用法扩展存在的话，digitalSignature 位必须设置)注: ECDHE\_RSA定义于 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC)|
+|DHE\_DSS    |   DSA公钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名|
+|DH\_DSS<br> DH\_RSA   |  Diffie-Hellman公钥; 如果密钥用法扩展存在的话,keyAgreement 位必须设置|
+|ECDH\_ECDSA <br>ECDH\_RSA |     ECDH-capable公钥; 公钥必须使用一个能够被 Client 支持的曲线和点格式, 正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样|
+|ECDHE\_ECDSA  |  ECDSA-capable公钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名;公钥必须使用一个能够被 Client 支持的曲线和点格式, 正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样|
+
+
+
+如果 Client 提供了一个 "signature\_algorithms" 扩展，则所有由 Server 提供的证书必须由出现在这个扩展中的一个 hash/签名算法对进行签名。需要注意的是这意味着一个包含了一个签名算法密钥的证书应该被一个不同的签名算法签名(例如，RSA 密钥被 DSA 密钥签名)。这个与 TLS 1.1 不同，后者要求算法是相同的。需要注意的是这也意味着 DH\_DSS，DH\_RSA，ECDH\_ECDSA，和ECDH\_RSA密钥交换算法并不限制用于对证书签名的算法。固定的DH证书可以被出现在扩展中的任意hash/签名算法对签名。DH\_DSS，DH\_RSA，ECDH\_ECDSA，和 ECDH\_RSA 是历史上的名称。
+
+如果server有多个证书, 它基于上述标准(此外其它的标准有:传输层端点, 本地配置和偏好等)选择其中一个.如果server只有一个证书, 它应该尝试使这个证书符合这些标准.
+
+需要注意的是有很多证书使用无法与TLS兼容的算法或算法组合. 例如, 一个使用RSASSA-PSS签名密钥的证书(在SubjectPublicKeyInfo中是id-RSASSA-PSS OID)不能被使用因为TLS没有定义相应的签名算法.
+
+正如密钥族指定了用于TLS协议的新的密钥交换方法, 它们也指定了证书格式和要求的编码的按键信息.
+
+### 3. Server Key Exchange Message
+
+
+
+### 4. Certificate Request
+
+
+
+### 5. Server Hello Done
+
+
+
+### 6. Client Certificate
+
+
+
+### 7. Client Key Exchange Message
+
+
+
+### 8. Certificate Verify
+
+
+
+### 9. Finished
 
 
 
