@@ -67,22 +67,22 @@ TLS 握手协议运行在 TLS 记录层之上，目的是为了让服务端和�
 
 握手协议主要负责协商一个会话，这个会话由以下元素组成:
 
-- session identifier:    
+- session identifier:      
   由服务端选取的一个任意字节的序列用于辨识一个活动的或可恢复的连接状态。
 
-- peer certificate:    
+- peer certificate:      
   对端的 X509v3 [[PKIX]](https://tools.ietf.org/html/rfc5246#ref-PKIX)证书。这个字段可以为空。
 
-- compression method:    
+- compression method:      
   加密之前的压缩算法。这个字段在 TLS 1.2 中用的不多。在 TLS 1.3 中这个字段被删除。
 
-- cipher spec:    
+- cipher spec:      
   指定用于产生密钥数据的伪随机函数(PRF)，块加密算法(如：空，AES 等)，和 MAC 算法(如：HMAC-SHA1)。它也定义了密码学属性如 mac\_length。这个字段在 TLS 1.3 标准规范中已经删除，但是为了兼容老的 TLS 1.2 之前的协议，实际使用中还可能存在。在 TLS 1.3 中，密钥导出用的是 HKDF 算法。具体 PRF 和 HKDF 的区别会在之后的一篇文章中详细分析。
 
-- master secret:    
+- master secret:      
   client 和 server 之间共享的 48 字节密钥。
   
-- is resumable:    
+- is resumable:      
    一个用于标识会话是否能被用于初始化新连接的标签。
 
 上面这些字段随后会被用于产生安全参数并由记录层在保护应用数据时使用。利用TLS握手协议的恢复特性，使用相同的会话可以实例化许多连接。
@@ -220,22 +220,22 @@ HelloRequest 消息的结构:
       } ClientHello;         
 ```
 
-- gmt\_unix\_time  
+- gmt\_unix\_time:    
   依据发送者内部时钟以标准 UNIX 32 位格式表示的当前时间和日期(从1970年1月1日UTC午夜开始的秒数, 忽略闰秒)。基本 TLS 协议不要求时钟被正确设置；更高层或应用层协议可以定义额外的需求. 需要注意的是，出于历史原因，该字段使用格林尼治时间命名，而不是 UTC 时间。
 
-- random\_bytes  
+- random\_bytes:    
   由一个安全的随机数生成器产生的 28 个字节数据。
 
-- client\_version  
+- client\_version:    
   Client 愿意在本次会话中使用的 TLS 协议的版本. 这个应当是 Client 所能支持的最新版本(值最大)，TLS 1.2 是 3.3，TLS 1.3 是 3.4。
 
-- random  
+- random:    
   一个 Client 所产生的随机数结构 Random。随机数的结构体 Random 在上面展示出来了。**客户端的随机数，这个值非常有用，生成预备主密钥的时候，在使用 PRF 算法计算导出主密钥和密钥块的时候，校验完整的消息都会用到，随机数主要是避免重放攻击**。
 
-- session\_id  
+- session\_id:    
   Client 希望在本次连接中所使用的会话 ID。如果没有 session\_id 或 Client 想生成新的安全参数，则这个字段为空。**这个字段主要用在会话恢复中**。
 
-- cipher\_suites  
+- cipher\_suites:    
   Client 所支持的密码套件列表，Client最倾向使用的排在最在最前面。如果 session\_id 字段不空(意味着是一个会话恢复请求)，这个向量必须至少包含那条会话中的 cipher\_suite。cipher\_suites 字段可以取的值如下：
 
 ```c
@@ -272,10 +272,10 @@ HelloRequest 消息的结构:
       CipherSuite TLS_DHE_RSA_WITH_AES_256_CBC_SHA256   = { 0x00,0x6B };
 ```  
 
-- compression\_methods  
+- compression\_methods:    
   这是 Client 所支持的压缩算法的列表，按照 Client所倾向的顺序排列。如果 session\_id 字段不空(意味着是一个会话恢复请求)，它必须包含那条会话中的 compression\_method。这个向量中必须包含, 所有的实现也必须支持 CompressionMethod.null。因此，一个 Client 和 Server 将能就压缩算法协商打成一致。
 
-- extensions  
+- extensions:    
   Clients 可以通过在扩展域中发送数据来请求 Server 的扩展功能。**和证书中的扩展一样，TLS/SSL 协议中也支持扩展，可以在不用修改协议的基础上提供更多的可扩展性**。
 
 如果一个 Client 使用扩展来请求额外的功能, 并且这个功能 Server 并不支持, 则 Client可以中止握手。一个 Server 必须接受带有或不带扩展域的 ClientHello 消息，并且(对于其它所有消息也是一样)它必须检查消息中数据的数量是否精确匹配一种格式；如果不是，它必须发送一个致命"decode\_error" alert 消息。
@@ -329,23 +329,23 @@ Server Hello 消息的结构是:
 
 通过查看 compression\_methods 后面是否有多余的字节在 ServerHello 结尾处就能探测到扩展是否存在。
 
-- server\_version  
+- server\_version:    
   这个字段将包含 Client 在 Client hello 消息中建议的较低版本和 Server 所能支持的最高版本。TLS 1.2 版本是 3.3，TLS 1.3 是 3.4 。
 
 
-- random    
+- random:      
   这个结构由 Server 产生并且必须独立于 ClientHello.random 。**这个随机数值和 Client 的随机数一样，这个值非常有用，生成预备主密钥的时候，在使用 PRF 算法计算导出主密钥和密钥块的时候，校验完整的消息都会用到，随机数主要是避免重放攻击**。
 
-- session\_id    
+- session\_id:      
   这是与本次连接相对应的会话的标识。如果 ClientHello.session\_id 非空，Server 将在它的会话缓存中进行匹配查询。如果匹配项被找到，且 Server 愿意使用指定的会话状态建立新的连接，Server 会将与 Client 所提供的相同的值返回回去。这意味着恢复了一个会话并且规定双方必须在 Finished 消息之后继续进行通信。否则这个字段会包含一个不同的值以标识新会话。Server 会返回一个空的 session\_id 以标识会话将不再被缓存从而不会被恢复。如果一个会话被恢复了，它必须使用原来所协商的密码套件。需要注意的是没有要求 Server 有义务恢复任何会话，即使它之前提供了一个 session\_id。Client 必须准备好在任意一次握手中进行一次完整的协商，包括协商新的密码套件。
   
-- cipher\_suite  
+- cipher\_suite:    
   由 Server 在 ClientHello.cipher\_suites 中所选择的单个密码套件。对于被恢复的会话, 这个字段的值来自于被恢复的会话状态。**从安全性考虑，应该以服务器配置为准**。
 
-- compression\_method  
+- compression\_method:    
   由 Server 在 ClientHello.compression\_methods 所选择的单个压缩算法。对于被恢复的会话，这个字段的值来自于被恢复的会话状态。
 
-- extensions  
+- extensions:    
   扩展的列表. 需要注意的是只有由 Client 给出的扩展才能出现在 Server 的列表中。
 
 
@@ -371,7 +371,7 @@ Server Hello 消息的结构是:
       } Certificate;
 ```
 
-- certificate\_list:  
+- certificate\_list:    
   这是一个证书序列(链)。**每张证书都必须是 ASN.1Cert 结构**。发送者的证书必须在列表的第一个位置。每个随后的证书必须直接证明它前面的证书。假设远端必须已经拥有它以便在任何情况下验证它，在这个假设下，因为证书验证要求根密钥是独立分发的，所以可以从链中省略指定根证书颁发机构的自签名证书。**根证书集成到了 Client 的根证书列表中，没有必要包含在 Server 证书消息中**。
 
 相同的消息类型和结果将用于 Client 端对一个证书请求消息的响应。需要注意的是一个 Client 可能不发送证书, 如果它没有合适的证书来发送以响应 Server 的认证请求。
@@ -379,9 +379,9 @@ Server Hello 消息的结构是:
 
 如下的规则会被应用于 Server 发送的证书:
 
--  证书类型必须是 X.509v3, 除非显式协商了其它的类型(如 [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。
--  终端实体证书的公钥(和相关的限制)必须与选择的密钥交互算法兼容。
--  "server\_name"和"trusted\_ca\_keys"扩展 [[TLSEXT]](https://tools.ietf.org/html/rfc5246#ref-TLSEXT) 被用于指导证书选择。
+-  证书类型必须是 X.509v3, 除非显式协商了其它的类型(如 [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。  
+-  终端实体证书的公钥(和相关的限制)必须与选择的密钥交互算法兼容。  
+-  "server\_name"和"trusted\_ca\_keys"扩展 [[TLSEXT]](https://tools.ietf.org/html/rfc5246#ref-TLSEXT) 被用于指导证书选择。  
 
 |密钥交换算法|证书类型|
 |:------:|:-------:|
@@ -405,11 +405,11 @@ Server Hello 消息的结构是:
 
 至此已经涉及到了 Client 签名算法、证书签名算法、密码套件、Server 公钥，这 4 者相互有关联，也有没有关系的。
 
-- Client 签名算法需要和证书签名算法相互匹配，如果 Client Hello 中的 signature\_algorithms 扩展与证书链中的证书签名算法不匹配的话，结果是握手失败。
+- Client 签名算法需要和证书签名算法相互匹配，如果 Client Hello 中的 signature\_algorithms 扩展与证书链中的证书签名算法不匹配的话，结果是握手失败。  
 
-- Server 公钥与证书签名算法无任何关系。证书中包含 Server 证书，证书签名算法对 Server 公钥进行签名，但是 Server 公钥的加密算法可以是 RSA 也可以是 ECDSA。
+- Server 公钥与证书签名算法无任何关系。证书中包含 Server 证书，证书签名算法对 Server 公钥进行签名，但是 Server 公钥的加密算法可以是 RSA 也可以是 ECDSA。  
 
-- 密码套件和 Server 公钥存在相互匹配的关系，因为密码套件中的身份验证算法指的就是 Server 公钥类型。
+- 密码套件和 Server 公钥存在相互匹配的关系，因为密码套件中的身份验证算法指的就是 Server 公钥类型。  
 
 例如 TLS\_ECDHE\_ECDSA\_WITH\_AES\_256\_GCM\_SHA384 这个密码套件：
 
@@ -473,13 +473,13 @@ DH 参数的结构是:
       } ServerDHParams;     /* 动态的 DH 参数 */
 ```
 
-- dh\_p
+- dh\_p:  
   用于 Diffie-Hellman 操作的素模数，即大质数。
 
-- dh\_g
+- dh\_g:  
   用于 Diffie-Hellman 操作的生成器
 
-- dh\_Ys
+- dh\_Ys:  
   Server 的 Diffie-Hellman 公钥 (g^X mod p)
 
 Server 需要传递额外参数的密码套件主要 6 种，之前提到过，DHE\_DSS、DHE\_RSA、ECDHE\_ECDSA、ECDHE\_RSA、DH\_anon、ECDH\_anon，其他的密码套件不可用于 ServerKeyExchange 这个消息中。**一般 HTTPS 都会部署这 4 种密码套件：ECDHE\_RSA、DHE\_RSA、ECDHE\_ECDSA、RSA**。
@@ -614,11 +614,11 @@ ServerECDHParams 中包含了 ECParameters 参数和 ECPoint 公钥。
       } ServerKeyExchange;
 ```
 
-- params
-  Server 密钥协商需要的参数
+- params:  
+  Server 密钥协商需要的参数。
 
-- signed\_params
-  对于非匿名密钥交换, 这是一个对 Server 密钥协商参数的签名
+- signed\_params:  
+  对于非匿名密钥交换, 这是一个对 Server 密钥协商参数的签名。
 
 ServerKeyExchange 根据 KeyExchangeAlgorithm 类型的不同，加入了不同的参数。对于匿名协商，不需要证书，所以也不需要身份验证，没有证书。DHE 开头的协商算法，Server 需要发给 Client 动态的 DH 参数 ServerDHParams 和 数字签名。这里的数字签名会包含 Client 端传过来的随机数，Server 端生成的随机数和 ServerDHParams。
 
@@ -680,24 +680,24 @@ RSA、DH\_DSS、DH\_RSA 这 3 个不需要 ServerKeyExchange 消息。
       } CertificateRequest;
 ```
 
-- certificate\_types
-  client 可以提供的证书类型的列表.
-  rsa\_sign:一个包含 RSA 密钥的证书
-  dss\_sign:一个包含 DSA 密钥的证书
-  rsa\_fixed\_dh:一个包含静态 DH 密钥的证书
-  dss\_fixed\_dh:一个包含静态 DH 密钥的证书
+- certificate\_types:  
+  client 可以提供的证书类型的列表。
+  rsa\_sign:一个包含 RSA 密钥的证书  
+  dss\_sign:一个包含 DSA 密钥的证书  
+  rsa\_fixed\_dh:一个包含静态 DH 密钥的证书  
+  dss\_fixed\_dh:一个包含静态 DH 密钥的证书  
 
-- supported\_signature\_algorithms
+- supported\_signature\_algorithms:  
   一个 hash/签名算法对列表供 Server选择，按照偏好降序排列
 
-- certificate\_authorities
+- certificate\_authorities:    
   可接受的 certificate\_authorities [[X501]](https://tools.ietf.org/html/rfc5246#ref-X501) 的名称列表，以 DER 编码的格式体现。这些名称可以为一个根 CA 或一个次级 CA 指定一个期望的名称；因此，这个消息可以被用于描已知的根和期望的认证空间。如果 certificate\_authorities 列表为空，则 Client 可以发送 ClientCertificateType 中的任意证书，除非存在有一些属于相反情况的外部设定。
 
 certificate\_types 和 supported\_signature\_algorithms 域的交互关系某种程度上有些复杂，certificate\_type 自从 SSLv3 开始就在 TLS 中存在，但某种程度上并不规范。它的很多功能被 supported\_signature\_algorithms 所取代。应遵循下述 3 条规则:
 
-- Client 提供的任何证书必须使用在 supported\_signature\_algorithms 中存在的 hash/签名算法对来签名
+- Client 提供的任何证书必须使用在 supported\_signature\_algorithms 中存在的 hash/签名算法对来签名。
 
-- Clinet 提供的终端实体的证书必须包含一个与 certificate\_types 兼容的密钥。如果这个密钥是一个签名密钥，它必须能与 supported\_signature\_algorithms 中的一些 hash/签名算法对一起使用
+- Clinet 提供的终端实体的证书必须包含一个与 certificate\_types 兼容的密钥。如果这个密钥是一个签名密钥，它必须能与 supported\_signature\_algorithms 中的一些 hash/签名算法对一起使用。
 
 - 出于历史原因，一些 Client 证书类型的名称包含了签名证书的算法。例如，在早期版本的 TLS 中，rsa\_fixed\_dh 意味着一个用 RSA 签名并且还包含一个静态 DH 密钥的证书。在 TLS 1.2 中，这个功能被 supported\_signature\_algorithms 废除，证书类型不再限制签名证书的算法。例如，如果 Server 发送了 dss\_fixed\_dh 证书类型和 {{sha1, dsa}, {sha1, rsa}} 签名类型，Client 可以回复一个包含一个静态 DH 密钥的证书，用 RSA-SHA1 签名。
 
@@ -724,11 +724,49 @@ ServerHelloDone 消息已经被 Server 发送以表明 ServerHello 及其相关�
 
 ### 6. Client Certificate
 
+这是 Client 在收到一个 ServerHelloDone 消息后发送的第一个消息。这个消息只能在 Server 请求一个证书时发送。如果没有合适的证书，Client 必须发送一个不带证书的证书消息。即, certificate\_list 结构体的长度是 0。如果 Client 不发送任何证书，Server 可以自行决定是否可以在不验证 Client 的情况下继续握手，或者回复一个致命 handshake\_failure 警报 alert 信息。而且, 如果证书链某些方面不能接受(例如, 它没有被一个知名的可信 CA 签名)，Server 可以自行决定是否继续握手(考虑到 Client 无认证)或发送一个致命的警报 alert 信息。
 
+Client 证书的数据结构和 Server Certificate 是相同的。
+
+Client Certificate 消息的目的是传递 Client 的证书链给 Server；当验证 CertificateVerify 消息时(当 Client 的验证基于签名时)Server 会用它来验证或计算预主密钥(对于静态的 Diffie-Hellman)。证书必须适用于已协商的密码套件的密钥交换算法, 和任何已协商的扩展.
+
+尤其是:
+
+- 证书类型必须是 X.509v3, 除非显示协商其它类型(例如, [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。  
+
+- 终端实体证书的公钥(和相关的限制)应该与列在 CertificateRequest 中的证书类型兼容:  
+
+|Client 证书类型 | 证书密钥类型 |
+|:-----:|:-----:|
+|rsa\_sign   |  证书包含 RSA公钥；证书必须允许这个密钥被用于签名, 并与签名方案和 hash 算法一起被用于证书验证消息。|
+|dss\_sign    | 证书 DSA公钥；证书必须允许这个密钥被用于签名, 并与 hash 算法一起被用于证书验证消息。|
+|ecdsa\_sign   | 证书包含 ECDSA 的公钥；证书必须允许这个密钥被用于签名, 并与 hash 算法一起被用于证书验证消息；这个公钥必须使用一个曲线和 Server 支持的点的格式。|
+|rsa\_fixed\_dh <br>dss\_fixed\_dh  |    证书包含 Diffie-Hellman 公钥；必须使用与 Server 的密钥相同的参数|
+| rsa\_fixed\_ecdh <br> ecdsa\_fixed\_ecdh | 证书包含 ECDH 公钥；必须使用与 Server 密钥相同的曲线，并且必须使用 Server 支持的点格式|
+
+- 如果列出在证书请求中的 certificate\_authorities 非空，证书链中的一个证书应该被一个列出来的 CA 签发。  
+
+- 证书必须被一个可接受的 hash/签名算法对签名，正如 [Certificate Request](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#4-certificate-request) 那部分描述的那样。需要注意的是这放宽了在以前的 TLS 版本中对证书签名算法的限制。  
+
+需要注意的是, 与 Server 证书一样，有一些证书使用了当前不能用于当前 TLS 的算法/算法组合。
 
 ### 7. Client Key Exchange Message
 
+这个消息始终由 Client 发送。如果有 Client Certificate 消息的话，Client Key Exchange 紧跟在 Client Certificate 消息之后发送。如果不存在Client Certificate 消息的话，它必须是在 Client 收到 ServerHelloDone 后发送的第一个消息。
+
+这个消息的含义是，在这个消息中设置了预主密钥，或者通过 RSA 加密后直接传输，或者通过传输 Diffie-Hellman 参数来允许双方协商出一致的预主密钥。
+
+当 Client 使用一个动态的 Diffie-Hellman 指数时，这个消息就会包含 Client 的 Diffie-Hellman 公钥。如果 Client 正在发送一个包含一个静态 DH 指数(例如，它正在进行 fixed_dh Client 认证)的证书时，这个消息必须被发送但必须为空。
+
+这个消息的结构:
+
+这个消息的选项依赖于选择了哪种密钥交互方法。关于 KeyExchangeAlgorithm 的定义，见  [Server Key Exchange Message](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#3-server-key-exchange-message) 这一节。
+
+
+ClientKeyExchange 消息的数据结构如下：
+
 ```c
+
         enum { implicit, explicit } PublicValueEncoding;
         
         struct {
@@ -738,20 +776,208 @@ ServerHelloDone 消息已经被 Server 发送以表明 ServerHello 及其相关�
             } ecdh_public;
         } ClientECDiffieHellmanPublic;
         
-        struct {
-            select (KeyExchangeAlgorithm) {
-                case ec_diffie_hellman: ClientECDiffieHellmanPublic;
-            } exchange_keys;
-        } ClientKeyExchange;                
+      struct {
+          select (KeyExchangeAlgorithm) {
+              case rsa:
+                  EncryptedPreMasterSecret;
+              case dhe_dss:
+              case dhe_rsa:
+              case dh_dss:
+              case dh_rsa:
+              case dh_anon:
+                  ClientDiffieHellmanPublic;
+              case ec_diffie_hellman: 
+                  ClientECDiffieHellmanPublic;
+          } exchange_keys;
+      } ClientKeyExchange;
 ```
+
+从 exchange\_keys 的 case 中可以看到主要分为 3 种处理方式：EncryptedPreMasterSecret、ClientDiffieHellmanPublic、ClientECDiffieHellmanPublic。那么接下来就依次分析这 3 种处理方式的不同。
+
+### (1) RSA/ECDSA 加密预备主密钥
+
+如果 RSA 被用于密钥协商和身份认证(RSA 密码套件)，Client 会生成一个 48 字节的预备主密钥，使用 Server 证书中的公钥加密，然后以一个加密的预主密钥消息发送。这个结构体是 ClientKeyExchange 消息的一个变量，它本身并非一个消息。
+
+这个消息的结构是:
+
+```c
+   struct {
+       ProtocolVersion client_version;
+       opaque random[46];
+   } PreMasterSecret;
+```
+
+- client\_version:  
+  client\_version 是 Client 支持的最高 TLS 协议版本。这个版本号是为了防止回退攻击。
+  
+- random:    
+  紧跟着是一个 46 字节的随机数。
+  
+Client 将这 48 字节的预备主密钥用 Server 的 RSA 公钥加密以后生成 EncryptedPreMasterSecret，再发回 Server。
+
+EncryptedPreMasterSecret 的数据结构如下：
+
+```c
+   struct {
+       public-key-encrypted PreMasterSecret pre_master_secret;
+   } EncryptedPreMasterSecret;
+```
+
+- PreMasterSecret 中的 client\_version 字段不是协商出来的 TLS 版本号，而是 ClientHello 中传递的版本号，这样做是为了防止回退攻击。不幸的是，一些旧的 TLS 实现使用了协商的版本，因此检查版本号会导致与这些不正确的 Client 实现之间的互操作失败。  
+- Client 生成的 EncryptedPreMasterSecret，仅仅是加密之后的结果，并没有完整性保护，消息可能会被篡改。有两种加密方式，一种是 RSAES-PKCS1-v1\_5，另外一个种 RSAES-OAEP 加密方式。后者更加安全，但是在 TLS 1.2 中普遍用的是前者。  
+
+
+Server 拿到 EncryptedPreMasterSecret 以后，用自己的 RSA 私钥解密。解密以后还需要再次校验 PreMasterSecret 中的 ProtocolVersion 和 ClientHello 中传递的 ProtocolVersion 是否一致。如果不相等，校验失败，Server 会根据下面说的规则重新生成 PreMasterSecret，并继续进行握手。
+
+如果 ClientHello.client\_version 是 TLS 1.1 或更高，Server 实现必须按照以下的描述检查版本号。如果版本号是 TLS 1.0 或更早，Server 实现应该检查版本号，但可以有一个可配置的选项来禁止这个检查。需要注意的是如果检查失败，PreMasterSecret 应该按照以下的描述将PreMasterSecret 重新随机化生成。
+
+
+由 Bleichenbacher [[BLEI]](https://tools.ietf.org/html/rfc5246#ref-BLEI) 和 Klima et al.[[KPR03]](https://tools.ietf.org/html/rfc5246#ref-KPR03) 发现的攻击能被用于攻击 TLS Server，这种攻击表明一个特定的消息在解密时，已经被格式化为 PKCS#1，包含一个有效的 PreMasterSecret 结构，或着表明了有正确的版本号。
+
+正如 Klima [[KPR03]](https://tools.ietf.org/html/rfc5246#ref-KPR03) 所描述的, 这些弱点能够被避免，通过处理不正确的格式消息块，或者在正确格式的 RSA 块中不区分错误的版本号。换句话说:
+
+- 1. 生成一个 46 字节随机字符串 R；  
+- 2. 解密这消息来恢复明文 M；  
+- 3. 如果 PKCS#1 填充不正确，或消息 M 的长度不是精确的 48 字节:`pre_master_secret = ClientHello.client_version || R`，再如果 `ClientHello.client_version <= TLS 1.0`，且版本号检查被显示禁用：`pre_master_secret = M`。如果以上 2 种情况都不符合，那么就`pre_master_secret = ClientHello.client_version || M[2..47]`。  
+
+
+需要注意的是,如果 Client 在原始的 pre\_master\_secret 中发生了错误的版本的话，那么使用 ClientHello.client\_version 显式构造产生出来的 pre\_master\_secret 是一个无效的 master\_secret。
+
+另外一个可供选择的方法是将版本号不匹配作为一个 PKCS-1 格式错误来处理，并将预备主密钥完全随机化：
+
+- 1. 生成一个 46 字节随机字符串 R；  
+- 2. 解密这消息来恢复明文 M；  
+- 3. 如果 PKCS#1 填充不正确，或消息 M 的长度不是精确的 48 字节:`pre_master_secret = R`，再如果`ClientHello.client_version <= TLS 1.0`，且版本号检查被显示禁用:`pre_master_secret = M`。再如果 M 的前两个字节 M[0..1] 不等于`ClientHello.client_version`:`premaster secret = R`，如果以上 3 种情况都不满足，就`pre_master_secret = M`。  
+
+虽然没有已知的针对这个结构体的攻击，Klima et al. [[KPR03]](https://tools.ietf.org/html/rfc5246#ref-KPR03) 描述了一些理论上的攻击， 因此推荐第一种结构描述来处理。
+
+
+在任何情况下，如果处理一个 RSA 加密的预备主密钥消息失败的时候，或版本号不是期望的时候，一个 TLS Server 一定不能产生一个警报。作为替代，它必须以一个随机生成的预主密钥继续握手流程。出于定位问题的意图将失败的真正原因记录在日志中可能是有帮助的。但必须注意避免泄露信息给攻击者（例如，计时，日志文件或其它渠道）
+
+在 [[PKCS1]](https://tools.ietf.org/html/rfc5246#ref-PKCS1) 中定义的 RSAES-OAEP 加密方案对于 Bleichenbacher 攻击是更安全的。然而，为了最大程度上兼容早期的 TLS 版本，TLS 1.2 规范使用 RSAES-PKCS1-v1\_5 方案。如果上述建议被采纳的话，不会有多少已知的Bleichenbacher 能够奏效。
+
+公钥加密数据被表现为一个非透明向量 <0..2^16-1>。因此，一个 ClientKeyExchange 消息中的 RSA 加密的预备主密钥以两个长度字节为先导。这些字节对于 RSA 是冗余的因为 EncryptedPreMasterSecret 是 ClientKeyExchange 中仅有的数据，它的长度会明确地确定。SSLv3 规范对公钥加密数据的编码没有明确指定，因此很多 SSLv3 实现没有包含长度字节，它们将 RSA 加密数据直接编码进 ClientKeyExchange 消息中。
+
+TLS 1.2 要求 EncryptedPreMasterSecret 和长度字节一起正确地编码。结果 PDU 会与很多 SSLv3 实现不兼容。实现者从 SSLv3 升级时必须修改他们的实现以生成和接受正确的编码。希望兼容 SSLv3 和 TLS 的实现者必须使他们的实现的行为依赖于版本号。
+
+现在得知对 TLS 进行基于计时的攻击是可能的，至少当 Client 和 Server 在相同局域网中时是可行的。相应地，使用静态 RSA 密钥的实现必须使用 RSA 混淆或其它抗计时攻击技术，如 [[TIMING]](https://tools.ietf.org/html/rfc5246#ref-TIMING) 所述。
+
+
+### (2) 静态 DH 公钥算出预备主密钥
+
+如果这个值没有被包含在 Clietn 的证书中，这个结构体传递了 Client 的 Diffie-Hellman 公钥(Yc)。Yc 所用的编码由 PublicValueEncoding 罗列。这个结构是 Client 密钥交换消息的一个变量，它本身并非一个消息。
+
+这个消息的结构是：
+
+```c
+        enum { implicit, explicit } PublicValueEncoding;
+```
+
+- implicit:  
+  如果 Client 发送了一个证书其中包含了一个合适的 Diffie-Hellman 密钥(用于 fixed\_dh 类型的 Client认证)，则 Yc 是隐式的且不需要再次发送。这种情况下，Client 密钥交换消息会被发送，单必须是空。
+
+- explicit:  
+  Yc 需要被发送。
+  
+```c
+        struct {
+          select (PublicValueEncoding) {
+              case implicit: struct {};
+              case explicit: opaque dh_Yc<1..2^16-1>;
+          } dh_public;
+      } ClientDiffieHellmanPublic;
+```
+
+- dh\_Yc:   
+  Client 的 Diffie-Hellman 公钥(Yc)。**DH 公钥是明文传递的**。就是算明文传递，被中间人窃听了，也无法得到最终的主密钥。具体原因可以看笔者之前密码学[这篇文章](https://halfrost.com/cipherkey/#diffiehellman)的分析。
+
+
+### (3) 动态 DH 公钥算出预备主密钥
+
+如果协商出来的密码套件密钥协商算法是 ECDHE，Client 需要发送 ECDH 公钥，结构体如下:
+
+```c
+
+        struct {
+            opaque point <1..2^8-1>;
+        } ECPoint;
+        
+        struct {
+            select (PublicValueEncoding) {
+                case implicit: struct {};
+                case explicit: ECPoint ecdh_Yc;
+            } ecdh_public;
+        } ClientECDiffieHellmanPublic;                  
+```
+
+- ecdh\_Yc：  
+  Client 的 ECDH 公钥(Yc)。**ECDH 公钥也是明文传递的**。就是算明文传递，被中间人窃听了，也无法得到最终的主密钥。具体原因可以看笔者之前密码学[这篇文章](https://halfrost.com/asymmetric_encryption/#3diffiehellmanecdh)的分析。
+  
+所有涉及 ECC 操作的，Server 和 Client 必须选用双方都支持的命名曲线，Client Hello 消息中 ecc\_curve 扩展指定了 Client 支持的 ECC 命名曲线。
 
 ### 8. Certificate Verify
 
 
+这个消息用于对一个 Client 的证书进行显式验证。这个消息只能在一个 Client 证书具有签名能力时才能发送(例如，所有除了包含固定 Diffie-Hellman 参数的证书)。当发送时，它必须紧随着 client key exchange 消息。
+
+这条消息的结构是：
+
+```c
+   struct {
+        digitally-signed struct {
+            opaque handshake_messages[handshake_messages_length];
+        }
+   } CertificateVerify;
+```
+
+
+这里 handshake\_messages 是指发送或接收到的所有握手消息，从 client hello 开始到但不包括本消息，包含握手消息的类型和长度域。这是到目前为止所有握手结构（在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#%E4%B8%89tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)定义的）的级联。需要注意的是这要求两端要么缓存消息，要么计算用所有可用的 hash 算法计算运行时的 hash 值直到计算 CertificateVerify 的 hash 值为止。Server 可以通过在 CertificateRequest 消息中提高一个受限的摘要算法及来最小化这种计算代价。
+
+在签名中使用的 hash 和签名算法必须是 CertificateRequest 消息中 supported\_signature\_algorithms 字段所列出的算法中的一种。此外，hash 和签名算法必须与 Client 的终端实体证书相兼容。RSA 密钥可以与任何允许的 hash 算法一起使用，但需要服从证书中的限制(如果有的话)。
+
+由于 DSA 签名不包含任何安全的 hash 算法的方法，如果任意密钥使用多个 hash 的话会产生一个 hash 替代风险。目前 DSA [[DSS]](https://tools.ietf.org/html/rfc5246#ref-DSS) 可以与 SHA-1 一起使用。将来版本的 DSS [[DSS-3]](https://tools.ietf.org/html/rfc5246#ref-DSS-3) 被希望允许与 DSA 一起使用其它的摘要算法。以及指导哪些摘要算法应与每个密钥大小一起使用。此外，将来版本的 [[PKIX]](https://tools.ietf.org/html/rfc5246#ref-PKIX) 可以指定机制以允许证书表明哪些摘要算法能与 DSA 一起使用。
+
 
 ### 9. Finished
 
+一个 Finished 消息一直会在一个 change cipher spec 消息后立即发送，以证明密钥交换和认证过程是成功的。一个 change cipher spec 消息必须在其它握手消息和结束消息之间被接收。
 
+Finished 消息是第一个被刚刚协商的算法，密钥和机密保护的消息。Finished 消息的接收者必须验证内容是正确的。一旦一方已经发送了 Finished 消息且接收并验证了对端发送的 Finished 消息，就可以在连接上开始发送和接收应用数据。
+
+Finished 消息的结构：
+
+```c
+      struct {
+          opaque verify_data[verify_data_length];
+      } Finished;
+
+      verify_data = 
+         PRF(master_secret, finished_label, Hash(handshake_messages))
+            [0..verify_data_length-1];
+```
+
+- finished\_label:  
+  对于由 Client 发送的结束消息，字符串是 "client finished"。 对于由 Server 发送的结束消息，字符串是"server finished"。
+
+Hash 指出了握手消息的一个 hash。hash 必须用作 PRF 的基础。任何定义了一个不同 PRF 的密码套件必须定义 Hash 用于 Finished 消息的计算。
+
+在 TLS 1.2 之前的版本中，verify\_data 一直是 12 字节长。在 TLS 1.2 版本中，verify\_data 的长度取决于密码套件。任何没有显式指定 verify\_data\_length 的密码套件都默认 verify\_data\_length 等于 12。需要注意的是这种表示的编码与之前的版本相同。将来密码套件可能会指定其它长度但这个长度必须至少是 12 字节。
+
+- handshake\_messages:    
+  所有在本次握手过程（不包括任何 HelloRequest 消息）到但不包括本消息的消息中的数据。这是只能在握手层中看见的数据且不包含记录层头。这是到目前为止所有在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#%E4%B8%89tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)中定义的握手结构体的关联。
+
+如果一个 Finished 消息在握手的合适环节上没有一个 ChangeCipherSpec 在其之前则是致命错误。
+
+handshake\_messages 的值包括了从 ClientHello 开始一直到（但不包括）Finished 消息的所有握手消息。[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#8-certificate-verify)中的 handshake\_messages 不同，因为它包含 CertificateVerify 消息（如果发送了）。同样，client 发送的 Finished 消息的 handshake\_messages 与 Server 发送的 Finished 消息不同，因为第二个被发送的要包含前一个。Server 的 Finished 消息会包含 Client 的 Finished 子消息。
+
+注意：ChangeCipherSpec 消息，alert 警报，和任何其它记录类型不是握手消息，不会被包含在 hash 计算中。同样，HelloRequest 消息也被握手 hash 忽略。
+
+
+Finished 子消息是 TLS 记录层加密保护的第一条消息。Finished 子消息的存在的意义是什么呢？
+
+在所有的握手协议中，所有的子消息都没有加密和完整性保护，消息很容易篡改，改掉以后如果不检验，就会出现不安全的攻击。为了避免握手期间存在消息被篡改的情况，所以 Client 和 Server 都需要校验一下对方的 Finished 子消息。
+
+如果中间人在握手期间把 ClientHello 的 TLS 最高支持版本修改为 TLS 1.0，企图回退攻击，利用 TLS 旧版本中的漏洞。Server 收到中间人的 ClientHello 并不知道是否存在篡改，于是也按照 TLS 1.0 去协商。握手进行到最后一步，校验 Finished 子消息的时候，校验不通过，因为 Client 原本发的 ClientHello 中 TLS 最高支持版本是 TLS 1.2，那么产生的 Finished 子消息的 verify\_data 与 Server 拿到篡改后的 ClientHello 计算出来的 verify\_data 肯定不同。至此也就发现了中间存在篡改，握手失败。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_2.png)
 
