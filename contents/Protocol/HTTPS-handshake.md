@@ -372,46 +372,354 @@ Server Hello 消息的结构是:
 ```
 
 - certificate\_list:  
-  这是一个证书序列(链)。发送者的证书必须在列表的第一个位置。每个随后的证书必须直接证明它前面的证书。假设远端必须已经拥有它以便在任何情况下验证它，在这个假设下，因为证书验证要求根密钥是独立分发的，所以可以从链中省略指定根证书颁发机构的自签名证书。
+  这是一个证书序列(链)。**每张证书都必须是 ASN.1Cert 结构**。发送者的证书必须在列表的第一个位置。每个随后的证书必须直接证明它前面的证书。假设远端必须已经拥有它以便在任何情况下验证它，在这个假设下，因为证书验证要求根密钥是独立分发的，所以可以从链中省略指定根证书颁发机构的自签名证书。**根证书集成到了 Client 的根证书列表中，没有必要包含在 Server 证书消息中**。
 
 相同的消息类型和结果将用于 Client 端对一个证书请求消息的响应。需要注意的是一个 Client 可能不发送证书, 如果它没有合适的证书来发送以响应 Server 的认证请求。
 
 
-如下的规则会被应用于server发送的证书:
+如下的规则会被应用于 Server 发送的证书:
 
--  证书类型必须是 X.509v3, 除非显式协商了其它的类型(如, [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。
+-  证书类型必须是 X.509v3, 除非显式协商了其它的类型(如 [[TLSPGP]](https://tools.ietf.org/html/rfc5246#ref-TLSPGP))。
 -  终端实体证书的公钥(和相关的限制)必须与选择的密钥交互算法兼容。
--  "server\_name"和"trusted_ca_keys"扩展[TLSEXT]被用于指导证书选择。
+-  "server\_name"和"trusted\_ca\_keys"扩展 [[TLSEXT]](https://tools.ietf.org/html/rfc5246#ref-TLSEXT) 被用于指导证书选择。
 
 |密钥交换算法|证书类型|
 |:------:|:-------:|
-|RSA <br> RSA\_PSK |    RSA 公钥；证书必须允许密钥用于加密(如果密钥使用扩展存在的话，则 keyEncipherment 位必须被设置) 注:RSA\_PSK 定义于 [[TLSPSK]](https://tools.ietf.org/html/rfc5246#ref-TLSPSK)|
-|DHE\_RSA<br>ECDHE\_RSA   |  RSA公钥；证书必须允许密钥使用 Server 密钥交互消息中的签名机制和 hash 算法进行签名 (如果密钥用法扩展存在的话，digitalSignature 位必须设置)注: ECDHE\_RSA定义于 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC)|
-|DHE\_DSS    |   DSA公钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名|
-|DH\_DSS<br> DH\_RSA   |  Diffie-Hellman公钥; 如果密钥用法扩展存在的话,keyAgreement 位必须设置|
-|ECDH\_ECDSA <br>ECDH\_RSA |     ECDH-capable公钥; 公钥必须使用一个能够被 Client 支持的曲线和点格式, 正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样|
-|ECDHE\_ECDSA  |  ECDSA-capable公钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名;公钥必须使用一个能够被 Client 支持的曲线和点格式, 正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样|
+|RSA <br> RSA\_PSK |   证书中包含 RSA 公钥，该公钥可以进行密码协商，也就是使用 RSA 密码协商算法；证书必须允许密钥用于加密(如果 key usage 扩展存在的话，则 keyEncipherment 位必须被设置，表示允许服务器公钥用于密码协商) <br>注:RSA\_PSK 定义于 [[TLSPSK]](https://tools.ietf.org/html/rfc5246#ref-TLSPSK)|
+|DHE\_RSA<br>ECDHE\_RSA   | 证书中包含 RSA 公钥，可以使用 ECDHE 或者 DHE 进行密钥协商；证书必须允许密钥使用 Server 密钥交互消息中的签名机制和 hash 算法进行签名 (如果 key usage 扩展存在的话，digitalSignature 位必须设置，RSA 公钥就可以进行数字签名)<br>注: ECDHE\_RSA定义于 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC)|
+|DHE\_DSS    |  证书包含 DSA 公钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名|
+|DH\_DSS<br> DH\_RSA   | 证书中包含 DSS 或 RSA 公钥，使用 Diffie-Hellman 进行密钥协商; 如果 key usage 扩展存在的话，keyAgreement 位必须设置，**目前这种套件已经很少见了**。|
+|ECDH\_ECDSA <br>ECDH\_RSA |    证书包含 ECDSA 或 RSA 公钥，使用 ECDH-capable 进行密钥协商。由于是静态密钥协商算法，ECDH 的参数和公钥包含在证书中; 公钥必须使用一个能够被 Client 支持的曲线和点格式, 正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样。**目前这种套件已经很少见了，因为 ECDH 不支持前向安全性**|
+|ECDHE\_ECDSA  | 证书包含 ECDSA-capable 公钥，使用 ECDHE 算法协商预备主密钥; 证书必须允许密钥用于使用将在 Server 密钥交换消息中使用的散列算法进行签名;公钥必须使用一个能够被 Client 支持的曲线和点格式，Client 通过 Client Hello 消息中的 ec\_point\_formats 扩展指定支持的命名曲线，正如 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中描述的那样。**这是 TLS 1.2 中最安全，性能最高的密码套件**。|
+
+
+如果 Client 提供了一个 "signature\_algorithms" 扩展，则 Server 提供的所有证书必须由出现在这个扩展中的一个 hash/签名算法对进行签名。需要注意的是这意味着一个包含了一个签名算法密钥的证书应该被一个不同的签名算法签名(例如，RSA 密钥被 DSA 密钥签名)。这个与 TLS 1.1 不同，TLS 1.1 中要求算法是相同的。**更进一步也说明了 DH\_DSS，DH\_RSA，ECDH\_ECDSA，和 ECDH\_RSA 套件的后半部分对应的公钥不会用来加密或者数字签名，没有存在的必要性，并且后半部分也不限制 CA 机构签发证书所选用的数字签名算法**。固定的 DH 证书可以被出现在扩展中的任意 hash/签名算法对签名。DH\_DSS，DH\_RSA，ECDH\_ECDSA，和 ECDH\_RSA 是历史上的名称。
 
 
 
-如果 Client 提供了一个 "signature\_algorithms" 扩展，则所有由 Server 提供的证书必须由出现在这个扩展中的一个 hash/签名算法对进行签名。需要注意的是这意味着一个包含了一个签名算法密钥的证书应该被一个不同的签名算法签名(例如，RSA 密钥被 DSA 密钥签名)。这个与 TLS 1.1 不同，后者要求算法是相同的。需要注意的是这也意味着 DH\_DSS，DH\_RSA，ECDH\_ECDSA，和ECDH\_RSA密钥交换算法并不限制用于对证书签名的算法。固定的DH证书可以被出现在扩展中的任意hash/签名算法对签名。DH\_DSS，DH\_RSA，ECDH\_ECDSA，和 ECDH\_RSA 是历史上的名称。
+如果 Server 有多个证书, 它基于上述标准(此外其它的标准有:传输层端点，本地配置和偏好等)选择其中一个。如果 Server 只有一个证书，它应该尝试使这个证书符合这些标准。
 
-如果server有多个证书, 它基于上述标准(此外其它的标准有:传输层端点, 本地配置和偏好等)选择其中一个.如果server只有一个证书, 它应该尝试使这个证书符合这些标准.
+需要注意的是有很多证书使用无法与 TLS 兼容的算法或算法组合。例如，一个使用 RSASSA-PSS 签名密钥的证书(在 SubjectPublicKeyInfo 中是 id-RSASSA-PSS OID)不能被使用因为 TLS 没有定义相应的签名算法。
 
-需要注意的是有很多证书使用无法与TLS兼容的算法或算法组合. 例如, 一个使用RSASSA-PSS签名密钥的证书(在SubjectPublicKeyInfo中是id-RSASSA-PSS OID)不能被使用因为TLS没有定义相应的签名算法.
+正如密钥套件指定了用于 TLS 协议的新的密钥交换方法，它们也同样指定了证书格式和要求的编码的按键信息。
 
-正如密钥族指定了用于TLS协议的新的密钥交换方法, 它们也指定了证书格式和要求的编码的按键信息.
+至此已经涉及到了 Client 签名算法、证书签名算法、密码套件、Server 公钥，这 4 者相互有关联，也有没有关系的。
+
+- Client 签名算法需要和证书签名算法相互匹配，如果 Client Hello 中的 signature\_algorithms 扩展与证书链中的证书签名算法不匹配的话，结果是握手失败。
+
+- Server 公钥与证书签名算法无任何关系。证书中包含 Server 证书，证书签名算法对 Server 公钥进行签名，但是 Server 公钥的加密算法可以是 RSA 也可以是 ECDSA。
+
+- 密码套件和 Server 公钥存在相互匹配的关系，因为密码套件中的身份验证算法指的就是 Server 公钥类型。
+
+例如 TLS\_ECDHE\_ECDSA\_WITH\_AES\_256\_GCM\_SHA384 这个密码套件：
+
+密钥协商算法是 ECDHE，身份验证算法是 ECDSA，加密模式是 AES\_256\_GCM，由于 GCM 是属于 AEAD 加密模式，所以整个密码套件无须另外的 HMAC，SHA384 指的是 PRF 算法。
+
+**这里的身份验证并不是指的证书由哪种数字签名算法签名的，而是指的证书中包含的 Server 公钥是什么类型的公钥**。
+
+所以 Client Hello 中的 signature\_algorithms 扩展需要和证书链中的签名算法匹配，如果不匹配，就无法验证证书中的 Server 公钥，也需要和双方协商出来的密码套件匹配，如果不匹配，就无法使用 Server 公钥。
+
+
 
 ### 3. Server Key Exchange Message
 
+这个消息会紧随在 Server 证书消息之后发送(如果是一个匿名协商的话，会紧随在 Server Hello消息之后发送)；
+
+ServerKeyExchange 消息由 Server 发送，但仅在 Server 证书消息(如果发送了)没有包含足够的数据以允许 Client 交换一个预密钥时。这个限制对于如下的密钥交换算法是成立的:
+
+```c
+         DHE_DSS
+         DHE_RSA
+         ECDHE_ECDSA
+         ECDHE_RSA
+         DH_anon
+         ECDH_anon
+```
+
+对于上面前 4 个密码套件，由于使用的临时的 DH/ECDH 密钥协商算法，证书中是不包含这些动态的 DH 信息(DH 参数和 DH 公钥)，所以需要使用 Server Key Exchange 消息传递这些信息。传递的动态 DH 信息需要使用 Server 私钥进行签名加密。
+
+对于上面后 2 个密码套件，是匿名协商，使用的静态的 DH/ECDH 密钥协商算法，而且它们也没有证书消息(Server Certificate 消息)，所以同样需要使用 Server Key Exchange 消息传递这些信息。传递的静态 DH 信息需要使用 Server 私钥进行签名加密。
+
+对于如下密钥交换算法发送 ServerKeyExchange 是非法的:
+
+```c
+         RSA
+         DH_DSS
+         DH_RSA
+```
+
+对于 RSA 加密套件，Client 不需要额外参数就可以计算出预备主密钥，然后使用 Server 的公钥加密发送给 Server 端，所以不需要 Server Key Exchange 可以完成协商。
+
+对于 DH\_DSS 和 DH\_RSA，在证书中就会包含静态的 DH 信息，也不需要发送 Server Key Exchange，Client 和 Server 双方可以各自协商出预备主密钥的一半密钥，合起来就是预备主密钥了。这两种密码套件目前很少用，一般 CA 不会在证书中包含静态的 DH 信息，也不太安全。
+
+其它的密钥交换算法，如在 [[TLSECC]](https://tools.ietf.org/html/rfc5246#ref-TLSECC) 中所定义的那些，必须指定是否发送 ServerKeyExchange；如果消息发送了，则必须指定发送内容。
+
+
+ServerKeyExchange 这个消息的目的就是传递了必要的密码信息，使得 Client 可以完成预备主密钥的通信：获得一个 Client 可用于完成一个密钥交换的 Diffie-Hellman 公钥(结果就是生成预备主密钥)或一个其它算法的公钥。
+
+
+
+DH 参数的结构是:
+    
+```c
+      enum { dhe_dss, dhe_rsa, dh_anon, rsa, dh_dss, dh_rsa,ec_diffie_hellman
+            /* 可以被扩展, 例如, 对于 ECDH -- 见 [TLSECC] */
+           } KeyExchangeAlgorithm;
+
+      struct {
+          opaque dh_p<1..2^16-1>;
+          opaque dh_g<1..2^16-1>;
+          opaque dh_Ys<1..2^16-1>;
+      } ServerDHParams;     /* 动态的 DH 参数 */
+```
+
+- dh\_p
+  用于 Diffie-Hellman 操作的素模数，即大质数。
+
+- dh\_g
+  用于 Diffie-Hellman 操作的生成器
+
+- dh\_Ys
+  Server 的 Diffie-Hellman 公钥 (g^X mod p)
+
+Server 需要传递额外参数的密码套件主要 6 种，之前提到过，DHE\_DSS、DHE\_RSA、ECDHE\_ECDSA、ECDHE\_RSA、DH\_anon、ECDH\_anon，其他的密码套件不可用于 ServerKeyExchange 这个消息中。**一般 HTTPS 都会部署这 4 种密码套件：ECDHE\_RSA、DHE\_RSA、ECDHE\_ECDSA、RSA**。
+
+>关于 TLS 中 ECC 相关描述在 [RFC4492](https://tools.ietf.org/html/rfc4492) 这篇文档中 
+
+|密钥交换算法 |  描述  |
+|:------|:-----|
+|ECDH\_ECDSA | 静态的 ECDH + ECDSA 签名证书|
+|ECDHE\_ECDSA  |   动态的 ECDH + ECDSA 签名证书|
+|ECDH\_RSA     |   静态的 ECDH + RSA 签名证书|
+|ECDHE\_RSA    |   动态的 ECDH + RSA 签名证书 |
+|ECDH\_anon    |   匿名的 ECDH + 无签名证书 |
+
+
+ECDHE 参数的结构是:
+
+```c
+        struct {
+            ECParameters    curve_params;
+            ECPoint         public;
+        } ServerECDHParams;
+```
+
+ECC public 公钥的数据结构如下：
+
+```c
+        struct {
+            opaque point <1..2^8-1>;
+        } ECPoint;
+```
+
+ECC 椭圆曲线的类型:
+
+```c
+        enum { 
+            explicit_prime (1), 
+            explicit_char2 (2),
+            named_curve (3), 
+            reserved(248..255) 
+        } ECCurveType;
+         
+        struct {
+            opaque a <1..2^8-1>;
+            opaque b <1..2^8-1>;
+        } ECCurve;  
+        
+        enum { ec_basis_trinomial, ec_basis_pentanomial } ECBasisType;     
+```
+
+支持的所有命名曲线:
+
+```c
+        enum {
+            sect163k1 (1), sect163r1 (2), sect163r2 (3),
+            sect193r1 (4), sect193r2 (5), sect233k1 (6),
+            sect233r1 (7), sect239k1 (8), sect283k1 (9),
+            sect283r1 (10), sect409k1 (11), sect409r1 (12),
+            sect571k1 (13), sect571r1 (14), secp160k1 (15),
+            secp160r1 (16), secp160r2 (17), secp192k1 (18),
+            secp192r1 (19), secp224k1 (20), secp224r1 (21),
+            secp256k1 (22), secp256r1 (23), secp384r1 (24),
+            secp521r1 (25),
+            reserved (0xFE00..0xFEFF),
+            arbitrary_explicit_prime_curves(0xFF01),
+            arbitrary_explicit_char2_curves(0xFF02),
+            (0xFFFF)
+        } NamedCurve;
+```
+
+ECDH 参数的数据结构：
+
+```c
+        struct {
+            ECCurveType    curve_type;
+            select (curve_type) {
+                case explicit_prime:
+                    opaque      prime_p <1..2^8-1>;
+                    ECCurve     curve;
+                    ECPoint     base;
+                    opaque      order <1..2^8-1>;
+                    opaque      cofactor <1..2^8-1>;
+                case explicit_char2:
+                    uint16      m;
+                    ECBasisType basis;
+                    select (basis) {
+                        case ec_trinomial:
+                            opaque  k <1..2^8-1>;
+                        case ec_pentanomial:
+                            opaque  k1 <1..2^8-1>;
+                            opaque  k2 <1..2^8-1>;
+                            opaque  k3 <1..2^8-1>;
+                    };
+                    ECCurve     curve;
+                    ECPoint     base;
+                    opaque      order <1..2^8-1>;
+                    opaque      cofactor <1..2^8-1>;
+                case named_curve:
+                    NamedCurve namedcurve;
+            };
+        } ECParameters;
+```
+
+ECCurveType 表示 ECC 类型每个人可以自行指定椭圆曲线的公式，基点等参数，但是在 TLS/SSL 协议中一般都是使用已经命名好的命名曲线 NamedCurve，这样也更加安全。
+
+ServerECDHParams 中包含了 ECParameters 参数和 ECPoint 公钥。
+
+最后来看看 ServerKeyExchange 消息的数据结构：
+
+```c
+      struct {
+          select (KeyExchangeAlgorithm) {
+              case dh_anon:
+                  ServerDHParams params;
+              case dhe_dss:
+              case dhe_rsa:
+                  ServerDHParams params;
+                  digitally-signed struct {
+                      opaque client_random[32];
+                      opaque server_random[32];
+                      ServerDHParams params;
+                  } signed_params;
+              case rsa:
+              case dh_dss:
+              case dh_rsa:
+                  struct {} ;
+                 /* 消息忽略 rsa, dh_dss, 和dh_rsa */
+              case ec_diffie_hellman:
+                  ServerECDHParams    params;
+                  Signature           signed_params;
+          };
+      } ServerKeyExchange;
+```
+
+- params
+  Server 密钥协商需要的参数
+
+- signed\_params
+  对于非匿名密钥交换, 这是一个对 Server 密钥协商参数的签名
+
+ServerKeyExchange 根据 KeyExchangeAlgorithm 类型的不同，加入了不同的参数。对于匿名协商，不需要证书，所以也不需要身份验证，没有证书。DHE 开头的协商算法，Server 需要发给 Client 动态的 DH 参数 ServerDHParams 和 数字签名。这里的数字签名会包含 Client 端传过来的随机数，Server 端生成的随机数和 ServerDHParams。
+
+RSA、DH\_DSS、DH\_RSA 这 3 个不需要 ServerKeyExchange 消息。
+
+如果是动态的 ECDH 协商算法，Server 需要把 ServerECDHParams 参数和签名发给 Client。签名的数据结构如下：
+
+```c
+          enum { ecdsa } SignatureAlgorithm;
+
+          select (SignatureAlgorithm) {
+              case ecdsa:
+                  digitally-signed struct {
+                      opaque sha_hash[sha_size];
+                  };
+          } Signature;
+          
+        ServerKeyExchange.signed_params.sha_hash
+            SHA(ClientHello.random + ServerHello.random +
+                                              ServerKeyExchange.params);
+```
+
+这里的签名里面包含的是 Client 随机数、Server 随机数 和 ServerKeyExchange.params 三者求 SHA。
+
+
+如果 Client已经提供了 "signature\_algorithms" 扩展，签名算法和 hash 算法必须成对出现在扩展中。需要注意的是这里可能会有不一致的可能，例如，Client 可能提供 DHE\_DSS 密钥交换算法，但却在 "signature\_algorithms" 扩展中忽略任何与 DSA 配对的组合。为了达成正确的密码协商，Server 必须在选择密码套件之前检查与 "signature\_algorithms" 扩展可能冲突的密码套件。这并不算是一个优雅的方案，只能算是一个折中的方案，对原来密码套件的设计改动最小。
+
+此外，hash 和签名算法必须与位于 Server 的终端实体证书中的密钥相兼容。RSA 密钥可以与任何允许的 hash 算法配合使用, 并满足任何证书的约束(如果有的话)。
 
 
 ### 4. Certificate Request
+
+一个非匿名的 Server 可以选择性地请求一个 Client 发送的证书，如果相互选定的密码套件合适的话。如果 ServerKeyExchange 消息发送了的话，就紧跟在 ServerKeyExchange 消息的后面。如果 ServerKeyExchange 消息没有发送的话，就跟在 Server Certificate 消息后面。
+
+这个消息的结构是:
+
+```c
+        enum {
+          rsa_sign(1), 
+          dss_sign(2), 
+          rsa_fixed_dh(3), 
+          dss_fixed_dh(4),
+          rsa_ephemeral_dh_RESERVED(5), 
+          dss_ephemeral_dh_RESERVED(6),
+          fortezza_dms_RESERVED(20), 
+          ecdsa_sign(64), 
+          rsa_fixed_ecdh(65),
+          ecdsa_fixed_ecdh(66),
+          (255)
+      } ClientCertificateType;
+      
+      opaque DistinguishedName<1..2^16-1>;
+
+      struct {
+          ClientCertificateType certificate_types<1..2^8-1>;
+          SignatureAndHashAlgorithm
+            supported_signature_algorithms<2^16-1>;
+          DistinguishedName certificate_authorities<0..2^16-1>;
+      } CertificateRequest;
+```
+
+- certificate\_types
+  client 可以提供的证书类型的列表.
+  rsa\_sign:一个包含 RSA 密钥的证书
+  dss\_sign:一个包含 DSA 密钥的证书
+  rsa\_fixed\_dh:一个包含静态 DH 密钥的证书
+  dss\_fixed\_dh:一个包含静态 DH 密钥的证书
+
+- supported\_signature\_algorithms
+  一个 hash/签名算法对列表供 Server选择，按照偏好降序排列
+
+- certificate\_authorities
+  可接受的 certificate\_authorities [[X501]](https://tools.ietf.org/html/rfc5246#ref-X501) 的名称列表，以 DER 编码的格式体现。这些名称可以为一个根 CA 或一个次级 CA 指定一个期望的名称；因此，这个消息可以被用于描已知的根和期望的认证空间。如果 certificate\_authorities 列表为空，则 Client 可以发送 ClientCertificateType 中的任意证书，除非存在有一些属于相反情况的外部设定。
+
+certificate\_types 和 supported\_signature\_algorithms 域的交互关系某种程度上有些复杂，certificate\_type 自从 SSLv3 开始就在 TLS 中存在，但某种程度上并不规范。它的很多功能被 supported\_signature\_algorithms 所取代。应遵循下述 3 条规则:
+
+- Client 提供的任何证书必须使用在 supported\_signature\_algorithms 中存在的 hash/签名算法对来签名
+
+- Clinet 提供的终端实体的证书必须包含一个与 certificate\_types 兼容的密钥。如果这个密钥是一个签名密钥，它必须能与 supported\_signature\_algorithms 中的一些 hash/签名算法对一起使用
+
+- 出于历史原因，一些 Client 证书类型的名称包含了签名证书的算法。例如，在早期版本的 TLS 中，rsa\_fixed\_dh 意味着一个用 RSA 签名并且还包含一个静态 DH 密钥的证书。在 TLS 1.2 中，这个功能被 supported\_signature\_algorithms 废除，证书类型不再限制签名证书的算法。例如，如果 Server 发送了 dss\_fixed\_dh 证书类型和 {{sha1, dsa}, {sha1, rsa}} 签名类型，Client 可以回复一个包含一个静态 DH 密钥的证书，用 RSA-SHA1 签名。
+
+>注: 一个匿名 Server 请求认证 Client 会产生一个致命的 handshake\_failure 警告错误。
+
 
 
 
 ### 5. Server Hello Done
 
+ServerHelloDone 消息已经被 Server 发送以表明 ServerHello 及其相关消息的结束。发送这个消息之后, Server 将会等待 Client 发过来的响应。
+
+这个消息意味着 Server 发送完了所有支持密钥交换的消息，Client 能继续它的密钥协商，证书校验等步骤。
+
+在收到 ServerHelloDone 消息之后，Client 应当验证 Server 提供的是否是有效的证书，如果有要求的话, 还需要进一步检查 Server hello 参数是否可以接受。
+
+这个消息的结构:
+
+```c
+        struct { } ServerHelloDone;
+```    
+  
 
 
 ### 6. Client Certificate
@@ -420,7 +728,22 @@ Server Hello 消息的结构是:
 
 ### 7. Client Key Exchange Message
 
-
+```c
+        enum { implicit, explicit } PublicValueEncoding;
+        
+        struct {
+            select (PublicValueEncoding) {
+                case implicit: struct { };
+                case explicit: ECPoint ecdh_Yc;
+            } ecdh_public;
+        } ClientECDiffieHellmanPublic;
+        
+        struct {
+            select (KeyExchangeAlgorithm) {
+                case ec_diffie_hellman: ClientECDiffieHellmanPublic;
+            } exchange_keys;
+        } ClientKeyExchange;                
+```
 
 ### 8. Certificate Verify
 
