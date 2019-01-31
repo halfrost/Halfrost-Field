@@ -728,7 +728,7 @@ ServerHelloDone 消息已经被 Server 发送以表明 ServerHello 及其相关�
 
 Client 证书的数据结构和 Server Certificate 是相同的。
 
-Client Certificate 消息的目的是传递 Client 的证书链给 Server；当验证 CertificateVerify 消息时(当 Client 的验证基于签名时)Server 会用它来验证或计算预主密钥(对于静态的 Diffie-Hellman)。证书必须适用于已协商的密码套件的密钥交换算法, 和任何已协商的扩展.
+Client Certificate 消息的目的是传递 Client 的证书链给 Server；当验证 CertificateVerify 消息时(当 Client 的验证基于签名时)Server 会用它来验证或计算预备主密钥(对于静态的 Diffie-Hellman)。证书必须适用于已协商的密码套件的密钥交换算法, 和任何已协商的扩展.
 
 尤其是:
 
@@ -754,7 +754,7 @@ Client Certificate 消息的目的是传递 Client 的证书链给 Server；当�
 
 这个消息始终由 Client 发送。如果有 Client Certificate 消息的话，Client Key Exchange 紧跟在 Client Certificate 消息之后发送。如果不存在Client Certificate 消息的话，它必须是在 Client 收到 ServerHelloDone 后发送的第一个消息。
 
-这个消息的含义是，在这个消息中设置了预主密钥，或者通过 RSA 加密后直接传输，或者通过传输 Diffie-Hellman 参数来允许双方协商出一致的预主密钥。
+这个消息的含义是，在这个消息中设置了预备主密钥，或者通过 RSA 加密后直接传输，或者通过传输 Diffie-Hellman 参数来允许双方协商出一致的预备主密钥。
 
 当 Client 使用一个动态的 Diffie-Hellman 指数时，这个消息就会包含 Client 的 Diffie-Hellman 公钥。如果 Client 正在发送一个包含一个静态 DH 指数(例如，它正在进行 fixed_dh Client 认证)的证书时，这个消息必须被发送但必须为空。
 
@@ -796,7 +796,7 @@ ClientKeyExchange 消息的数据结构如下：
 
 ### (1) RSA/ECDSA 加密预备主密钥
 
-如果 RSA 被用于密钥协商和身份认证(RSA 密码套件)，Client 会生成一个 48 字节的预备主密钥，使用 Server 证书中的公钥加密，然后以一个加密的预主密钥消息发送。这个结构体是 ClientKeyExchange 消息的一个变量，它本身并非一个消息。
+如果 RSA 被用于密钥协商和身份认证(RSA 密码套件)，Client 会生成一个 48 字节的预备主密钥，使用 Server 证书中的公钥加密，然后以一个加密的预备主密钥消息发送。这个结构体是 ClientKeyExchange 消息的一个变量，它本身并非一个消息。
 
 这个消息的结构是:
 
@@ -852,7 +852,7 @@ Server 拿到 EncryptedPreMasterSecret 以后，用自己的 RSA 私钥解密。
 虽然没有已知的针对这个结构体的攻击，Klima et al. [[KPR03]](https://tools.ietf.org/html/rfc5246#ref-KPR03) 描述了一些理论上的攻击， 因此推荐第一种结构描述来处理。
 
 
-在任何情况下，如果处理一个 RSA 加密的预备主密钥消息失败的时候，或版本号不是期望的时候，一个 TLS Server 一定不能产生一个警报。作为替代，它必须以一个随机生成的预主密钥继续握手流程。出于定位问题的意图将失败的真正原因记录在日志中可能是有帮助的。但必须注意避免泄露信息给攻击者（例如，计时，日志文件或其它渠道）
+在任何情况下，如果处理一个 RSA 加密的预备主密钥消息失败的时候，或版本号不是期望的时候，一个 TLS Server 一定不能产生一个警报。作为替代，它必须以一个随机生成的预备主密钥继续握手流程。出于定位问题的意图将失败的真正原因记录在日志中可能是有帮助的。但必须注意避免泄露信息给攻击者（例如，计时，日志文件或其它渠道）
 
 在 [[PKCS1]](https://tools.ietf.org/html/rfc5246#ref-PKCS1) 中定义的 RSAES-OAEP 加密方案对于 Bleichenbacher 攻击是更安全的。然而，为了最大程度上兼容早期的 TLS 版本，TLS 1.2 规范使用 RSAES-PKCS1-v1\_5 方案。如果上述建议被采纳的话，不会有多少已知的Bleichenbacher 能够奏效。
 
