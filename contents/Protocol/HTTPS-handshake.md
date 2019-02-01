@@ -979,7 +979,7 @@ Finished 子消息是 TLS 记录层加密保护的第一条消息。Finished 子
 
 如果中间人在握手期间把 ClientHello 的 TLS 最高支持版本修改为 TLS 1.0，企图回退攻击，利用 TLS 旧版本中的漏洞。Server 收到中间人的 ClientHello 并不知道是否存在篡改，于是也按照 TLS 1.0 去协商。握手进行到最后一步，校验 Finished 子消息的时候，校验不通过，因为 Client 原本发的 ClientHello 中 TLS 最高支持版本是 TLS 1.2，那么产生的 Finished 子消息的 verify\_data 与 Server 拿到篡改后的 ClientHello 计算出来的 verify\_data 肯定不同。至此也就发现了中间存在篡改，握手失败。
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_2.png)
+![](https://img.halfrost.com/Blog/ArticleImage/97_2_0.png)
 
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_3.png)
