@@ -210,4 +210,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/TLS\_1.3\_Record\_Protocol/](https://halfrost.com/tls_1-3_record_protocol/)
