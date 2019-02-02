@@ -10,7 +10,7 @@
 
 对称密码套件定义了一对 AEAD 算法和与 HKDF 一起使用的哈希算法。密码套件名称遵循    命名惯例：
 
-```
+```c
       CipherSuite TLS_AEAD_HASH = VALUE;
 
       +-----------+------------------------------------------------+
@@ -28,7 +28,7 @@
 
 此规范定义了以下用于 TLS 1.3 的密码套件：
 
-```
+```c
               +------------------------------+-------------+
               | Description                  | Value       |
               +------------------------------+-------------+
@@ -128,4 +128,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/TLS\_1.3\_Implementation\_Notes/](https://halfrost.com/tls_1-3_implementation_notes/)

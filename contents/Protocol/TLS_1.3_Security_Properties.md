@@ -203,4 +203,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/TLS\_1.3\_Security\_Properties/](https://halfrost.com/tls_1-3_security_properties/)

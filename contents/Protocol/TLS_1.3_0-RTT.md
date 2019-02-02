@@ -2,7 +2,7 @@
 
 
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/112_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/112_0_.png'>
 </p>
 
 如 [第2.3节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3.md#3-0-rtt-%E6%95%B0%E6%8D%AE) 和 [附录 E.5](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Security_Properties.md#%E4%BA%94-replay-attacks-on-0-rtt) 所述，TLS不为 0-RTT 数据提供固有的重放保护。有两个潜在的威胁值得关注:
@@ -94,4 +94,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/TLS\_1.3\_0-RTT/](https://halfrost.com/tls_1-3_0-rtt/)

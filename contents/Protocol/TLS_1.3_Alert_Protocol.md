@@ -179,4 +179,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/TLS\_1.3\_Alert\_Protocol/](https://halfrost.com/tls_1-3_alert_protocol/)

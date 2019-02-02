@@ -694,4 +694,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/HTTPS\_record\_layer/](https://halfrost.com/https_record_layer/)
