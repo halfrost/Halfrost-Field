@@ -116,7 +116,7 @@ message SearchRequest {
 
 ### 1. 分配字段编号
 
-每个消息定义中的每个字段都有**唯一的编号**。这些字段编号用于标识消息二进制格式中的字段，并且在使用消息类型后不应更改。请注意，范围 1 到 15 中的字段编号需要一个字节进行编码，包括字段编号和字段类型（具体原因见 [Protocol Buffer 编码原理](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#%E5%85%AD-protocol-buffer-%E7%BC%96%E7%A0%81%E5%8E%9F%E7%90%86) 这一章节）。范围 16 至 2047 中的字段编号需要两个字节。所以你应该保留数字 1 到 15 作为非常频繁出现的消息元素。请记住为将来可能添加的频繁出现的元素留出一些空间。
+每个消息定义中的每个字段都有**唯一的编号**。这些字段编号用于标识消息二进制格式中的字段，并且在使用消息类型后不应更改。请注意，范围 1 到 15 中的字段编号需要一个字节进行编码，包括字段编号和字段类型（具体原因见 [Protocol Buffer 编码原理](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers-encode.md#%E5%85%AD-protocol-buffer-%E7%BC%96%E7%A0%81%E5%8E%9F%E7%90%86) 这一章节）。范围 16 至 2047 中的字段编号需要两个字节。所以你应该保留数字 1 到 15 作为非常频繁出现的消息元素。请记住为将来可能添加的频繁出现的元素留出一些空间。
 
 可以指定的最小字段编号为1，最大字段编号为2^29^-1 或 536,870,911。也不能使用数字 19000 到 19999（FieldDescriptor :: kFirstReservedNumber 到 FieldDescriptor :: kLastReservedNumber），因为它们是为 Protocol Buffers实现保留的。
 
@@ -142,7 +142,7 @@ message Foo {
 - 字段名不能重复，必须唯一。
 - repeated 字段：可以在一个 message 中重复任何数字多次(包括 0 )，不过这些重复值的顺序被保留。
 
-在 proto3 中，纯数字类型的 repeated 字段编码时候默认采用 packed 编码（具体原因见 [Protocol Buffer 编码原理](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#%E5%85%AD-protocol-buffer-%E7%BC%96%E7%A0%81%E5%8E%9F%E7%90%86) 这一章节）
+在 proto3 中，纯数字类型的 repeated 字段编码时候默认采用 packed 编码（具体原因见 [Protocol Buffer 编码原理](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers-encode.md#%E5%85%AD-protocol-buffer-%E7%BC%96%E7%A0%81%E5%8E%9F%E7%90%86) 这一章节）
 
 ### 4. 各个语言标量类型对应关系
 
@@ -262,7 +262,7 @@ message Outer {                  // Level 0
 如果后面发现之前定义 message 需要增加字段了，这个时候就体现出 Protocol Buffer 的优势了，不需要改动之前的代码。不过需要满足以下 10 条规则：
 
 1. 不要改动原有字段的数据结构。
-2. 如果您添加新字段，则任何由代码使用“旧”消息格式序列化的消息仍然可以通过新生成的代码进行分析。您应该记住这些元素的默认值，以便新代码可以正确地与旧代码生成的消息进行交互。同样，由新代码创建的消息可以由旧代码解析：旧的二进制文件在解析时会简单地忽略新字段。（具体原因见 [未知字段](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#9-%E6%9C%AA%E7%9F%A5%E5%AD%97%E6%AE%B5) 这一章节）
+2. 如果您添加新字段，则任何由代码使用“旧”消息格式序列化的消息仍然可以通过新生成的代码进行分析。您应该记住这些元素的默认值，以便新代码可以正确地与旧代码生成的消息进行交互。同样，由新代码创建的消息可以由旧代码解析：旧的二进制文件在解析时会简单地忽略新字段。（具体原因见 [未知字段](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers-encode.md#9-%E6%9C%AA%E7%9F%A5%E5%AD%97%E6%AE%B5) 这一章节）
 3. 只要字段号在更新的消息类型中不再使用，字段可以被删除。您可能需要重命名该字段，可能会添加前缀“OBSOLETE_”，或者标记成保留字段号 `reserved`，以便将来的 `.proto` 用户不会意外重复使用该号码。
 4. int32，uint32，int64，uint64 和 bool 全都兼容。这意味着您可以将字段从这些类型之一更改为另一个字段而不破坏向前或向后兼容性。如果一个数字从不适合相应类型的线路中解析出来，则会得到与在 C++ 中将该数字转换为该类型相同的效果（例如，如果将 64 位数字读为 int32，它将被截断为 32 位）。
 5. sint32 和 sint64 相互兼容，但与其他整数类型不兼容。
@@ -607,7 +607,7 @@ message Test1 {
 如果存在上面这样的一个 message 的结构，如果存入 150，在 Protocol Buffer 中显示的二进制应该为 08 96 01 。
 
 
-额外说一句，type 需要注意的是 type = 2 的情况，tag 里面除了包含 field number 和 wire\_type ，还需要再包含一个 length，决定 value 从那一段取出来。（具体原因见 [Protocol Buffer 字符串](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#4-%E5%AD%97%E7%AC%A6%E4%B8%B2) 这一章节） 
+额外说一句，type 需要注意的是 type = 2 的情况，tag 里面除了包含 field number 和 wire\_type ，还需要再包含一个 length，决定 value 从那一段取出来。（具体原因见 [Protocol Buffer 字符串](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers-encode.md#4-%E5%AD%97%E7%AC%A6%E4%B8%B2) 这一章节） 
 
 
 ### 2. Signed Integers 编码
@@ -703,7 +703,7 @@ length 为 3，代表后面有 3 个字节，即 08 96 01 。
 
 ### 6. Optional 和 Repeated 的编码
 
-在 proto2 中定义成 repeated 的字段，（没有加上 [packed=true] option ），编码后的 message 有一个或者多个包含相同 tag 数字的 key-value 对。这些重复的 value 不需要连续的出现；他们可能与其他的字段间隔的出现。尽管他们是无序的，但是在解析时，他们是需要有序的。在 proto3 中 repeated 字段默认采用 packed 编码（具体原因见 [Packed Repeated Fields](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers.md#7-packed-repeated-fields) 这一章节） 
+在 proto2 中定义成 repeated 的字段，（没有加上 [packed=true] option ），编码后的 message 有一个或者多个包含相同 tag 数字的 key-value 对。这些重复的 value 不需要连续的出现；他们可能与其他的字段间隔的出现。尽管他们是无序的，但是在解析时，他们是需要有序的。在 proto3 中 repeated 字段默认采用 packed 编码（具体原因见 [Packed Repeated Fields](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/Protocol-buffers-encode.md#7-packed-repeated-fields) 这一章节） 
 
 对于 proto3 中的任何非重复字段或 proto2 中的可选字段，编码的 message 可能有也可能没有包含该字段号的键值对。
 
