@@ -104,9 +104,9 @@ TLS 握手协议包含如下几步:
 
 TLS 1.2 握手协议主要流程如下：
 
-Client 发送一个 ClientHello 消息, Server 必须回应一个 ServerHello 消息或产生一个验证的错误并且使连接失败。ClientHello 和 ServerHello 用于在 Client 和 Server 之间建立安全性增强的能力。ClientHello 和 ServerHello 建立了如下的属性: 协议版本, 会话 ID, 密码套件, 压缩算法。此外, 产生并交换两个随机数: ClientHello.random 和 ServerHello.random。
+Client 发送一个 ClientHello 消息，Server 必须回应一个 ServerHello 消息或产生一个验证的错误并且使连接失败。ClientHello 和 ServerHello 用于在 Client 和 Server 之间建立安全性增强的能力。ClientHello 和 ServerHello 建立了如下的属性: 协议版本，会话 ID，密码套件，压缩算法。此外，产生并交换两个随机数: ClientHello.random 和 ServerHello.random。
 
-密钥交换中使用的最多4个消息: Server Certificate, ServerKeyExchange, Client Certificate 和 ClientKeyExchange。新的密钥交换方法可以通过这些方法产生:为这些消息指定一个格式, 并定义这些消息的用法以允许 Client 和 Server 就一个共享密钥达成一致。这个密钥必须很长；当前定义的密钥交换方法交换的密钥大于 46 字节。
+密钥交换中使用的最多 4 个消息: Server Certificate, ServerKeyExchange, Client Certificate 和 ClientKeyExchange。新的密钥交换方法可以通过这些方法产生:为这些消息指定一个格式, 并定义这些消息的用法以允许 Client 和 Server 就一个共享密钥达成一致。这个密钥必须很长；当前定义的密钥交换方法交换的密钥大于 46 字节。
 
 在 hello 消息之后, Server 会在 Certificate 消息中发送它自己的证书，如果它即将被认证。此外，如果需要的话，一个 ServerKeyExchange 消息会被发送(例如, 如果 Server 没有证书, 或者它的证书只用于签名，RSA 密码套件就不会出现 ServerKeyExchange 消息)。如果 Server 被认证过了，如果对于已选择的密码套件来说是合适的话，它可能会要求 Client 发送证书。接下来，Server 会发送 ServerHelloDone 消息，至此意味着握手的 hello 消息阶段完成。Server 将会等待 Client 的响应。如果 Server 发送了一个 CertificateRequest 消息，Client 必须发送 Certificate 消息。现在 ClientKeyExchange 消息需要发送, 这个消息的内容取决于 ClientHello 和 ServerHello 之间选择的公钥算法。如果 Client 发送了一个带签名能力的证书, 则需要发送以一个数字签名的 CertificateVerify 消息，以显式验证证书中私钥的所有权。
 
@@ -979,36 +979,104 @@ Finished 子消息是 TLS 记录层加密保护的第一条消息。Finished 子
 
 如果中间人在握手期间把 ClientHello 的 TLS 最高支持版本修改为 TLS 1.0，企图回退攻击，利用 TLS 旧版本中的漏洞。Server 收到中间人的 ClientHello 并不知道是否存在篡改，于是也按照 TLS 1.0 去协商。握手进行到最后一步，校验 Finished 子消息的时候，校验不通过，因为 Client 原本发的 ClientHello 中 TLS 最高支持版本是 TLS 1.2，那么产生的 Finished 子消息的 verify\_data 与 Server 拿到篡改后的 ClientHello 计算出来的 verify\_data 肯定不同。至此也就发现了中间存在篡改，握手失败。
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_2_0.png)
 
+## 四、直观感受 TLS 1.2 首次握手流程
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_3.png)
+至此，TLS 1.2 首次握手的所有细节都已经分析完了。这一节让我们小结一下上面的流程，并用 Wireshark 直观感受一下 TLS 1.2 协议。
 
+首先是基于 RSA 密钥协商算法的首次握手：
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_2_3.png)
+
+握手开始，Client 先发送 ClientHello ，在这条消息中，Client 会上报它支持的所有“能力”。client\_version 中标识了 Client 能支持的最高 TLS 版本号；random 中标识了 Client 生成的随机数，用于预备主密钥和主密钥以及密钥块的生成，总长度是 32 字节，其中前 4 个字节是时间戳，后 28 个字节是随机数；cipher\_suites 标识了 Client 能够支持的密码套件。extensions 中标识了 Client 能够支持的所有扩展。
+
+> 关于 extensions 本篇文章涉及的少，因为笔者打算把 TLS 1.2 和 TLS 1.3 中涉及到的 extensions 都整理到一篇文章中，在这篇握手的流程中没有详细分析。extensions 更加详细的分析请见 [《HTTPS 温故知新（六） —— TLS 中的 Extensions》]()
+
+Server 在收到 ClientHello 之后，如果能够继续协商，就会发送 ServerHello，否则发送 Hello Request 重新协商。在 ServerHello 中，Server 会结合 Client 的能力，选择出双方都支持的协议版本以及密码套件进行下一步的握手流程。server\_version 中标识了经过协商以后，Server 选出了双方都支持的协议版本。random 中标识了 Server 生成的随机数，用于预备主密钥和主密钥以及密钥块的生成，总长度是 32 字节，其中前 4 个字节是时间戳，后 28 个字节是随机数；cipher\_suites 标识了经过协商以后，Server 选出了双方都支持的密码套件。extensions 中标识了 Server 处理 Client 的 extensions 之后的结果。
+
+当协商出了双方都能满足的密钥套件，根据需要 Server 会发送 Certificate 消息。Certificate 消息会带上 Server 的证书链。Certificate 消息的目的一是为了验证 Server 身份，二是为了让 Client 根据协商出来的密码套件从证书中获取 Server 的公钥。Client 拿到 Server 的公钥和 server 的 random 会生成预备主密钥。
+
+由于密钥协商算法是 RSA，需要 Server 在发送完 Certificate 消息以后就直接发送 ServerHelloDone 消息了。
+
+Client 收到 ServerHelloDone 消息以后，会开始计算预备主密钥，计算出来的预备主密钥会经过 RSA/ECDSA 算法加密，并通过 ClientKeyExchange 消息发送给 Server。RSA 密码套件的预备主密钥是 48 字节。前 2 个字节是 client\_version，后 46 字节是随机数。Server 收到 ClientKeyExchange 消息以后就会开始计算主密钥和密钥块了。同时 Client 也会在自己本地算好主密钥和密钥块。
+ 
+> 有些人会说“主密钥和会话密钥”，这里的会话密钥和密钥块是相同的意思。主密钥是由预主密钥、客户端随机数和服务器随机数通过 PRF 函数来生成；会话密钥是由主密钥、客户端随机数和服务器随机数通过 PRF 函数来生成。
+>
+>会话密钥 = key_block = 密钥块，这三者的意思是一样的，只是翻译不同罢了。
+
+Client 发送完 ClientKeyExchange 消息紧接着还会继续发送 ChangeCipherSpec 消息和 Finished 消息。Server 也会回应 ChangeCipherSpec 消息和 Finished 消息。如果 Finished 消息校验完成以后，代表握手最终成功。
+
+再来看看基于 DH 密钥协商算法的首次握手：
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_3_0.png)
+
+基于 DH 密钥协商算法和基于 RSA 密码协商的区别在 Server 和 Client 协商 DH 参数上面。这里只说明一下 DH 密钥协商过程比 RSA 多的几步，其他的流程和 RSA 的流程基本一致。
+
+在 Server 发送完 Certificate 消息以后，还会继续发送 ServerKeyExchange 消息，在这条消息里面传递 DH 参数。
+
+另外一个不同点在于 ClientKeyExchange 消息中传递给 Server 预备主密钥长度不是 48 字节。基于 DH/ECDH 算法的协商密钥长度取决于 DH/ECDH 算法的公钥。
+
+为了让读者能更加直观的理解 TLS 1.2 的流程，笔者用 Wireshark 抓取了 Chrome 和笔者博客 TLS 握手中的网络包。结合 Wireshark 的抓包分析，让我们更加深入的理解 TLS 1.2 握手吧。下面的例子以 TLS\_ECDHE\_ECDSA\_WITH\_AES\_256\_GCM\_SHA384 密码套件为例：
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_6.png)
 
+上面这是一次从 TLS 握手开始到 TCP 4 次挥手完整的过程。这里我们重要关注 protocol = TLS 1.2 的所有消息。整体流程和上面分析的基于 DH 密钥交换算法的是一致的。在 TCP 4 次挥手之前，TLS 层会先收到 Close Notify 的 Alert 消息。
+
+> 读到这里能有读者有疑问，为什么经过 TLS 加密以后的上层数据会以明文展示在抓包中？HTTPS 不安全？这里需要解释一下，因为笔者利用 `export SSLKEYLOGFILE=/Users/XXXX/sslkeylog.log` 把 ECDHE 协商的密钥保存成 log 文件了，解析上层 HTTP/2 的加密包的时候就可以利用 log 中的 TLS key 进行解密。上图中绿色的部分，就是通过解密出来得到的 HTTP/2 的解密内容。具体这块内容笔者会在 HTTP/2 相关的文章里面会提一提，这里读者就认为是笔者利用某些手段解析出了 HTTPS 加密的内容即可。
+
+接下来一条条的看看网络是如何传输数据包的。从 ClientHello 开始。
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_7.png)
+
+从 TLS 1.2 Record Layer 的 Length 字段中我们可以看到 TLS 记录层的这条 TLS 握手消息长度是 512 字节，其中 ClientHello 消息中占 508 字节。ClientHello 中标识了 Client 最高支持的 TLS 版本是 TLS 1.2 (0x0303)。Client 支持的密码套件有 17 种，优先支持的是 TLS\_AES\_128\_GCM\_SHA256 。Session ID 的长度是 32 字节，这里不为空。压缩算法是 null。signature\_algorithms 中标识了 Client 支持 9 对数字签名算法。
+
+>默认情况下 TLS 压缩都是关闭的，因为 CRIME 攻击会利用 TLS 压缩恢复加密认证 cookie，实现会话劫持，而且一般配置 gzip 等内容压缩后再压缩 TLS 分片效益不大又额外占用资源，所以一般都关闭 TLS 压缩。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_8.png)
 
+ClientHello 中发送了 status\_request 扩展，查询 OCSP 封套消信息。发送了 signed\_certificate\_timestamp 扩展，查询 SCT 信息。发送了 application\_layer\_protocol\_negotiation (ALPN)扩展，询问服务端是否支持 HTTP/2 协议。supported\_group 扩展里面标识了 Client 中支持的椭圆曲线。SessionTicket TLS 扩展表明了 Client 支持基于 Session Ticket 的会话恢复。
+
+再看看 ServerHello 消息。
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_9.png)
+
+从 TLS 1.2 Record Layer 的 Length 字段中我们可以看到 TLS 记录层的这条 TLS  握手协议消息长度是 82 字节，其中 ServerHello 消息中占 78 字节。Server 选择用 TLS 1.2 版本与 Client 进行接下来的握手流程。Server 与 Client 协商出来的密码套件是 TLS\_ECDHE\_ECDSA\_WITH\_AES\_256\_GCM\_SHA384。
+
+Server 支持 HTTP/2，在 ALPN 扩展中进行了回复。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_10.png)
 
+从 TLS 1.2 Record Layer 的 Length 字段中我们可以看到 TLS 记录层的这条 TLS 握手消息长度是 2544 字节，其中 Certificate 消息中占 2540 字节，Certificates 证书链包含 2 张证书，Server 实体证书 1357 字节，中间证书 1174 字节。中间证书是 Let's Encrypt 签发的。两张证书都是用 sha256WithRSAEncryption 签名算法进行签名的。
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_11.png)
+
+从 TLS 1.2 Record Layer 的 Length 字段中我们可以看到 TLS 记录层的这条 TLS  握手协议消息长度是 535 字节，其中 Certificate Status 消息中占 531 字节。Server 将 OCSP 的 response 发送给 Client。
+
+从 TLS 1.2 Record Layer 的 Length 字段中我们可以看到 TLS 记录层的这条 TLS  握手协议消息长度是 116 字节，其中 ServerKeyExchange 消息中占 112 字节。由于协商出来的是 ECDHE 密钥协商算法，所以 Server 需要把 ECDH 的参数和公钥通过 ServerKeyExchange 消息发给 Client。这里 ECDHE 使用的 ECC 命名曲线是 x25519 。Server 的公钥是 (62761b5……)，签名算法是 ECDSA\_secp256r1\_SHA256 。签名值是 (3046022……)。
+
+ServerHelloDone 消息结构很简单，见上图。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_12.png)
 
+由于是 ECDHE 协商算法，所以 Client 需要发送 ECC DH 公钥，对应的公钥值是 (1e58cf……)。公钥长度 32 字节。
+
+ChangeCipherSpec 消息结构很简单，发送这条消息是为了告诉 Server ，Client 可以使用 TLS 记录层协议进行密码学保护了。第一条进行密码学保护的消息是 Finished 消息。
+
+Finished 消息结构很简单，见上图。
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_13.png)
+
+Server 如果只是 SessionTicket，那么会生成新的 NewSessionTicket 返给 Client，然后同样返回 ChangeCipherSpec 消息和 Finished 消息。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_14.png)
 
+当页面关闭的时候，Server 会给 Client 发送 TLS Alert 消息，这条消息里面的描述就是 Close Notify。同时 Server 会发送 FIN 包开始 4 次挥手。
 
 
-## 四、TLS 1.2 第二次握手流程
+## 五、TLS 1.2 会话恢复
 
-为何会出现再次握手呢？这个就牵扯到了会话复用机制。
 
+Client 和 Server 只要一关闭连接，短时间内再次访问 HTTPS 网站的时候又需要重新连接。新的连接会造成网络延迟，并消耗双方的计算能力。有没有办法能复用之前的 TLS 连接呢？办法是有的，这就涉及到了 TLS 会话复用机制。
 
 当 Client 和 Server 决定继续一个以前的会话或复制一个现存的会话(取代协商新的安全参数)时，消息流如下:
 
@@ -1028,92 +1096,368 @@ Client 使用需要恢复的当前会话的 ID 发送一个 ClientHello。Server
 ```
 
 
-在 TLS 1.2 中，会话复用机制，一种是 session id 复用，一种是 session ticket 复用。session id 复用存在于服务端，session ticket 复用存在于客户端。
+Session ID 由服务器端支持，协议中的标准字段，因此基本所有服务器都支持，服务器端保存会话 ID 以及协商的通信信息，占用服务器资源较多。
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_4.png)
+### 1. 基于 Session ID 的会话恢复
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_5.png)
+当 Client 通过一次完整的握手，与 Server 建立了一次完整的 Session，Server 会记录这次 Session 的信息，以备恢复会话的时候使用:
+
+- 会话标识符(session identifier):      
+  每个会话的唯一标识符
+- 对端的证书(peer certificate):   
+  对端的证书，一般为空
+- 压缩算法(compression method):   
+  一般不启用
+- 密码套件(cipher spec):  
+  Client 和 Server 协商共同协商出来的密码套件
+- 主密钥(master secret):    
+  每个会话都会保存一份主密钥，**注意不是预备主密钥**。(读者可以想想为什么，如果还是想不通，见 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》]())
+- 会话可恢复标识(is resumable): 
+  标识会话是否可恢复
+  
+当 Server 保存了以上的信息，可以再次计算出 TLS 记录层需要的 security parameters 加密参数，从而加密应用数据。
+
+基于 Session ID 会话恢复的流程如下：  
+
+```c
+      Client                                                Server
+
+      ClientHello                   -------->
+                                                       ServerHello
+                                                [ChangeCipherSpec]
+                                    <--------             Finished
+      [ChangeCipherSpec]
+      Finished                      -------->
+      Application Data              <------->     Application Data
+      
+```
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_4_.png)
+
+Client 发现请求的网站是之前请求过的，即内存中存在 Session ID，那么再次建立连接的时候会在 ClientHello 中附带与网站对应的 Session ID。Server 的内存中会保存一份 Session Cache 的字典，key 是 Session ID，value 是会话信息。Server 收到 ClientHello 以后，根据传过来的 Session ID 查看是否有相关的会话信息，如果有，就会允许 Client 进行会话恢复，直接发送 ChangeCipherSpec 和 Finished 消息。如果没有相关的会话信息，就会开始一次完整的握手，并在 ServerHello 中生成新的 Session ID 返回给 Client。Client 收到 Server 发来的 ChangeCipherSpec 和 Finished 消息，代表会话恢复成功，也发送 ChangeCipherSpec 和 Finished 消息作为回应。
+
+Session ID 的来源：  
+
+- 上次完全握手生成的 Session ID  
+- 使用另外一条连接的 Session ID  
+- 直接使用本次连接的 Session ID  
+
+会话恢复中 ClientHello 各个参数的必要性：
+
+- Server 通过 ClientHello 中协商出来的密钥套件必须和会话中的密钥套件是一致的，否则会话恢复失败，进行完整的握手。
+- ClientHello 中的随机数和恢复之前会话所用的随机数是不同的，所以即使会话恢复了，由于 ClientHello 中随机数的不同，再次通过 PRF 生成的密钥块(会话密钥)也是不同的。增加了安全性。
+- ClientHello 中的 Session ID 是明文传输，所以不应该在 Session ID 中包含敏感信息。并且握手最后一步的  Finished 校验非常有必要，防止 Session ID 被篡改。
+
+最后需要注意的是，会话恢复取决于 Server 端，即使 Session ID 正确，并且 Server 内存中也存在相关的会话信息，Server 依旧可以要求 Client 进行完整的握手。即会话恢复不是强制的。
+
+基于 Session ID 的会话恢复的**优点**是:  
+
+- 减少网络延迟，握手耗时从 2-RTT -> 1-RTT
+- 减少了 Client 和 Server 端的负载，减少了加密运算的 CPU 资源消耗
+
+基于 Session ID 的会话恢复的**缺点**是:  
+
+- Server 存储会话信息，限制了 Server 的扩展能力。
+- 分布式系统中，如果只是简单的在 Server 的内存中存储 Session Cache，那么多台机器的数据同步也是一个问题。
+
+Nginx 官方并没有提供支持分布式服务器的 Session Cache 的实现。可以使用第三方补丁，但是安全和维护成本也会增加。
+
+由于上面 2 个缺点，也就引出了基于 Session Ticket 的会话恢复方案。
+
+
+### 2. 基于 Session Ticket 的会话恢复
+
+用来替代 Session ID 会话恢复的方案是使用会话票证（Session ticket）。使用这种方式，除了所有的状态都保存在客户端（与 HTTP Cookie 的原理类似）之外，其消息流与服务器会话缓存是一样的。
+
+其思想是服务器取出它的所有会话数据（状态）并进行加密 (密钥只有服务器知道)，再以票证的方式发回客户端。在接下来的连接中，客户端恢复会话时在 ClientHello 的扩展字段 session\_ticket 中携带加密信息将票证提交回服务器，由服务器检查票证的完整性，解密其内容，再使用其中的信息恢复会话。
+
+**对于 Server 来说，解密 ticket 就可以得到预备主密钥**，(注意这里和 SessionID 不同，有 Session ID 可以得到主密钥的信息)。对于 Client 来说，完整握手的时候收到 Server 下发的 NewSessionTicket 子消息的时候，Client 会将 Ticket 和对应的预备主密钥存在 Client，简短握手的时候，一旦 Server 验证通过，可以进行简单握手的时候，Client 通过本地存储的预备主密钥生成主密钥，最终再生成会话密钥(密钥块)。
+
+这种方法有可能使扩展服务器集群更为简单，因为如果不使用这种方式，就需要在服务集群的各个节点之间同步 Session Cache。Session ticket 需要服务器和客户端都支持，属于一个扩展字段，占用服务器资源很少。
+
+Session Ticket 的优点也就决定了它特别适合在以下场景中使用：
+
+- 大型 HTTPS 网站，访问量非常大，在 Server 中存储 Session 信息需要消耗大量内存
+- HTTPS 网站所有者希望会话信息的生命周期能足够长，让 Client 尽量都使用简短握手的方式
+- HTTPS 网站所有者希望用户能跨地域跨主机访问
+
+
+基于 Session Ticket 会话恢复的流程如下： 
+
+
+### (1). 获取 SessionTicket
+
+Client 在进行一次完整握手以后才能获取到 SessionTicket。
+
+```c
+      Client                                               Server
+
+      ClientHello
+      (empty SessionTicket extension)-------->
+                                                      ServerHello
+                                   (empty SessionTicket extension)
+                                                     Certificate*
+                                               ServerKeyExchange*
+                                              CertificateRequest*
+                                   <--------      ServerHelloDone
+      Certificate*
+      ClientKeyExchange
+      CertificateVerify*
+      [ChangeCipherSpec]
+      Finished                     -------->
+      											         NewSessionTicket
+                                               [ChangeCipherSpec]
+                                   <--------             Finished
+      Application Data             <------->     Application Data
+```
+
+Client 在 ClientHello 的扩展中包含空的 SessionTicket 扩展，如果 Server 支持 SessionTicket 会话恢复，则会在 ServerHello 中回复一个空的 SessionTicket 扩展。Server 将会话信息进行加密保护，生成一个 ticket，通过 NewSessionTicket 子消息发给 Client 。**注意，虽然 NewSessionTicket 子消息在 ChangeCipherSpec 消息之前，但是它也是一条加密消息**。
+
+Server 将会话信息加密以后以 ticket 的方式发送给 Client，Server 就不再存储任何信息了。Client 将接收到的 ticket 存储在内存中，什么时候想会话恢复了，发给 Server，如果解密以后确认无误，即可进行简短握手了。
+
+### (2). 基于 SessionTicket 的会话恢复
+
+当 Client 本地获取了 SessionTicket 以后，下次想要进行简短握手，就可以使用这个 SessionTicket 了。
+
+```c
+      Client                                                Server
+
+      ClientHello
+      (SessionTicket extension)     -------->
+                                                       ServerHello
+                                    (empty SessionTicket extension)
+                                                  NewSessionTicket
+                                                [ChangeCipherSpec]
+                                    <--------             Finished
+      [ChangeCipherSpec]
+      Finished                      -------->
+      Application Data              <------->     Application Data
+      
+```
+
+Client 在 ClientHello 的扩展中包含非空的 SessionTicket 扩展，如果 Server 支持 SessionTicket 会话恢复，则会在 ServerHello 中回复一个空的 SessionTicket 扩展。Server 将会话信息进行加密保护，生成一个新的 ticket，通过 NewSessionTicket 子消息发给 Client。发送完 NewSessionTicket 消息以后，紧跟着发送 ChangeCipherSpec 和 Finished 消息。Client 收到上述消息以后，回应 ChangeCipherSpec 和 Finished 消息，会话恢复成功。
+
+### (3). Server 不支持 SessionTicket
+
+有读者可能会问了，既然 Client 发送了非空的 SessionTicket extension，为什么 Server 必须在 ServerHello 中回复一个空的 SessionTicket 扩展呢？因为当 Server 不支持 SessionTicket 的时候，ServerHello 中是不包含 SessionTicket extension 的，所以是否包含 SessionTicket extension，区分出了 Server 是否支持 SessionTicket。
+
+```c
+         Client                                               Server
+
+         ClientHello
+         (SessionTicket extension)    -------->
+                                                         ServerHello
+                                                        Certificate*
+                                                  ServerKeyExchange*
+                                                 CertificateRequest*
+                                      <--------      ServerHelloDone
+         Certificate*
+         ClientKeyExchange
+         CertificateVerify*
+         [ChangeCipherSpec]
+         Finished                     -------->
+                                                  [ChangeCipherSpec]
+                                      <--------             Finished
+         Application Data             <------->     Application Data
+```
+
+Server 如果不支持 SessionTicket，那么在 ServerHello 不响应 SessionTicket TLS 扩展，并且也不发送 NewSessionTicket 子消息。
+
+
+### (4). Server 校验 SessionTicket 失败
+
+如果 Server 校验 SessionTicket 失败，那么握手会回退到完整握手。
+
+```c
+         Client                                               Server
+
+         ClientHello
+         (SessionTicket extension) -------->
+                                                         ServerHello
+                                     (empty SessionTicket extension)
+                                                        Certificate*
+                                                  ServerKeyExchange*
+                                                 CertificateRequest*
+                                  <--------          ServerHelloDone
+         Certificate*
+         ClientKeyExchange
+         CertificateVerify*
+         [ChangeCipherSpec]
+         Finished                 -------->
+                                                    NewSessionTicket
+                                                  [ChangeCipherSpec]
+                                  <--------                 Finished
+         Application Data         <------->         Application Data
+```
+
+如果 Server 接受了票证但最终握手失败，则 Client 应该删除 ticket。
+
+正常的基于 SessionTicket 的会话恢复流程如下图：
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_5_.png)
+
+
+### (5). NewSessionTicket 子消息
+
+这一节内容主要都来自 [[RFC5077]](https://tools.ietf.org/html/rfc5077)。
+
+如果 ServerHello 消息中包含了 Session Ticket TLS 扩展，那么必须在 ChangeCipherSpec 之前发送**加密过的 NewSessionTicket 子消息**。如果 ServerHello 消息中不包含了 Session Ticket TLS 扩展，表示 Server 或 Client 不想使用 SessionTicket 会话恢复机制。
+
+由于 NewSessionTicket 子消息也算是握手的一部分，所以 Finished 子消息中也需要校验它。**如果 Server 成功校验了 Client 发送的 ticket，那么也必须重新生成一个全新的 ticket，通过 NewSessionTicket 子消息发送给 Client，Client 下次会使用这个新的 SessionTicket**。
+
+在握手协议中，由于扩展的加入，也加入了几条新的握手消息:  
+
+```c
+      struct {
+          HandshakeType msg_type;
+          uint24 length;
+          select (HandshakeType) {
+              case hello_request:       HelloRequest;
+              case client_hello:        ClientHello;
+              case server_hello:        ServerHello;
+              case certificate:         Certificate;
+              case certificate_url:     CertificateURL;    /* NEW */
+              case certificate_status:  CertificateStatus; /* NEW */
+              case server_key_exchange: ServerKeyExchange;
+              case certificate_request: CertificateRequest;
+              case server_hello_done:   ServerHelloDone;
+              case certificate_verify:  CertificateVerify;
+              case client_key_exchange: ClientKeyExchange;
+              case finished:            Finished;
+              case session_ticket:      NewSessionTicket; /* NEW */
+          } body;
+      } Handshake;
+```
+
+CertificateURL、CertificateStatus、NewSessionTicket 这 3 条握手子消息都算是扩展带来的新的子消息。
+
+NewSessionTicket 消息的数据结构如下：
+
+```c
+
+      struct {
+          uint32 ticket_lifetime_hint;
+          opaque ticket<0..2^16-1>;
+      } NewSessionTicket;
+```
+
+NewSessionTicket 最重要的一个字段就是 `ticket_lifetime_hint`。它标识了 ticket 是否过期，Server 会校验这个字段，如果过期就不能进行会话恢复。ticket 的生成和校验全部都由 Server 进行，Client 仅仅只是接收和存储。
+
+Server 生成 ticket 没有固定的规范，每个 Server 生成的方式也可以不同，需要注意的一点就是前向安全性，防止被破解。在 RFC5077 中建议按照如下方式生成:
+
+```c
+      struct {
+          opaque key_name[16];
+          opaque iv[16];
+          opaque encrypted_state<0..2^16-1>;
+          opaque mac[32];
+      } ticket;
+```
+
+- key\_name:  
+  ticket 加密使用的密钥文件
+  
+- iv:  
+  初始化向量，AES 加密算法需要使用
+  
+- encrypted\_state:  
+  ticket 详细信息，存储的就是会话信息
+  
+- mac:  
+  ticket 需要的完整和安全性保护
+  
+  
+会话信息的数据结构如下：
+
+```c
+      struct {
+          ProtocolVersion protocol_version;
+          CipherSuite cipher_suite;
+          CompressionMethod compression_method;
+          opaque master_secret[48];
+          ClientIdentity client_identity;
+          uint32 timestamp;
+      } StatePlaintext;
+```
+
+StatePlaintext 中的 `client_identity` 是 Client 标识符，`timestamp` 是 ticket 过期时间。ClientIdentity 的数据结构如下：
+
+```c
+      enum {
+         anonymous(0),
+         certificate_based(1),
+         psk(2)
+     } ClientAuthenticationType;
+
+      struct {
+          ClientAuthenticationType client_authentication_type;
+          select (ClientAuthenticationType) {
+              case anonymous: struct {};
+              case certificate_based:
+                  ASN.1Cert certificate_list<0..2^24-1>;
+              case psk:
+                  opaque psk_identity<0..2^16-1>;   /* from [RFC4279] */
+          };
+       } ClientIdentity;
+```
+
+ClientIdentity 有 2 种认证方式，一种是基于 `certificate_based` 证书的方式，另外一种是基于 `psk` PSK 的方式。
+
+使用给定 IV，在 CBC 模式下使用 128 位 AES 加密 encrypted\_state 中的实际状态信息。使用 HMAC-SHA-256 通过 key\_name（16个字节）和 IV（16个字节）计算消息验证代码（MAC），然后是 encrypted\_state 字段的长度（2个字节）及其内容（可变长度），这样就生成了 ticket。
+
+## 六、直观感受 TLS 1.2 会话恢复
+
+
+这一节，笔者用 Wireshark 展示一下 TLS 1.2 的会话恢复，让读者加深理解。
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_7.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_9.png)
+
+ServerHello 中 SessionID 为空，并且 SessionTicket TLS 扩展也会空。这个时候表明了 Server 会在接下来的子消息中发送 NewSessionTicket 子消息。
+
+这里用的例子比较特殊，Client 在上次握手的时候，ClientHello 中带有 SessionID 和空的 SessionTicket TLS 扩展，Server 收到这个扩展以后，在内存的 Session Cache 中找到了这个 Session ID 对应的会话信息，在 ServerHello 中以相同的 SessionID 响应了 Client，并且也回应了空的 SessionTicket TLS 扩展。以此为背景，进行会话恢复，结果会是怎么样的呢？
+
+最终结果抓包截图如下:
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_23.png)
 
+看上面的截图没有看到 NewSessionTicket 子消息，是否说明会话恢复不是基于 SessionTicket 的呢？我们继续看细节。
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_24.png)
+
+在 ClientHello 中，可以看到 Client 同时带了 Session ID 和非空的 SessionTicker TLS 扩展。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/97_25.png)
 
+Server 在 ServerHello 中回应了相同的 Session ID，说明了可以在 Session Cache 中找到相应的会话信息。在 ClientHello 中也发送了 SessionTicket，这里 Server 为什么什么扩展消息都没有回应呢？难道是因为 Server 不支持 SessionTicket TLS 扩展？Server 在前一次握手中发送了 NewSessionTicket 子消息说明了 Server 支持 SessionTicket TLS 扩展，那为什么这里什么关于 SessionTicket 的信息都没有回复呢？原因就是因为 ClientHello 包含了可以用来会话恢复的 SessionID。[[RFC 5077 3.4.  Interaction with TLS Session ID]](https://tools.ietf.org/html/rfc5077) 中**规定**：如果 Client 在 ClientHello 中同时发送了 Session ID 和 SessionTicket TLS 扩展，Server 必须是用 ClientHello 中相同的 Session ID 进行相应。但是在校验 SessionTicket 时，Sever 不能依赖这个特定的 Session ID，即不能用 ClientHello 中的 Session ID 进行会话恢复。Server 优先使用 SessionTicket 进行会话恢复(SessionTicket 优先级高于 Session ID)，如果 Session 校验通过，就继续发送 ChangeCipherSpec 和 Finished 消息。不发送 NewSessionTicket 消息。
+
+
 ![](https://img.halfrost.com/Blog/ArticleImage/97_26.png)
 
-## 五、TLS 1.3 首次握手流程
+Client 收到 Server 发过来的 ChangeCipherSpec 和 Finished 消息，作为回应，也会发送 ChangeCipherSpec 和 Finished 消息。
+
+![](https://img.halfrost.com/Blog/ArticleImage/97_33_.png)
+
+把会话恢复过程中 Client 同时带有 Session ID 和 SessionTicket TLS 扩展的情况总结成一张图，如上图。
 
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_15.png)
+至此，直观感受 TLS 握手流程的上篇就结束了，上篇将 TLS 1.2 中所有的握手流程都详细分析完成了。[《HTTPS 温故知新（四） —— 直观感受 TLS 握手流程(下)》]() 下篇会着重分析 TLS 1.3 的握手流程，与 TLS 1.2 握手流程进行对比。另外还会讲解 TLS 1.3 新增的 0-RTT 是怎么一回事。
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_16.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_17.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_18.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_19.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_20.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_21.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_22.png)
-
-
-
-## 六、TLS 1.3 第二次握手流程
-
-这里网上很多文章对 TLS 1.3 第二次握手有误解。经过自己实践以后发现了“真理”。
-
-TLS 1.3 在宣传的时候就以 0-RTT 为主，大家都会认为 TLS 1.3 再第二次握手的时候都是 0-RTT 的，包括网上一些分析的文章里面提到的最新的 PSK 密钥协商，PSK 密钥协商并非是 0-RTT 的。
-
-TLS 1.3 再次握手其实是分两种：会话恢复模式、0-RTT 模式
-
-### 1. 会话恢复模式
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_27.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_28.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_29.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_30.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_31.png)
-
-![](https://img.halfrost.com/Blog/ArticleImage/97_32.png)
-
-### 2. 0-RTT 模式
-
-先来看看 0-RTT 在整个草案里面的变更历史。
-
-|    草案    | 变更 |
-| ---------- | --- |
-| draft-07   |  0-RTT 最早是在 draft-07 中加入了基础的支持 |
-| draft-11   |  1. 在 draft-11 中删除了early\_handshake内容类型<br>2. 使用一个 alert 终止 0-RTT 数据 |
-| draft-13   |  1. 删除 0-RTT 客户端身份验证<br>2. 删除 (EC)DHE 0-RTT<br>3. 充实 0-RTT PSK 模式并 shrink EarlyDataIndication |
-| draft-14   |  1. 移除了 0-RTT EncryptedExtensions<br>2. 降低使用 0-RTT 的门槛<br>3. 阐明 0-RTT 向后兼容性<br>4. 说明 0-RTT 和 PSK 密钥协商的相互关系 |
-| draft-15   |  讨论 0-RTT 时间窗口 |
-| draft-16   |  1. 禁止使用 0-RTT 和 PSK 的 CertificateRequest<br>2. 放宽要求检查 SNI 的 0-RTT |
-| draft-17   |  1. 删除 0-RTT Finished 和 resumption\_context，并替换为 PSK 本身的 psk\_binder 字段<br>2. 协调密码套件匹配的要求：会话恢复只需要匹配 KDF 但是对于 0-RTT 需要匹配整个密码套件。允许 PSK 实际去协商密码套件<br>3. 阐明允许使用 PSK 进行 0-RTT 的条件 |
-| draft-21   |  关于 0-RTT 和重放的讨论，建议实现一些反重放机制 |
-
-目前最新草案是 draft-28，从历史来看，人们从功能问题讨论到性能问题，最后讨论到安全问题。
-
+当然在 TLS 1.2 和 TLS 1.3 握手流程中所有涉及到密钥计算的内容，都放在 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》]() 这篇文章里面了，TLS 1.2 和 TLS 1.3 握手流程中所有涉及到扩展的内容，都放在 [《HTTPS 温故知新（六） —— TLS 中的 Extensions》]() 这篇文章里面了。
 
 ------------------------------------------------------
 
 Reference：
-   
-《深入浅出 HTTPS》      
-[TLS1.3 draft-28](https://tools.ietf.org/html/draft-ietf-tls-tls13-28)  
-[Keyless SSL: The Nitty Gritty Technical Details](https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/)  
-[大型网站的 HTTPS 实践（二）-- HTTPS 对性能的影响](https://developer.baidu.com/resources/online/doc/security/https-pratice-2.html)
+
+[RFC 5247](https://tools.ietf.org/html/rfc5077)  
+[RFC 5077](https://tools.ietf.org/html/rfc5077)    
+[RFC 8466](https://tools.ietf.org/html/rfc8466)   
+[TLS1.3 draft-28](https://tools.ietf.org/html/draft-ietf-tls-tls13-28)        
+[大型网站的 HTTPS 实践（二）-- HTTPS 对性能的影响](https://developer.baidu.com/resources/online/doc/security/https-pratice-2.html)  
 
 > GitHub Repo：[Halfrost-Field](HTTPS://github.com/halfrost/Halfrost-Field)
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/HTTPS-TLS1.2\_handshake/](https://halfrost.com/https_tls1-2_handshake/)
