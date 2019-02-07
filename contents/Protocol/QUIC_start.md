@@ -230,6 +230,30 @@ udp6       0      0 :::443                  :::*                                
 
 在上面的字典里，还会记录下次尝试的时间。如果之前出现了 broken，可以在这个页面清空这里的所有记录。清空方法是在这个页面点击右上角的小三角，里面有一项“Clear cache”，清空以后 chrome 在下次请求的时候就会立即尝试 QUIC 了。
 
+
+**更新：**
+
+新版的 Chrome 68 以上版本，net\-internals 中没有笔者上面截图的页面了，这些工具都转到了 chrome:\/\/net\-export\/ 这个页面了。笔者写这篇文章的时候 Chrome 还是 67 的版本。
+
+chrome:\/\/net\-export\/ 这个页面需要先把请求记录下来，存成 json 文件。
+
+![](https://img.halfrost.com/Blog/ArticleImage/100_15.png)
+
+记录完成以后会出现下面这个页面：
+
+![](https://img.halfrost.com/Blog/ArticleImage/100_16.png)
+
+
+然后在 https:\/\/netlog\-viewer.appspot.com\/ 这里解析 json 文件。解析出来以后就能看到左边的那些工具了。
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/100_18.png)
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/100_17.png)
+
+至于如何清除 Alt-svc 的 cache，这个笔者还没有找到实时清除的方法，笔者现在都是在 dev-tool 里面点击清理 Network 中的 Disable cache 和 Application 中的 Clear storage。可能清除 Alt-svc 的 cache 目前还没有实现出来，如果以后笔者发现方法了，还会再回来更新这段话，如果读者看到这里知道如何清除 Alt-svc 中的 Alternate Service Mappings，也麻烦留言评论分享一下。不过不清除 Alt-svc 中的 cache 对开启 QUIC 影响不大，只是在 broken 以后需要多等待 5 分钟的过期时间(如果能立即清除 cache 就不用等这个 5 分钟了)。
+
 ### 6. wireshark 抓包
 
 ![](https://img.halfrost.com/Blog/ArticleImage/100_12.png)
@@ -492,7 +516,7 @@ $ nohup sudo ./caddy -quic -conf ./conf  >/dev/null 2>&1 &
 Q: 我刷新了好几次，怎么还是没有你博客上绿色的小闪电⚡️？
 A: 首先要看你的 chrome 版本是不是 62-65 之间，如果高于这个版本或者低于这个版本，都会导致 QUIC 握手失败，进而无法进行 QUIC 通讯。因为 62-65 版本之间支持了是 quic-39，而目前 caddy 最新只支持到了 quic-39。
 
-其次还需要看看你本地是否开启了类似 surge 全局翻墙软件，如果开启了类似这些软件，一般都会系统代理你本机的所有请求，那么所有的请求都是来自 127.0.0.1：XXXX，这样也不会触发 UDP 的请求了。
+其次还需要看看你本地是否开启了类似 surge 全局翻墙软件，如果开启了类似这些软件，一般都会系统代理你本机的所有请求，那么所有的请求都是来自 127.0.0.1:XXXX，这样也不会触发 UDP 的请求了。所以要关闭 Surge “设置为系统代理” 这个设置。
 
 最后，可以看看 chrome:\/\/net\-internals\/#alt\-svc 页面里面有 broken 的情况，如果有，可以清除了以后立即刷新再看看。
 
