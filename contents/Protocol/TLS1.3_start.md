@@ -60,6 +60,37 @@ $ patch -p1 < nginx_auto_using_PRIORITIZE_CHACHA.patch
 $ cd ..
 ```
 
+**更新：**
+
+支持 TLS 1.3 0-RTT 的 Nginx 最好使用 1.15.4+，笔者这里直接更新到最新版本 1.15.8
+
+```bash
+#下载 Nginx 1.15.8
+$ wget https://nginx.org/download/nginx-1.15.8.tar.gz
+$ tar zxf nginx-1.15.8.tar.gz
+```
+Nginx 1.15.8 对应的补丁有变化：
+
+```bash
+# SPDY, HTTP2 HPACK, Dynamic TLS Record, Fix Http2 Push Error Patch
+# 此补丁不一定适用于最新的 Nginx 已测试通过的版本请查看 https://github.com/kn007/patch
+$ cd nginx-1.15.8
+$ curl https://raw.githubusercontent.com/kn007/patch/d6bd9f7e345a0afc88e050a4dd991a57b7fb39be/nginx.patch | patch -p1
+$ cd ..
+```
+
+下面这个是 Strict-SNI Patch 的补丁，可选安装，笔者没有安装:   
+
+```bash
+# Strict-SNI Patch
+# Strict SNI requires at least two ssl server (fake) settings (server { listen 443 ssl }).
+#It does not matter what kind of certificate or duplicate.
+
+$ cd nginx-1.15.8
+$ curl https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_strict-sni.patch | patch -p1
+$ cd ..
+```
+
 
 ### OpenSSL 1.1.1-pre9
 
@@ -80,6 +111,40 @@ $ patch -p1 < openssl-equal-pre9.patch
 $ cd ..
 ```
 
+**更新：**
+
+支持 TLS 1.3 0-RTT 的 OpenSSL 必须使用 1.1.1+，笔者这里直接更新到最新版本 1.1.1a
+
+```bash
+# 安装 OpenSSL 1.1.1a (LTS)
+$ wget https://www.openssl.org/source/openssl-1.1.1a.tar.gz
+$ tar zxf openssl-1.1.1a.tar.gz
+```
+
+同样，为了支持 Chrome 不同版本，所以需要支持 TLS 1.3 的几个主要草案版本，Draft 23, 26, 28, Final 这几个版本都需要支持，打补丁！
+
+```bash
+# 打 TLS1.3 Draft 23, 26, 28, Final Patch 的补丁
+#根据 OpenSSL 版本决定, 具体见 https://github.com/hakasenyang/openssl-patch
+$ cd openssl-1.1.1a
+$ curl https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/openssl-equal-1.1.1a_ciphers.patch | patch -p1
+$ cd ..
+```
+
+为了给 OpenSSL 增加下面 2 个功能：  
+
+- 使 OpenSSL 能支持 BoringSSL 等效加密算法组的功能。
+- 在 TLS 1.1 以后的版本中，3DES 不能使用 ECDHE 密钥套件，提高安全性。
+
+需要打补丁。
+
+```bash
+# 打 CHACHA20-POLY1305-OLD Patch 补丁
+$ cd openssl-1.1.1a
+$ curl https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/openssl-1.1.1a-chacha_draft.patch | patch -p1
+$ cd ..
+```
+
 ### ngx_brotli
 
 本站支持 Google 开发的 Brotli 压缩格式，它通过内置分析大量网页得出的字典，实现了更高的压缩比率，同时几乎不影响压缩 / 解压速度。
@@ -91,6 +156,62 @@ pushd ngx_brotli
 $ git submodule update --init
 $ cd ..
 ```
+
+### jemalloc
+
+这个插件也是可选安装，笔者没有安装。
+
+```bash
+$ git clone https://github.com/jemalloc/jemalloc.git
+$ cd jemalloc
+$ ./autogen.sh
+$ make -j$(nproc --all)
+$ touch doc/jemalloc.html
+$ touch doc/jemalloc.3
+$ sudo make install
+$ echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/local.conf
+$ sudo ldconfig
+```
+
+### zlib (Cloudflare)
+
+zlib 是 Cloudflare 推荐安装的，笔者暂时也没有安装。主要是编译参数有点问题，编译出来报错了。有时间还需要研究一下。
+
+```bash
+$ git clone https://github.com/cloudflare/zlib.git
+$ cd zlib
+$ ./configure
+$ cd ..
+```
+
+### libatomic\_ops
+
+这个插件也是可选安装，笔者没有安装。同样也是因为编译参数的问题。
+
+```bash
+$ git clone https://github.com/ivmai/libatomic_ops.git
+$ cd libatomic_ops
+$ ./autogen.sh
+$ ./configure
+$ make -j$(nproc --all)
+$ make install
+$ sudo ldconfig
+$ cd ..
+```
+
+### pcre
+
+这个插件也是可选安装，笔者没有安装。同样也是因为编译参数的问题。
+
+```bash
+$ wget https://ftp.pcre.org/pub/pcre/pcre-8.42.zip
+$ unzip pcre-8.42.zip&&rm pcre-8.42.zip
+$ mv pcre-8.42 pcre
+$ cd pcre
+$ ./configure
+$ cd ..
+```
+
 
 ## 二. 编译 Nginx
 
@@ -160,6 +281,38 @@ TLS SNI support enabled
 configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-openssl=/tmp/openssl-OpenSSL_1_1_1-pre9 --with-openssl-opt=enable-tls1_3 --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
 ```
 
+**更新：**
+
+由于 Nginx 和 OpenSSL 都支持到了 TLS 1.3 0-RTT，所以编译参数也更新了：
+
+```bash
+$ cd nginx-1.15.8
+$ ./configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-libatomic --with-openssl=/tmp/openssl-1.1.1a --with-openssl-opt='zlib -march=native -ljemalloc -Wl,-flto' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-pcre-jit --with-http_geoip_module --with-http_degradation_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
+```
+
+编译命令:
+
+```bash
+$ make -j$(nproc --all)
+$ sudo make install
+```
+
+编译完成以后，验证一下：
+
+```bash
+$ nginx -t
+
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+$ nginx -V
+
+nginx version: nginx/1.15.8
+built by gcc 4.8.5 20150623 (Red Hat 4.8.5-28) (GCC)
+built with OpenSSL 1.1.1a  20 Nov 2018
+TLS SNI support enabled
+configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-libatomic --with-openssl=/tmp/openssl-1.1.1a --with-openssl-opt='zlib -march=native -ljemalloc -Wl,-flto' --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-pcre-jit --with-http_geoip_module --with-http_degradation_module --with-cc-opt='-g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' --with-http_spdy_module --with-http_v2_hpack_enc --add-module=/tmp/ngx_brotli
+```
 
 ## 三. 更换 Nginx
 
@@ -285,10 +438,29 @@ $ ./testssl.sh -P halfrost.com
 
 ```bash
 $ ./testssl.sh halfrost.com
+$ ./testssl.sh --full https://halfrost.com
 ```
 
 
 自己测试。
+
+### 开启 TLS 1.3 0-RTT
+
+**更新**：  
+
+在 nginx 的 conf 配置文件中添加:  
+
+```bash
+ssl_early_data on;
+```
+
+另外还建议添加 Early-Data 头告知后端, 防止重放攻击
+
+```bash
+proxy_set_header Early-Data $ssl_early_data;
+```
+最后使用 sudo nginx -t 测试一下。
+
 
 关于 TLS 1.3 的更多细节，会在之后的文章里面分析。Enjoy ~
 
