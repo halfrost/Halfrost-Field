@@ -1008,7 +1008,7 @@ Client 发送完 ClientKeyExchange 消息紧接着还会继续发送 ChangeCiphe
 
 再来看看基于 DH 密钥协商算法的首次握手：
 
-![](https://img.halfrost.com/Blog/ArticleImage/97_3_0.png)
+![](https://img.halfrost.com/Blog/ArticleImage/97_3_0_.png)
 
 基于 DH 密钥协商算法和基于 RSA 密码协商的区别在 Server 和 Client 协商 DH 参数上面。这里只说明一下 DH 密钥协商过程比 RSA 多的几步，其他的流程和 RSA 的流程基本一致。
 
@@ -1171,7 +1171,7 @@ Nginx 官方并没有提供支持分布式服务器的 Session Cache 的实现�
 
 其思想是服务器取出它的所有会话数据（状态）并进行加密 (密钥只有服务器知道)，再以票证的方式发回客户端。在接下来的连接中，客户端恢复会话时在 ClientHello 的扩展字段 session\_ticket 中携带加密信息将票证提交回服务器，由服务器检查票证的完整性，解密其内容，再使用其中的信息恢复会话。
 
-**对于 Server 来说，解密 ticket 就可以得到预备主密钥**，(注意这里和 SessionID 不同，有 Session ID 可以得到主密钥的信息)。对于 Client 来说，完整握手的时候收到 Server 下发的 NewSessionTicket 子消息的时候，Client 会将 Ticket 和对应的预备主密钥存在 Client，简短握手的时候，一旦 Server 验证通过，可以进行简单握手的时候，Client 通过本地存储的预备主密钥生成主密钥，最终再生成会话密钥(密钥块)。
+**对于 Server 来说，解密 ticket 就可以得到主密钥**，(注意这里和 SessionID 不同，有 Session ID 可以得到主密钥的信息)。对于 Client 来说，完整握手的时候收到 Server 下发的 NewSessionTicket 子消息的时候，Client 会将 Ticket 和对应的预备主密钥存在 Client，简短握手的时候，一旦 Server 验证通过，可以进行简单握手的时候，Client 通过本地存储的预备主密钥生成主密钥，最终再生成会话密钥(密钥块)。
 
 这种方法有可能使扩展服务器集群更为简单，因为如果不使用这种方式，就需要在服务集群的各个节点之间同步 Session Cache。Session ticket 需要服务器和客户端都支持，属于一个扩展字段，占用服务器资源很少。
 

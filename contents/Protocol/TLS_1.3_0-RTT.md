@@ -41,7 +41,7 @@
 
 
 
-如果 expected\_arrival\_time 在窗口中，则 Server 检查它是否记录了匹配的ClientHello。如果找到一个，它将使用 "illegal\_parameter" alert 消息中止握手或接受 PSK 但拒绝 0-RTT。如果找不到匹配的 ClientHello，则它接受 0-RTT，然后只要 expected\_arrival\_time 在窗口内，就存储 ClientHello。Server 也可以实现具有误报的数据存储，例如布隆过滤器，在这种情况下，它们必须通过拒绝 0-RTT 来响应明显的重放，但绝不能中止握手。
+如果 expected\_arrival\_time 在窗口中，则 Server 检查它是否记录了匹配的 ClientHello。如果找到一个，它将使用 "illegal\_parameter" alert 消息中止握手或接受 PSK 但拒绝 0-RTT。如果找不到匹配的 ClientHello，则它接受 0-RTT，然后只要 expected\_arrival\_time 在窗口内，就存储 ClientHello。Server 也可以实现具有误报的数据存储，例如布隆过滤器，在这种情况下，它们必须通过拒绝 0-RTT 来响应明显的重放，但绝不能中止握手。
 
 Server 必须仅从 ClientHello 的有效部分派生存储密钥。如果 ClientHello 包含多个 PSK 标识，则攻击者可以创建多个具有不同 binder 值的 ClientHellos，用于不太优选的标识，前提是 Server 不会对其进行验证(如 [第4.2.11节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#11-pre-shared-key-extension) 所述)。即，如果 Client 发送PSK A 和 B 但 Server 选择了 A，那么攻击者可以更改 B 的 binder 而不影响 A 的 binder。如果 B 的 binder 是存储密钥的一部分，则此 ClientHello 将不会重复出现，这将导致该 ClientHello 被接受，并且可能导致副作用，例如重放缓存污染，尽管任何 0-RTT 数据都不会被解密，因为它使用的不同的密钥。如果使用经过验证的 binder 或 ClientHello.random 作为存储密钥，则无法进行此攻击。
 

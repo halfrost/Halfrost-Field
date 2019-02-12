@@ -143,7 +143,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 
 ```c
   [sender]_write_key = HKDF-Expand-Label(Secret, "key", "", key_length)
-   [sender]_write_iv  = HKDF-Expand-Label(Secret, "iv", "", iv_length)
+  [sender]_write_iv  = HKDF-Expand-Label(Secret, "iv", "", iv_length)
 ```
 
 [sender] 表示发送方。每种记录类型的 Secret 值显示在下表中:

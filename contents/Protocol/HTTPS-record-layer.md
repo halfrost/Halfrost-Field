@@ -588,6 +588,9 @@ TLS 1.3 中 AEAD 结构的 per-record nonce 随机数形成如下:
 
 得到的值(长度为 iv\_length)被用作 per-record 的随机数 nonce。
 
+>关于随机数：   
+>双方维护一个 64 位的 sequence number，连接建立和每一次密钥变更时，sequence number 置 0，此后随传递的字节数自增 1。加密时将 sequence 左边用 0 扩充到 write\_iv (也是由 write_key 导出的一个初始向量)的长度，再与 write\_iv 做异或计算得到最终的 nonce。
+>
 >注意：这与 TLS 1.2 中的结构不同了，TLS 1.2 指定了部分显式的随机数。
 
 
