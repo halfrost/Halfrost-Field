@@ -438,27 +438,27 @@ enum {
 
 ```
 
-请注意：这个枚举之所以名为 "SignatureScheme"，是因为在 TLS 1.2中已经存在了 "SignatureAlgorithm" 类型，取而代之。在本篇文章中，我们都使用术语 "签名算法"。
+请注意：这个枚举之所以名为 "SignatureScheme"，是因为在 TLS 1.2 中已经存在了 "SignatureAlgorithm" 类型，取而代之。在本篇文章中，我们都使用术语 "签名算法"。
 
 每一个列出的 SignatureScheme 的值是 Client 想要验证的单一签名算法。这些值按照优先级降序排列。请注意，签名算法以任意长度的消息作为输入，而不是摘要作为输入。传统上用于摘要的算法应该在 TLS 中定义，首先使用指定的哈希算法对输入进行哈希计算，然后再进行常规处理。上面列出的代码具有以下含义：
 
 
-- RSASSA-PKCS1-v1\_5 algorithms:
+- RSASSA-PKCS1-v1\_5 algorithms:  
 	表示使用 RSASSA-PKCS1-v1\_5 [RFC8017](https://tools.ietf.org/html/rfc8017) 和定义在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中对应的哈希算法的签名算法。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。
 	
-- ECDSA algorithms:
+- ECDSA algorithms:  
 	表示签名算法使用 ECDSA，对应的曲线在 ANSI X9.62 [ECDSA](https://tools.ietf.org/html/rfc8446#ref-ECDSA) 和 FIPS 186-4 [DSS](https://tools.ietf.org/html/rfc8446#ref-DSS) 中定义了，对应的哈希算法在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义了。签名被表示为 DER 编码的 ECDSA-Sig-Value 结构。
 	
-- RSASSA-PSS RSAE algorithms:
+- RSASSA-PSS RSAE algorithms:  
 	表示使用带有掩码生成函数 1 的 RSASSA-PSS 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义的相应的哈希算法。盐的长度必须等于摘要算法输出的长度。如果公钥在 X.509 证书中，则必须使用 rsaEncryption OID [RFC5280](https://tools.ietf.org/html/rfc5280)。
 	
-- EdDSA algorithms:
+- EdDSA algorithms:  
 	表示使用定义在 [RFC 8032](https://tools.ietf.org/html/rfc8032) 中的 EdDSA 算法或者其后续改进算法。请注意，这些相应算法是 "PureEdDSA" 算法，而不是 "prehash" 变种算法。
 
-- RSASSA-PSS PSS algorithms:
+- RSASSA-PSS PSS algorithms:  
 	表示使用带有掩码生成函数 1 的 RSASSA-PSS [RFC 8017](https://tools.ietf.org/html/rfc8017) 签名算法。在掩码生成函数中使用的摘要和被签名的摘要都是在 [SHS](https://tools.ietf.org/html/rfc8446#ref-SHS) 中定义的相应的哈希算法。盐的长度必须等于摘要算法的长度。如果公钥在 X.509 证书中，则必须使用 RSASSA-PSS OID [RFC5756](https://tools.ietf.org/html/rfc5756)。当它被用在证书签名中，算法参数必须是 DER 编码。如果存在相应的公钥参数，则签名中的参数必须与公钥中的参数相同。
 	
-- Legacy algorithms:
+- Legacy algorithms:  
 	表示使用正在被废弃中的算法，因为这些算法有已知的缺点。特别是 SHA-1 配合上文提到的 RSASSA-PKCS1-v1\_5 和 ECDSA 算法一起使用。这些值仅指，出现在证书中又没有被定义用于签名 TLS 握手消息的签名。这些值会出现在 "signature\_algorithms" 和 "signature\_algorithms\_cert" 中，因为需要向后兼容 TLS 1.2 。终端不应该协商这些算法，但允许这样做只是为了向后兼容。提供这些值的 Client 必须把他们列在最低优先级的位置上(在 SignatureSchemeList 中的所有其他算法之后列出)。TLS 1.3 Server 绝不能提供 SHA-1 签名证书，除非没有它就无法生成有效的证书链。
 
 	
@@ -491,7 +491,7 @@ enum {
       } CertificateAuthoritiesExtension;
 ```
 	
-- authorities:
+- authorities:  
 	可接受证书颁发机构的一个可分辨名字 [X501](https://tools.ietf.org/html/rfc8446#ref-X501) 的列表	，这个列表是以 DER [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 编码格式表示的。这些可分辨的名称为，信任锚或从属的 CA 指定所需的可分辨的名称。因此，可以使用此消息描述已知的信任锚以及所需的授权空间。
 	
 Client 可能会在 ClientHello 消息中发送 "certificate\_authorities" 扩展，Server 可能会在 CertificateRequest 消息中发送 "certificate\_authorities" 扩展。
@@ -515,7 +515,7 @@ Client 可能会在 ClientHello 消息中发送 "certificate\_authorities" 扩�
       } OIDFilterExtension;
 ```
 
-- filters:
+- filters:  
 	一个有允许值的证书扩展 OID [RFC 5280](https://tools.ietf.org/html/rfc5280) 列表，以 DER 编码 [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 格式表示。一些证书扩展 OID 允许多个值(例如，Extended Key Usage)。如果 Server 包含非空的 filters 列表，则响应中包含的 Client 证书必须包含 Client 识别的所有指定的扩展 OID。对于 Client 识别的每个扩展 OID，所有指定的值必须存在于 Client 证书中（但是证书也可以具有其他值）。然而，Client 必须忽略并跳过任何无法识别的证书扩展 OID。如果 Client 忽略了一些所需的证书扩展 OID 并提供了不满足请求的证书。Server 可以自行决定是继续与没有身份认证的 Client 保持连接，还是用 "unsupported\_certificate" alert 消息中止握手。任何给定的 OID 都不能在 filters 列表中出现多次。
 
 
@@ -576,12 +576,12 @@ PKIX RFC 定义了各种证书扩展 OID 及其对应的值类型。根据类型
       } NamedGroupList;
 ```
 
-- Elliptic Curve Groups (ECDHE):
+- Elliptic Curve Groups (ECDHE):  
 	表示支持在 FIPS 186-4 [[DSS]](https://tools.ietf.org/html/rfc8446#ref-DSS) 或者 [[RFC7748]](https://tools.ietf.org/html/rfc7748) 中定义的对应命名的曲线。0xFE00 到 0xFEFF 的值保留使用[[RFC8126]](https://tools.ietf.org/html/rfc8126)。
 	
 	
 
-- Finite Field Groups (DHE):
+- Finite Field Groups (DHE):  
 	表示支持相应的有限域组，相关定义可以参考 [[RFC7919]](https://tools.ietf.org/html/rfc7919)。0x01FC 到 0x01FF 的值保留使用。
 
 named\_group\_list 中的项根据发送者的优先级排序(最好是优先选择的)。
@@ -603,10 +603,10 @@ Client 可能会发送空的 client\_shares 向量，以额外的往返代价，
       } KeyShareEntry;
 ```
 
-- group:
+- group:  
 	要交换的密钥的命名组。
 	
-- key\_exchange:
+- key\_exchange:  
 	密钥交换信息。这个字段的内容由特定的组和相应的定义确定。有限域的 Diffie-Hellman 参数在下面会描述。椭圆曲线 Diffie-Hellman 参数也会下面会描述。
 
 
@@ -618,7 +618,7 @@ Client 可能会发送空的 client\_shares 向量，以额外的往返代价，
       } KeyShareClientHello;
 ```
 
-- client\_shares: 
+- client\_shares:   
 	按照 Client 偏好降序顺序提供的 KeyShareEntry 值列表。
 
 如果 Client 正在请求 HelloRetryRequest， 则这个向量可以为空。每个 KeyShareEntry 值必须对应一个在 "supported\_groups" 扩展中提供的组，并且出现的顺序必须相同。然而，当优先级排名第一的组合是新的，并且不足以提供预生成 key shares 的时候，那么值可以是 "supported\_groups" 扩展的非连续子集，并且可以省略最优选的组，这种情况是可能会出现的。
@@ -634,7 +634,7 @@ Client 可以提供与其提供的 support groups 一样多数量的 KeyShareEnt
       } KeyShareHelloRetryRequest;
 ```
 
-- selected\_group:
+- selected\_group:  
 	Server 打算协商的相互支持并且正在请求重试 ClientHello / KeyShare 的 group。
 
 
@@ -649,7 +649,7 @@ Client 可以提供与其提供的 support groups 一样多数量的 KeyShareEnt
       } KeyShareServerHello;
 ```
 
-- server\_share:
+- server\_share:  
 	与 Client 共享的位于同一组的单个 KeyShareEntry 值。
 
 如果使用 (EC)DHE 密钥建立链接，Server 在 ServerHello 中只提供了一个 KeyShareEntry。这个值必须与，Server 为了协商密钥交换在 Client 提供的 KeyShareEntry 值中选择的值，在同一组中。Server 不能为 Client 的 "supported\_groups" 扩展中指定的任何 group 发送 KeyShareEntry 值。Server 也不能在使用 "psk\_ke" PskKeyExchangeMode 时候发送 KeyShareEntry 值。如果使用 (EC)DHE 建立链接，Client 收到了包含在 "key\_share" 扩展中的 HelloRetryRequest 消息，Client 必须验证在 ServerHello 中选择的 NameGroup 与 HelloRetryRequest 中是否相同。如果不相同，Client 必须立即发送 "illegal\_parameter" alert 消息中止握手。
@@ -708,10 +708,10 @@ Server 不能发送 "psk\_key\_exchange\_modes" 扩展:
       } PskKeyExchangeModes;
 ```
 
-- psk\_ke:
+- psk\_ke:  
 	仅 PSK 密钥建立。在这种模式下，Server 不能提供 "key\_share" 值。
 
-- psk\_dhe\_ke:
+- psk\_dhe\_ke:  
 	PSK 和 (EC)DHE 建立。在这种模式下，Client 和 Server 必须提供 "key\_share" 值。
 
 未来分配的任何值都必须要能保证传输的协议消息可以明确的标识 Server 选择的模式。目前 Server 选择的值由 ServerHello 中存在的 "key\_share" 表示。
@@ -903,7 +903,7 @@ EncryptedExtensions 消息包含应该被保护的扩展。即，任何不需要
       } EncryptedExtensions;
 ```
 
-- extensions:
+- extensions:   
 	扩展列表。
 
 
@@ -921,11 +921,11 @@ EncryptedExtensions 消息包含应该被保护的扩展。即，任何不需要
 ```
 
 
-- certificate_request_context:
+- certificate_request_context:  
 	一个不透明的字符串，这个字符串用来标识证书请求，并在 Client 的 Certificate 消息中回显。certificate\_request\_context 必须在本次连接中必须是唯一的(从而防止 Client 的 CertificateVerify 重放攻击)。这个字段一般情况下都是 0 长度，除非用于 [[4.6.2]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#2-post-handshake-authentication) 中描述的握手后身份验证交换。当请求握手后身份验证以后，Server 应该发送不可预测的上下文给 Client (例如，用随机数生成)，这样是为了防止攻击者破解。攻击者可以预先计算有效的 CertificateVerify 消息，从而获取临时的 Client 私钥的权限。
 
 
-- extensions:
+- extensions:  
 	一组描述正在请求的证书需要的参数扩展集。"signature\_algorithms" 扩展必须是特定的，如果其他的扩展被这个消息所定义，那么其他扩展也可能可选的被包含进来。Client 必须忽略不能识别的扩展。
 
 
@@ -949,11 +949,14 @@ Authentication 消息的计算统一采用以下的输入方式：
 
 基于这些输入，消息包含：
 
-- Certificate：用于认证的证书和链中任何支持的证书。请注意，基于证书的 Client 身份验证在 PSK 握手流中不可用(包括 0-RTT)
+- Certificate：  
+  用于认证的证书和链中任何支持的证书。请注意，基于证书的 Client 身份验证在 PSK 握手流中不可用(包括 0-RTT)
 
-- CertificateVerify: 根据 Transcript-Hash(Handshake Context, Certificate)的值得出的签名
+- CertificateVerify:   
+  根据 Transcript-Hash(Handshake Context, Certificate)的值得出的签名
 
-- Finished: 根据 Transcript-Hash(Handshake Context, Certificate, CertificateVerify)的值得出的 MAC 。使用从 Base key 派生出来的 MAC key 计算的 MAC 值。
+- Finished:   
+  根据 Transcript-Hash(Handshake Context, Certificate, CertificateVerify)的值得出的 MAC 。使用从 Base key 派生出来的 MAC key 计算的 MAC 值。
 
 对于每个场景，下表定义了握手上下文和 MAC Base Key    
 
@@ -1040,14 +1043,14 @@ Certificate 消息的结构体是：
       } Certificate;
 ```
 
-- certificate\_request\_context:
+- certificate\_request\_context:  
 	如果此消息是响应 CertificateRequest 消息的，则该消息中的 certificate\_request\_context 的值不为 0。否则(在 Server 认证的情况下)，该字段应为零长度。
 
 
-- certificate\_list:
+- certificate\_list:  
 	这是一个 CertificateEntry 结构的序列(链)，每个结构包含单个证书和一组扩展。
 
-- extensions:
+- extensions:  
 	CertificateEntry 的一组扩展值。"Extension" 的格式在 [[Section 4.2]](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#%E4%BA%8C-extensions) 中定义了。有效的扩展包括 OCSP 状态扩展 [[RFC6066]](https://tools.ietf.org/html/rfc6066) 和 SignedCertificateTimestamp [[RFC6962]](https://tools.ietf.org/html/rfc6962) 扩展。未来可以为此消息定义一些新的扩展。Server 的 Certificate 消息中的扩展必须对应于 ClientHello 消息中的扩展。Client 的 Certificate 消息中的扩展必须对应于 Server 的 CertificateRequest 消息中的扩展。如果一个扩展适应用于整个链，它应该被包括在第一个 CertificateEntry 中。
 	
 
@@ -1264,7 +1267,6 @@ Finished 消息之后的任何记录都必须在适当的应用程序流量密�
 如果 Server 在 EncryptedExtensions 中发送了 "early\_data" 扩展，则 Client 必须在收到 Server 的 Finished 消息后发送 EndOfEarlyData 消息。 如果 Server 没有在 EncryptedExtensions中发送 "early\_data" 扩展，那么 Client 绝不能发送 EndOfEarlyData 消息。此消息表示已传输完了所有 0-RTT application\_data消息(如果有)，并且接下来的记录受到握手流量密钥的保护。Server 不能发送此消息，Client 如果收到了这条消息，那么必须使用 "unexpected\_message" alert 消息终止连接。这条消息使用从 client\_early\_traffic\_secret 中派生出来的密钥进行加密保护。
 
 
-
 ### 6. Post-Handshake Messages
 
 
@@ -1306,7 +1308,7 @@ Client 必须只有在新的 SNI 值对原始会话中提供的 Server 证书有
 - ticket\_lifetime：  
 	这个字段表示 ticket 的生存时间，这个时间是以 ticket 发布时间为网络字节顺序的 32 位无符号整数表示以秒为单位的时间。Server 禁止使用任何大于604800秒(7天)的值。值为零表示应立即丢弃 ticket。无论 ticket\_lifetime 如何，Client 都不得缓存超过7天的 ticket，并且可以根据本地策略提前删除 ticket。Server 可以将 ticket 视为有效的时间段短于 ticket\_lifetime 中所述的时间段。
 
-- ticket\_age\_add:  
+- ticket\_age\_add:   
 	安全的生成的随机 32 位值，用于模糊 Client 在 "pre\_shared\_key" 扩展中包含的 ticket 的时间。Client 的 ticket age 以模 2 ^ 32 的形式添加此值，以计算出 Client 要传输的值。Server 必须为它发出的每个 ticket 生成一个新值。
 
 - ticket\_nonce:  
@@ -1366,7 +1368,7 @@ KeyUpdate 握手消息用于表示发送方正在更新其自己的发送加密�
       } KeyUpdate;
 ```
 
-- request\_update:
+- request\_update:  
 	这个字段表示 KeyUpdate 的收件人是否应使用自己的 KeyUpdate 进行响应。 如果实现接收到任何其他的值，则必须使用 "illegal\_parameter" alert 消息终止连接。
 	
 
