@@ -10,7 +10,7 @@
 
 TLS 1.3 在 TLS 1.2 的基础上，针对 TLS 握手协议最大的改进在于提升速度和安全性。本篇文章会重点分析这两块。
 
-## 一、TLS 对网络请求速度的影响
+## 一. TLS 对网络请求速度的影响
 
 由于部署了 HTTPS，传输层增加了 TLS，对一个完成的请求耗时又会多增加一些。具体会增加几个 RTT 呢？
 
@@ -59,7 +59,7 @@ TLS 1.3 在 TLS 1.2 的基础上，针对 TLS 握手协议最大的改进在于�
 除去 4 是无论如何都无法省掉的以外，剩下的就是 TCP 和 TLS 握手了。 TCP 想要减至 0-RTT，目前来看有点难。那 TLS 呢？目前 TLS 1.2 完整一次握手需要 2-RTT，能再减少一点么？答案是可以的。
 
 
-## 二、TLS/SSL 协议概述
+## 二. TLS/SSL 协议概述
 
 TLS 握手协议运行在 TLS 记录层之上，目的是为了让服务端和客户端就协议版本达成一致, 选择加密算法, 选择性的彼此相互验证对方, 使用公钥加密技术生成共享密钥——即协商出 TLS 记录层加密和完整性保护需要用到的 Security Parameters 加密参数。协商的过程中还必须要保证网络中传输的信息不能被篡改，伪造。由于协商需要在网络上来来回回花费几个来回，所以 TLS 的网络耗时基本上很大一部分花费在网络 RTT 上了。
 
@@ -100,7 +100,7 @@ TLS 握手协议包含如下几步:
 下面行文思路会按照 TLS 首次握手，会话恢复的顺序，依次对比 TLS 1.2 和 TLS 1.3 在握手上的不同，并且结合 Wireshark 抓取实际的网络包进行分析讲解。最后分析一下 TLS 1.3 新出的 0-RTT 是怎么回事。
 
 
-## 三、TLS 1.2 首次握手流程
+## 三. TLS 1.2 首次握手流程
 
 TLS 1.2 握手协议主要流程如下：
 
@@ -980,7 +980,7 @@ Finished 子消息是 TLS 记录层加密保护的第一条消息。Finished 子
 如果中间人在握手期间把 ClientHello 的 TLS 最高支持版本修改为 TLS 1.0，企图回退攻击，利用 TLS 旧版本中的漏洞。Server 收到中间人的 ClientHello 并不知道是否存在篡改，于是也按照 TLS 1.0 去协商。握手进行到最后一步，校验 Finished 子消息的时候，校验不通过，因为 Client 原本发的 ClientHello 中 TLS 最高支持版本是 TLS 1.2，那么产生的 Finished 子消息的 verify\_data 与 Server 拿到篡改后的 ClientHello 计算出来的 verify\_data 肯定不同。至此也就发现了中间存在篡改，握手失败。
 
 
-## 四、直观感受 TLS 1.2 首次握手流程
+## 四. 直观感受 TLS 1.2 首次握手流程
 
 至此，TLS 1.2 首次握手的所有细节都已经分析完了。这一节让我们小结一下上面的流程，并用 Wireshark 直观感受一下 TLS 1.2 协议。
 
@@ -1073,7 +1073,7 @@ Server 如果只是 SessionTicket，那么会生成新的 NewSessionTicket 返�
 当页面关闭的时候，Server 会给 Client 发送 TLS Alert 消息，这条消息里面的描述就是 Close Notify。同时 Server 会发送 FIN 包开始 4 次挥手。
 
 
-## 五、TLS 1.2 会话恢复
+## 五. TLS 1.2 会话恢复
 
 
 Client 和 Server 只要一关闭连接，短时间内再次访问 HTTPS 网站的时候又需要重新连接。新的连接会造成网络延迟，并消耗双方的计算能力。有没有办法能复用之前的 TLS 连接呢？办法是有的，这就涉及到了 TLS 会话复用机制。
@@ -1405,7 +1405,7 @@ ClientIdentity 有 2 种认证方式，一种是基于 `certificate_based` 证�
 
 使用给定 IV，在 CBC 模式下使用 128 位 AES 加密 encrypted\_state 中的实际状态信息。使用 HMAC-SHA-256 通过 key\_name（16个字节）和 IV（16个字节）计算消息验证代码（MAC），然后是 encrypted\_state 字段的长度（2个字节）及其内容（可变长度），这样就生成了 ticket。
 
-## 六、直观感受 TLS 1.2 会话恢复
+## 六. 直观感受 TLS 1.2 会话恢复
 
 
 这一节，笔者用 Wireshark 展示一下 TLS 1.2 的会话恢复，让读者加深理解。
@@ -1442,9 +1442,9 @@ Client 收到 Server 发过来的 ChangeCipherSpec 和 Finished 消息，作为�
 把会话恢复过程中 Client 同时带有 Session ID 和 SessionTicket TLS 扩展的情况总结成一张图，如上图。
 
 
-至此，直观感受 TLS 握手流程的上篇就结束了，上篇将 TLS 1.2 中所有的握手流程都详细分析完成了。[《HTTPS 温故知新（四） —— 直观感受 TLS 握手流程(下)》]() 下篇会着重分析 TLS 1.3 的握手流程，与 TLS 1.2 握手流程进行对比。另外还会讲解 TLS 1.3 新增的 0-RTT 是怎么一回事。
+至此，直观感受 TLS 握手流程的上篇就结束了，上篇将 TLS 1.2 中所有的握手流程都详细分析完成了。[《HTTPS 温故知新（四） —— 直观感受 TLS 握手流程(下)》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.3_handshake.md) 下篇会着重分析 TLS 1.3 的握手流程，与 TLS 1.2 握手流程进行对比。另外还会讲解 TLS 1.3 新增的 0-RTT 是怎么一回事。
 
-当然在 TLS 1.2 和 TLS 1.3 握手流程中所有涉及到密钥计算的内容，都放在 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》]() 这篇文章里面了，TLS 1.2 和 TLS 1.3 握手流程中所有涉及到扩展的内容，都放在 [《HTTPS 温故知新（六） —— TLS 中的 Extensions》]() 这篇文章里面了。
+当然在 TLS 1.2 和 TLS 1.3 握手流程中所有涉及到密钥计算的内容，都放在 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-key-cipher.md) 这篇文章里面了，TLS 1.2 和 TLS 1.3 握手流程中所有涉及到扩展的内容，都放在 [《HTTPS 温故知新（六） —— TLS 中的 Extensions》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-extensions.md) 这篇文章里面了。
 
 ------------------------------------------------------
 
