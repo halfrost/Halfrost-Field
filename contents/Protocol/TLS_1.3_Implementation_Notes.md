@@ -111,7 +111,7 @@ Client 不应该为多个连接重用一个 ticket。重用一个 ticket 会允�
 
 TLS 之前的版本中提供了基于匿名 Diffie-Hellman 算法的明显未经过验证的密码套件。这些模式已在 TLS 1.3 中弃用。但是，仍然可以通过多种方法协商不提供可验证 Server 身份验证的参数，包括：
 
-- 原始公钥[RFC7250](https://tools.ietf.org/html/rfc7250)。
+- 原始公钥 [[RFC7250]](https://tools.ietf.org/html/rfc7250)。
 
 - 使用证书中包含的公钥，但不验证证书链或其任何内容。
 
