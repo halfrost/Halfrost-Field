@@ -99,7 +99,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 ```
 
 
-这里的一般模式指的是，图左侧显示的 secrets 是没有上下文的原始熵，而右侧的 secrets 包括握手上下文，因此可以用来派生工作密钥而无需额外的上下文。请注意，对 Derive-Secret 的不同调用可能会使用不同的 Messages 参数，即使是具有相同的 secret。在 0-RTT 交换中，Derive-Secret 和四个不同的副本一起被调用;在 1-RTT-only 交换中，它和三个不同的副本一起被调用。
+这里的一般模式指的是，图左侧显示的 secrets 是没有上下文的原始熵，而右侧的 secrets 包括握手上下文，因此可以用来派生工作密钥而无需额外的上下文。请注意，对 Derive-Secret 的不同调用可能会使用不同的 Messages 参数，即使是具有相同的 secret。在 0-RTT 交换中，Derive-Secret 和四个不同的副本一起被调用；在 1-RTT-only 交换中，它和三个不同的副本一起被调用。
 
 如果给定的 secret 不可用，则使用由设置为零的 Hash.length 字节串组成的 0 值。请注意，这并不意味着要跳过轮次，因此如果 PSK 未被使用，Early Secret 仍将是 HKDF-Extract(0,0)。对于 binder\_key 的计算，label 是外部 PSK(在 TLS 之外提供的那些)的 "ext binder" 和用于恢复 PSK 的 "res binder"(提供为先前握手的恢复主密钥的那些)。不同的 labels 阻止了一种 PSK 替代另一种 PSK。
 
@@ -193,7 +193,7 @@ Transcript-Hash 和 HKDF 使用的 Hash 函数是密码套件哈希算法。Hash
 ## 五. Exporters
 
 
-[RFC5705] 根据 TLS 伪随机函数(PRF)定义 TLS 的密钥材料 exporter。本文档用 HKDF 取代 PRF，因此需要新的结构。exporter 的接口保持不变。
+[RFC5705](https://tools.ietf.org/html/rfc5705) 根据 TLS 伪随机函数(PRF)定义 TLS 的密钥材料 exporter。本文档用 HKDF 取代 PRF，因此需要新的结构。exporter 的接口保持不变。
 
 exporter 的值计算方法如下:
 
@@ -203,7 +203,7 @@ exporter 的值计算方法如下:
                          "exporter", Hash(context_value), key_length)
 ```
 
-Secret 可以是 early\_exporter\_master\_secret 或 exporter\_master\_secret。除非应用程序明确指定，否则实现方必须使用exporter\_master\_secret。early\_exporter\_master\_secret 被定义用来在 0-RTT 数据需要 exporter 的设置这种情况中使用。建议为 early exporter 提供单独的接口;这可以避免 exporter 用户在需要常规 exporter 时意外使用 early exporter，反之亦然。
+Secret 可以是 early\_exporter\_master\_secret 或 exporter\_master\_secret。除非应用程序明确指定，否则实现方必须使用 exporter\_master\_secret。early\_exporter\_master\_secret 被定义用来在 0-RTT 数据需要 exporter 的设置这种情况中使用。建议为 early exporter 提供单独的接口；这可以避免 exporter 用户在需要常规 exporter 时意外使用 early exporter，反之亦然。
 
 如果未提供上下文，则 context\_value 为零长度。因此，不提供上下文计算与提供空上下文得到的结果都是相同的。这是对以前版本的 TLS 的更改，以前的 TLS 版本中，空的上下文产生的输出与不提供的上下文的结果不同。截至本文档，无论是否使用上下文，都不会使用已分配的 exporter 标签。未来的规范绝不能定义允许空上下文和没有相同标签的上下文的 exporter 的使用。exporter 的新用法应该是在所有 exporter 计算中提供上下文，尽管值可能为空。
 
