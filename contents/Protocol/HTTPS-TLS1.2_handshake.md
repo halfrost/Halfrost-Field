@@ -680,12 +680,12 @@ RSA、DH\_DSS、DH\_RSA 这 3 个不需要 ServerKeyExchange 消息。
       } CertificateRequest;
 ```
 
-- certificate\_types:  
-  client 可以提供的证书类型的列表。
-  rsa\_sign:一个包含 RSA 密钥的证书  
-  dss\_sign:一个包含 DSA 密钥的证书  
-  rsa\_fixed\_dh:一个包含静态 DH 密钥的证书  
-  dss\_fixed\_dh:一个包含静态 DH 密钥的证书  
+- certificate\_types:      
+  client 可以提供的证书类型的列表。  
+  rsa\_sign: 一个包含 RSA 密钥的证书  
+  dss\_sign: 一个包含 DSA 密钥的证书  
+  rsa\_fixed\_dh: 一个包含静态 DH 密钥的证书  
+  dss\_fixed\_dh: 一个包含静态 DH 密钥的证书  
 
 - supported\_signature\_algorithms:  
   一个 hash/签名算法对列表供 Server选择，按照偏好降序排列
@@ -746,7 +746,7 @@ Client Certificate 消息的目的是传递 Client 的证书链给 Server；当�
 
 - 如果列出在证书请求中的 certificate\_authorities 非空，证书链中的一个证书应该被一个列出来的 CA 签发。  
 
-- 证书必须被一个可接受的 hash/签名算法对签名，正如 [Certificate Request](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#4-certificate-request) 那部分描述的那样。需要注意的是这放宽了在以前的 TLS 版本中对证书签名算法的限制。  
+- 证书必须被一个可接受的 hash/签名算法对签名，正如 [Certificate Request](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md#4-certificate-request) 那部分描述的那样。需要注意的是这放宽了在以前的 TLS 版本中对证书签名算法的限制。  
 
 需要注意的是, 与 Server 证书一样，有一些证书使用了当前不能用于当前 TLS 的算法/算法组合。
 
@@ -760,7 +760,7 @@ Client Certificate 消息的目的是传递 Client 的证书链给 Server；当�
 
 这个消息的结构:
 
-这个消息的选项依赖于选择了哪种密钥交互方法。关于 KeyExchangeAlgorithm 的定义，见  [Server Key Exchange Message](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#3-server-key-exchange-message) 这一节。
+这个消息的选项依赖于选择了哪种密钥交互方法。关于 KeyExchangeAlgorithm 的定义，见  [Server Key Exchange Message](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md#3-server-key-exchange-message) 这一节。
 
 
 ClientKeyExchange 消息的数据结构如下：
@@ -931,7 +931,7 @@ TLS 1.2 要求 EncryptedPreMasterSecret 和长度字节一起正确地编码。�
 ```
 
 
-这里 handshake\_messages 是指发送或接收到的所有握手消息，从 client hello 开始到但不包括本消息，包含握手消息的类型和长度域。这是到目前为止所有握手结构（在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#%E4%B8%89tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)定义的）的级联。需要注意的是这要求两端要么缓存消息，要么计算用所有可用的 hash 算法计算运行时的 hash 值直到计算 CertificateVerify 的 hash 值为止。Server 可以通过在 CertificateRequest 消息中提高一个受限的摘要算法及来最小化这种计算代价。
+这里 handshake\_messages 是指发送或接收到的所有握手消息，从 client hello 开始到但不包括本消息，包含握手消息的类型和长度域。这是到目前为止所有握手结构（在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md#%E4%B8%89-tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)定义的）的级联。需要注意的是这要求两端要么缓存消息，要么计算用所有可用的 hash 算法计算运行时的 hash 值直到计算 CertificateVerify 的 hash 值为止。Server 可以通过在 CertificateRequest 消息中提高一个受限的摘要算法及来最小化这种计算代价。
 
 在签名中使用的 hash 和签名算法必须是 CertificateRequest 消息中 supported\_signature\_algorithms 字段所列出的算法中的一种。此外，hash 和签名算法必须与 Client 的终端实体证书相兼容。RSA 密钥可以与任何允许的 hash 算法一起使用，但需要服从证书中的限制(如果有的话)。
 
@@ -964,11 +964,11 @@ Hash 指出了握手消息的一个 hash。hash 必须用作 PRF 的基础。任
 在 TLS 1.2 之前的版本中，verify\_data 一直是 12 字节长。在 TLS 1.2 版本中，verify\_data 的长度取决于密码套件。任何没有显式指定 verify\_data\_length 的密码套件都默认 verify\_data\_length 等于 12。需要注意的是这种表示的编码与之前的版本相同。将来密码套件可能会指定其它长度但这个长度必须至少是 12 字节。
 
 - handshake\_messages:    
-  所有在本次握手过程（不包括任何 HelloRequest 消息）到但不包括本消息的消息中的数据。这是只能在握手层中看见的数据且不包含记录层头。这是到目前为止所有在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#%E4%B8%89tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)中定义的握手结构体的关联。
+  所有在本次握手过程（不包括任何 HelloRequest 消息）到但不包括本消息的消息中的数据。这是只能在握手层中看见的数据且不包含记录层头。这是到目前为止所有在[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md#%E4%B8%89-tls-12-%E9%A6%96%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B)中定义的握手结构体的关联。
 
 如果一个 Finished 消息在握手的合适环节上没有一个 ChangeCipherSpec 在其之前则是致命错误。
 
-handshake\_messages 的值包括了从 ClientHello 开始一直到（但不包括）Finished 消息的所有握手消息。[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-handshake.md#8-certificate-verify)中的 handshake\_messages 不同，因为它包含 CertificateVerify 消息（如果发送了）。同样，client 发送的 Finished 消息的 handshake\_messages 与 Server 发送的 Finished 消息不同，因为第二个被发送的要包含前一个。Server 的 Finished 消息会包含 Client 的 Finished 子消息。
+handshake\_messages 的值包括了从 ClientHello 开始一直到（但不包括）Finished 消息的所有握手消息。[这一节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md#8-certificate-verify)中的 handshake\_messages 不同，因为它包含 CertificateVerify 消息（如果发送了）。同样，client 发送的 Finished 消息的 handshake\_messages 与 Server 发送的 Finished 消息不同，因为第二个被发送的要包含前一个。Server 的 Finished 消息会包含 Client 的 Finished 子消息。
 
 注意：ChangeCipherSpec 消息，alert 警报，和任何其它记录类型不是握手消息，不会被包含在 hash 计算中。同样，HelloRequest 消息也被握手 hash 忽略。
 
@@ -1111,7 +1111,7 @@ Session ID 由服务器端支持，协议中的标准字段，因此基本所有
 - 密码套件(cipher spec):  
   Client 和 Server 协商共同协商出来的密码套件
 - 主密钥(master secret):    
-  每个会话都会保存一份主密钥，**注意不是预备主密钥**。(读者可以想想为什么，如果还是想不通，见 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》]())
+  每个会话都会保存一份主密钥，**注意不是预备主密钥**。(读者可以想想为什么，如果还是想不通，见 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-key-cipher.md))
 - 会话可恢复标识(is resumable): 
   标识会话是否可恢复
   
