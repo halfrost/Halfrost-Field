@@ -191,7 +191,7 @@ Server 在 ServerHello 中响应该扩展，返回如下：
 <img src='https://img.halfrost.com/Blog/ArticleImage/122_19.png'>
 </p>
 
-Server 返回了一个空的 extended\_master\_secret 扩展，表明会使用增强型主密钥计算方式。关于增强型主密钥计算方式，见 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》]() 这篇文章。
+Server 返回了一个空的 extended\_master\_secret 扩展，表明会使用增强型主密钥计算方式。关于增强型主密钥计算方式，见 [《HTTPS 温故知新（五） —— TLS 中的密钥计算》](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-key-cipher.md) 这篇文章。
    
 ### 3. renegotiation\_info 重协商
 
@@ -230,6 +230,36 @@ Server 在 ServerHello 中响应该扩展，返回如下：
 这个例子中，Client 支持 4 种椭圆曲线，x25519、secp256r1、secp384r1、secp521r1。
 
 Server 接收到这个扩展会根据这些信息进行选择合适的椭圆曲线。
+
+TLS 1.3 中支持的所有曲线如下：
+
+```c
+      enum {
+          unallocated_RESERVED(0x0000),
+
+          /* Elliptic Curve Groups (ECDHE) */
+          obsolete_RESERVED(0x0001..0x0016),
+          secp256r1(0x0017), secp384r1(0x0018), secp521r1(0x0019),
+          obsolete_RESERVED(0x001A..0x001C),
+          x25519(0x001D), x448(0x001E),
+
+          /* Finite Field Groups (DHE) */
+          ffdhe2048(0x0100), ffdhe3072(0x0101), ffdhe4096(0x0102),
+          ffdhe6144(0x0103), ffdhe8192(0x0104),
+
+          /* Reserved Code Points */
+          ffdhe_private_use(0x01FC..0x01FF),
+          ecdhe_private_use(0xFE00..0xFEFF),
+          obsolete_RESERVED(0xFF01..0xFF02),
+          (0xFFFF)
+      } NamedGroup;
+
+      struct {
+          NamedGroup named_group_list<2..2^16-1>;
+      } NamedGroupList;
+```
+
+标记了 "obsolete\_RESERVED" 的曲线是在以前版本的 TLS 中使用过的，不得由 TLS 1.3 实现提供或协商。因为这些过时的曲线具有各种已知/理论上的弱点或者使用的非常少，它们不再被认为适合一般用途，应该被认为可能不安全。此处指定的曲线集足以与所有当前部署和正确配置的 TLS 实现进行互操作。
 
 ### 5. ec\_point\_formats 
 
@@ -502,6 +532,57 @@ CH (ClientHello), SH (ServerHello), EE (EncryptedExtensions), CT (Certificate), 
 
 在 TLS 1.3 中，相比 TLS 1.2 增加了大量的扩展，当然上一章提到的 TLS 1.2 的扩展也会继续使用。
 
+```c
+   +--------------------------------------------------+-------------+
+   | Extension                                        |     TLS 1.3 |
+   +--------------------------------------------------+-------------+
+   | server_name [RFC6066]                            |      CH, EE |
+   |                                                  |             |
+   | max_fragment_length [RFC6066]                    |      CH, EE |
+   |                                                  |             |
+   | status_request [RFC6066]                         |  CH, CR, CT |
+   |                                                  |             |
+   | supported_groups [RFC7919]                       |      CH, EE |
+   |                                                  |             |
+   | signature_algorithms (RFC 8446)                  |      CH, CR |
+   |                                                  |             |
+   | use_srtp [RFC5764]                               |      CH, EE |
+   |                                                  |             |
+   | heartbeat [RFC6520]                              |      CH, EE |
+   |                                                  |             |
+   | application_layer_protocol_negotiation [RFC7301] |      CH, EE |
+   |                                                  |             |
+   | signed_certificate_timestamp [RFC6962]           |  CH, CR, CT |
+   |                                                  |             |
+   | client_certificate_type [RFC7250]                |      CH, EE |
+   |                                                  |             |
+   | server_certificate_type [RFC7250]                |      CH, EE |
+   |                                                  |             |
+   | padding [RFC7685]                                |          CH |
+   |                                                  |             |
+   | key_share (RFC 8446)                             | CH, SH, HRR |
+   |                                                  |             |
+   | pre_shared_key (RFC 8446)                        |      CH, SH |
+   |                                                  |             |
+   | psk_key_exchange_modes (RFC 8446)                |          CH |
+   |                                                  |             |
+   | early_data (RFC 8446)                            | CH, EE, NST |
+   |                                                  |             |
+   | cookie (RFC 8446)                                |     CH, HRR |
+   |                                                  |             |
+   | supported_versions (RFC 8446)                    | CH, SH, HRR |
+   |                                                  |             |
+   | certificate_authorities (RFC 8446)               |      CH, CR |
+   |                                                  |             |
+   | oid_filters (RFC 8446)                           |          CR |
+   |                                                  |             |
+   | post_handshake_auth (RFC 8446)                   |          CH |
+   |                                                  |             |
+   | signature_algorithms_cert (RFC 8446)             |      CH, CR |
+   +--------------------------------------------------+-------------+
+```
+
+
 在 TLS 1.3 中，扩展通常以请求/响应方式构建，虽然有些扩展只是一些标识，并不会有任何响应。Client 只能在 ClientHello 中发送其扩展请求，Server 只能在 ServerHello, EncryptedExtensions, HelloRetryRequest,和 Certificate 消息中发送对应的扩展响应。
 
 <p align='center'>
@@ -603,15 +684,35 @@ KeyShareEntry 数据结构如下:
 
 上面 2 张图就展示了 Server 和 Client 是如何协商各自的密钥参数的。
 
+> 这个扩展在 TLS 1.3 中非常关键，TLS 1.3 官方也对它进行了大篇幅的说明，见[这篇文章](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#8-key-share)
+
+
 ### 3. psk\_key\_exchange\_modes
 
-```c
-    enum { psk_ke(0), psk_dhe_ke(1), (255) } PskKeyExchangeMode;
+为了使用 PSK，Client 还必须发送一个 "psk\_key\_exchange\_modes" 扩展。这个扩展语意是 Client 仅支持使用具有这些模式的 PSK。这就限制了在这个 ClientHello 中提供的 PSK 的使用，也限制了 Server 通过 NewSessionTicket 提供的 PSK 的使用。
 
-    struct {
-        PskKeyExchangeMode ke_modes<1..255>;
-    } PskKeyExchangeModes;
+如果 Client 提供了 "pre\_shared\_key" 扩展，那么它必须也要提供 "psk\_key\_exchange\_modes" 扩展。如果 Client 发送不带 "psk\_key\_exchange\_modes" 扩展名的 "pre\_shared\_key"，Server 必须立即中止握手。Server 不能选择一个 Client 没有列出的密钥交换模式。此扩展还限制了与 PSK 恢复使用的模式。Server 也不能发送与建议的 modes 不兼容的 NewSessionTicket。不过如果 Server 一定要这样做，影响的只是 Client 在尝试恢复会话的时候会失败。
+
+
+Server 不能发送 "psk\_key\_exchange\_modes" 扩展:
+
+```c
+      enum { psk_ke(0), psk_dhe_ke(1), (255) } PskKeyExchangeMode;
+
+      struct {
+          PskKeyExchangeMode ke_modes<1..255>;
+      } PskKeyExchangeModes;
 ```
+
+- psk\_ke:  
+	仅 PSK 密钥建立。在这种模式下，Server 不能提供 "key\_share" 值。
+
+- psk\_dhe\_ke:  
+	PSK 和 (EC)DHE 建立。在这种模式下，Client 和 Server 必须提供 "key\_share" 值。
+
+未来分配的任何值都必须要能保证传输的协议消息可以明确的标识 Server 选择的模式。目前 Server 选择的值由 ServerHello 中存在的 "key\_share" 表示。
+
+ClientHello 中包含此扩展的消息如下：
 
 <p align='center'>
 <img src='https://img.halfrost.com/Blog/ArticleImage/122_26.png'>
@@ -657,16 +758,61 @@ Server 收到以后，在 ServerHello 中的 supported\_versions 扩展响应 Cl
 ### 5. early\_data
 
 
+当使用 PSK 并且 PSK 允许使用 early\_data 的时候，Client 可以在其第一个消息中发送应用数据。如果 Client 选择这么做，则必须发送 "pre\_shared\_key" 和 "early\_data" 扩展。
+
+
+Early Data Indication 扩展中的 "extension\_data" 字段包含了一个 EarlyDataIndication 值。
+
 ```c
-    struct {
-        select (Handshake.msg_type) {
-            case new_session_ticket:   uint32 max_early_data_size;
-            case client_hello:         Empty;
-            case encrypted_extensions: Empty;
-        };
-    } EarlyDataIndication;
+      struct {} Empty;
+
+      struct {
+          select (Handshake.msg_type) {
+              case new_session_ticket:   uint32 max_early_data_size;
+              case client_hello:         Empty;
+              case encrypted_extensions: Empty;
+          };
+      } EarlyDataIndication;
 ```
 
+有关 max\_early\_data\_size 字段的使用请看 [New Session Ticket Message](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-new-session-ticket-message) 章节。
+
+
+0-RTT 数据(版本，对称加密套件，应用层协议协商协议[[RFC7301]](https://tools.ietf.org/html/rfc7301)，等等)的参数与使用中的 PSK 参数相关。对于外部配置的 PSK，关联值是由密钥提供的。对于通过 NewSessionTicket 消息建立的 PSK，关联值是在建立 PSK 连接时协商的值。PSK 用来加密 early data 必须是 Client 在 "pre\_shared\_key" 扩展中列出的第一个 PSK。
+
+
+对于通过 NewSessionTicket 提供的 PSK，Server 必须验证所选 PSK 标识中的 ticket age(从 PskIdentity.obfuscated\_ticket\_age 取 2^32 模中减去 ticket\_age\_add)距离 ticket 发出的时间是否有一个很小的公差。如果相差的时间很多，那么 Server 应该继续握手，但是要拒绝 0-RTT，并且还要假定这条 ClientHello 是新的，也不能采取任何其他措施。
+
+
+在第一次 flight 中发送的 0-RTT 消息与其他 flight (握手和应用数据)中发送的相同类型的消息具有相同(加密)的内容类型，但受到不同密钥的保护。如果 Server 已经接收了 early data，Client 在收到 Server 的 Finished 消息以后，Client 则会发送 EndOfEarlyData 消息表示密钥更改。这条消息将会使用 0-RTT 的 traffic 密钥进行加密。
+
+Server 接收 "early\_data" 扩展必须以下面三种方式之一操作：
+
+- 忽略 "early\_data" 扩展，并返回常规的 1-RTT 响应。Server 尝试通过用握手中的流量密钥(traffic key)解密收到的记录，并忽略掉 early data。丢弃解密失败的记录(取决于配置的 max\_early\_data\_size)。一旦一个记录被解密成功，它将会被 Server 看做 Client 第二次 flight 的开始并且 Server 会把它当做普通的 1-RTT 来处理。
+
+
+- 通过回应 HelloRetryRequest 来请求 Client 发送另外一个 ClientHello。Client 不能在这个 ClientHello 中包含 "early\_data" 扩展。Server 通过跳过具有外部内容类型的 "application\_data"(说明他们被加密了) 的所有记录来忽略 early data(同样取决于配置的 max\_early\_data\_size)。
+
+- 在 EncryptedExtensions 中返回自己的 "early\_data" 扩展，表明它准备处理 early data。Server 不可能只接受 early data 消息中的一部分。即使 Server 发送了一条接收 early data 的消息，但是实际上 early data 可能在 Server 生成这条消息的时候已经在 flight 了。
+
+为了接受 early data，Server 必须已经接受了 PSK 密码套件并且选择了 Client 的 "pre\_shared\_key" 扩展中提供的第一个密钥。此外，Server 还需要验证以下的值和选择的 PSK 关联值一样：
+
+- TLS 版本号
+- 选择的密码套件
+- 选择的 ALPN 协议，如果选择了的话
+
+这些要求是使用相关 PSK 执行 1-RTT 握手所需的超集。对于外部建立的 PSK，关联值是与密钥一起提供的值。对于通过 NewSessionTicket 消息建立的 PSK，关联值是在连接中协商的值，在这期间 ticket 被建立了。
+
+如果任何检查失败了，Server 不得在响应中附带扩展，并且必须使用上面列出的前两种机制中的一个，丢弃所有 first-flight 数据(因此回落到 1-RTT 或者 2-RTT)。如果 Client 尝试 0-RTT 握手但 Server 拒绝了它，则 Server 通常不会有 0-RTT 记录保护密钥，而必须使用试用解密（使用 1-RTT 握手密钥或者通过在有 HelloRetryRequest 消息的情况下查找明文 ClientHello）找到第一个非 0-RTT 消息。
+
+如果 Server 选择接受 early\_data 扩展，那么在处理 early data 记录的时候，Server 必须遵守用相同的标准(指定的相同错误处理要求)来处理所有记录。具体来说，如果 Server 无法解密已经接受的 "early\_data" 扩展中的记录，则它必须发送 "bad\_record\_mac" alert 消息中止握手。
+
+如果 Server 拒绝 "early\_data" 扩展，则 Client 应用程序可以选择在握手完成后重新发送先前在 early data 中发送的应用数据。请注意，early data 的自动重传可能会导致关于连接状态的误判。例如，当协商连接从用于 early data 的协议中选择不同的 ALPN 协议时，应用程序可能需要构造不同的消息。同样，如果 early data 假定包含有关连接状态的任何内容，则在握手完成后可能会错误地发送这些内容。
+
+
+TLS 的实现不应该自动重新发送 early data；应用程序可以很好的决定何时重传。除非协商连接选择相同的 ALPN 协议，否则 TLS 实现绝不能自动重新发送 early data。
+
+下图是 NewSessionTicket 中的 early\_data，表明了 Server 可以接受 0-RTT。
 
 <p align='center'>
 <img src='https://img.halfrost.com/Blog/ArticleImage/122_32.png'>
@@ -677,41 +823,236 @@ Server 收到以后，在 ServerHello 中的 supported\_versions 扩展响应 Cl
 
 "pre\_shared\_key" 预共享密钥和 "psk\_key\_exchange\_modes" 扩展配合使用。预共享密钥扩展包含了 Client 可以识别的对称密钥标识。"psk\_key\_exchange\_modes" 扩展表明了可能可以和 psk 一起使用的密钥交换模式。
 
-当存在多种不同类型的扩展的时候，除了 "pre\_shared\_key" 必须是 ClientHello 的最后一个扩展，其他的扩展间的顺序可以是任意的。("pre\_shared\_key" 可以出现在 ServerHello 中扩展块中的任何位置)。
+"pre\_shared\_key" 扩展用来协商标识的，这个标识是与 PSK 密钥相关联的给定握手所使用的预共享密钥的标识。
+
+
+这个扩展中的 "extension\_data" 字段包含一个 PreSharedKeyExtension 值:
 
 ```c
-    struct {
-        opaque identity<1..2^16-1>;
-        uint32 obfuscated_ticket_age;
-    } PskIdentity;
+      struct {
+          opaque identity<1..2^16-1>;
+          uint32 obfuscated_ticket_age;
+      } PskIdentity;
 
-    opaque PskBinderEntry<32..255>;
+      opaque PskBinderEntry<32..255>;
 
-    struct {
-        PskIdentity identities<7..2^16-1>;
-        PskBinderEntry binders<33..2^16-1>;
-    } OfferedPsks;
+      struct {
+          PskIdentity identities<7..2^16-1>;
+          PskBinderEntry binders<33..2^16-1>;
+      } OfferedPsks;
 
-    struct {
-        select (Handshake.msg_type) {
-            case client_hello: OfferedPsks;
-            case server_hello: uint16 selected_identity;
-        };
-    } PreSharedKeyExtension;
+      struct {
+          select (Handshake.msg_type) {
+              case client_hello: OfferedPsks;
+              case server_hello: uint16 selected_identity;
+          };
+      } PreSharedKeyExtension;
 ```
+
+- identity:  
+	key 的标签。例如，一个 ticket 或者是一个外部建立的预共享密钥的标签。
+	
+- obfuscated\_ticket\_age:  
+	age of the key 的混淆版本。[这一章节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TLS_1.3_Handshake_Protocol.md#1-ticket-age)描述了通过 NewSessionTicket 消息建立，如何为标识(identities)生成这个值。对于外部建立的标识(identities)，应该使用 0 的 obfuscated\_ticket\_age，并且 Server 也必须忽略这个值。
+
+
+- identities:  
+	Client 愿意和 Server 协商的 identities 列表。如果和 "early\_data" 一起发送，第一个标识被用来标识 0-RTT 的。
+	
+
+- binders:  
+	一系列的 HMAC 值。和 identities 列表中的每一个值都一一对应，并且顺序一致。
+
+- selected\_identity:  
+	Server 选择的标识，这个标识是以 Client 列表中标识表示为基于 0 的索引。
+
+每一个 PSK 都和单个哈希算法相关联。对于通过 ticket 建立的 PSK，当 ticket 在连接中被建立，这时候用的哈希算法是 KDF 哈希算法。对于外部建立的 PSK，当 PSK 建立的时候，哈希算法必须设置，如果没有设置，默认算法是 SHA-256。Server 必须确保它选择的是兼容的 PSK (如果有的话) 和密钥套件。
+
+实现者请注意：会话恢复是 PSK 最主要的用途，实现 PSK/密钥套件 匹配要求的最直接的方法是先协商密码套件，然后再排除任何不兼容的 PSK。任何未知的 PSK (例如：不在 PSK 数据库中，或者用未知的 key 进行编码的)都必须忽略。如果找不到可接受的 PSK，如果可能，Server 应该执行 non-PSK 握手。如果向后兼容性很重要，Client 提供的，外部建立的 PSK 应该影响密码套件的选择。
+
+
+在接受PSK密钥建立之前，Server 必须先验证相应的 binder 值。如果这个值不存在或者未验证，则 Server 必须立即中止握手。Server 不应该尝试去验证多个 binder，而应该选择单个 PSK 并且仅验证对应于该 PSK 的 binder。为了接受 PSK 密钥建立连接，Server 发送 "pre\_shared\_key" 扩展，标明它所选择的 identity。
+
+
+Client 必须验证 Server 的 selected\_identity 是否在 Client 提供的范围之内。Server 选择的加密套件标明了与 PSK 关联的哈希算法，如果 ClientHello "psk\_key\_exchange\_modes" 有需要，Server 还应该发送 "key\_share" 扩展。如果这些值不一致，Client 必须立即用 "illegal\_parameter" alert 消息中止握手。
+
+
+如果 Server 提供了 "early\_data" 扩展，Client 必须验证 Server 的 selected\_identity 是否为 0。如果返回任何其他值，Client 必须使用 "illegal\_parameter" alert 消息中止握手。
+
+
+"pre\_shared\_key" 扩展必须是 ClientHello 中的最后一个扩展(这有利于下面的描述的实现)。Server 必须检查它是最后一个扩展，否则用 "illegal\_parameter" alert 消息中止握手。
+
 
 <p align='center'>
 <img src='https://img.halfrost.com/Blog/ArticleImage/122_38.png'>
 </p>
 
+上图是 ClientHello 中的 pre\_shared\_key 扩展。
 
 <p align='center'>
 <img src='https://img.halfrost.com/Blog/ArticleImage/122_41.png'>
 </p>
 
+上图是 Server 选择后，返回给 Client 的 pre\_shared\_key 扩展。它标识了 Server 选择的哪一组密钥参数。
+
 ### 7. signature\_algorithms\_cert
 
 "signature\_algorithms" 签名算法和 "signature\_algorithms\_cert" 签名证书算法的扩展配合使用。"signature\_algorithms" 这个扩展展示了 Client 可以支持了签名算法有哪些。"signature\_algorithms\_cert" 这个扩展展示了具体证书的签名算法。
+
+
+
+### 8. cookie
+
+```c
+      struct {
+          opaque cookie<1..2^16-1>;
+      } Cookie;
+```
+
+Cookies 有 2 大主要目的：
+
+- 允许 Server 强制 Client 展示网络地址的可达性(因此提供了一个保护 Dos 的度量方法)，这主要是面向无连接的传输(参考 [RFC 6347](https://tools.ietf.org/html/rfc6347) 中的例子)
+
+
+- 允许 Server 卸载状态。从而允许 Server 在向 Client 发送 HelloRetryRequest 消息的时候，不存储任何状态。为了实现这一点，可以通过 Server 把 ClientHello 的哈希存储在 HelloRetryRequest 的 cookie 中(用一些合适的完整性算法保护)。
+
+
+当发送 HelloRetryRequest 消息时，Server 可以向 Client 提供 “cookie” 扩展(这是常规中的一个例外，常规约定是：只能是可能被发送的扩展才可以出现在 ClientHello 中)。当发送新的 ClientHello 消息时，Client 必须将 HelloRetryRequest 中收到的扩展的内容复制到新 ClientHello 中的 “cookie” 扩展中。Client 不得在后续连接中使用首次 ClientHello 中的 Cookie。
+
+
+当 Server 在无状态运行的时候，在第一个和第二个 ClientHello 之间可能会收到不受保护的 change\_cipher\_spec 消息。由于 Server 没有存储任何状态，它会表现出像到达的第一条消息一样。无状态的 Server 必须忽略这些记录。
+
+### 9. certificate\_authorities
+	
+"certificate\_authorities" 扩展用于表示终端支持的 CA, 并且接收的端点应该使用它来指导证书的选择。
+	
+"certificate\_authorities" 扩展的主体包含了一个 CertificateAuthoritiesExtension 结构：
+
+```c
+      opaque DistinguishedName<1..2^16-1>;
+
+      struct {
+          DistinguishedName authorities<3..2^16-1>;
+      } CertificateAuthoritiesExtension;
+```
+	
+- authorities:  
+	可接受证书颁发机构的一个可分辨名字 [X501](https://tools.ietf.org/html/rfc8446#ref-X501) 的列表	，这个列表是以 DER [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 编码格式表示的。这些可分辨的名称为，信任锚或从属的 CA 指定所需的可分辨的名称。因此，可以使用此消息描述已知的信任锚以及所需的授权空间。
+	
+Client 可能会在 ClientHello 消息中发送 "certificate\_authorities" 扩展，Server 可能会在 CertificateRequest 消息中发送 "certificate\_authorities" 扩展。
+
+
+"trusted\_ca\_keys" 扩展和 "certificate\_authorities" 扩展有相同的目的，但是更加复杂。"trusted\_ca\_keys" 扩展不能在 TLS 1.3 中使用，但是它在 TLS 1.3 之前的版本中，可能出现在 Client 的 ClientHello 消息中。
+
+
+### 10. oid\_filters
+
+"oid\_filters" 扩展允许 Server 提供一组 OID/value 对，用来匹配 Client 的证书。如果 Server 想要发送这个扩展，有且仅有在 CertificateRequest 消息中才能发送。
+
+```c
+      struct {
+          opaque certificate_extension_oid<1..2^8-1>;
+          opaque certificate_extension_values<0..2^16-1>;
+      } OIDFilter;
+
+      struct {
+          OIDFilter filters<0..2^16-1>;
+      } OIDFilterExtension;
+```
+
+- filters:  
+	一个有允许值的证书扩展 OID [RFC 5280](https://tools.ietf.org/html/rfc5280) 列表，以 DER 编码 [X690](https://tools.ietf.org/html/rfc8446#ref-X690) 格式表示。一些证书扩展 OID 允许多个值(例如，Extended Key Usage)。如果 Server 包含非空的 filters 列表，则响应中包含的 Client 证书必须包含 Client 识别的所有指定的扩展 OID。对于 Client 识别的每个扩展 OID，所有指定的值必须存在于 Client 证书中（但是证书也可以具有其他值）。然而，Client 必须忽略并跳过任何无法识别的证书扩展 OID。如果 Client 忽略了一些所需的证书扩展 OID 并提供了不满足请求的证书。Server 可以自行决定是继续与没有身份认证的 Client 保持连接，还是用 "unsupported\_certificate" alert 消息中止握手。任何给定的 OID 都不能在 filters 列表中出现多次。
+
+
+PKIX RFC 定义了各种证书扩展 OID 及其对应的值类型。根据类型，匹配的证书扩展值不一定是按位相等的。期望 TLS 实现将依靠它们的 PKI 库，使用证书扩展 OID 来做证书的选择。
+
+TLS 1.3 规范中定义了 [RFC5280](https://tools.ietf.org/html/rfc5280) 中定义的两个标准证书扩展的匹配规则：
+
+
+- 当请求中声明的所有 Key Usage 位也同样在 Key Usage 证书扩展声明了，那么证书中的 Key Usage 扩展匹配了请求。
+
+- 当请求中所有的密钥 OIDs 在 Extended Key Usage 证书扩展中也存在，那么证书中的 Extended Key Usage 匹配了请求。特殊的 anyExtendedKeyUsage OID 一定不能在请求中使用。
+
+
+单独的规范可以为其他证书扩展的规则定义匹配规则。
+
+
+
+### 11. post\_handshake\_auth
+
+
+"post\_handshake\_auth" 扩展用于表明 Client 愿意握手后再认证。Server 不能向没有提供此扩展的 Client 发送握手后再认证的 CertificateRequest 消息。Server 不能发送此扩展。
+
+```c
+      struct {} PostHandshakeAuth;
+```
+
+"post\_handshake\_auth" 扩展名中的 "extension\_data" 字段为零长度。
+
+当 Client 发送了 "post\_handshake\_auth" 扩展时，Server 可以在握手完成后随时通过发送 CertificateRequest 消息来请求客户端身份验证。Client 必须使用适当的验证消息进行响应。如果 Client 选择进行身份验证，则必须发送 Certificate，CertificateVerify，Finished 消息。如果 Client 拒绝身份验证，它必须发送一个 Certificate 证书消息，其中不包含证书，然后是 Finished 消息。响应 Server 的所有 Client 消息必须连续出现在线路上，中间不能有其他类型的消息。
+
+
+在没有发送 "post\_handshake\_auth" 扩展的情况下接收 CertificateRequest 消息的 Client 必须发送 "unexpected\_message" alert 消息。
+
+
+注意：由于 Client 身份验证可能涉及提示用户，因此 Server 必须做好一些延迟的准备，包括在发送 CertificateRequest 和接收响应之间接收任意数量的其他消息。此外，Client 如果连续接收到了多个 CertificateRequests 消息，Client 可能会以不同于它们的顺序响应它们(certificate\_request\_context 值允许服务器消除响应的歧义)
+
+### 12. signature\_algorithms
+
+这个扩展在 TLS 1.2 中就存在，只不过在 TLS 1.3 中数据结构发生了变化，所以这个扩展还是需要提一下。
+
+```c
+      struct {
+          SignatureScheme supported_signature_algorithms<2..2^16-2>;
+      } SignatureSchemeList;
+```
+
+SignatureScheme 有以下一些枚举值：
+
+```c
+      enum {
+          /* RSASSA-PKCS1-v1_5 algorithms */
+          rsa_pkcs1_sha256(0x0401),
+          rsa_pkcs1_sha384(0x0501),
+          rsa_pkcs1_sha512(0x0601),
+
+          /* ECDSA algorithms */
+          ecdsa_secp256r1_sha256(0x0403),
+          ecdsa_secp384r1_sha384(0x0503),
+          ecdsa_secp521r1_sha512(0x0603),
+
+          /* RSASSA-PSS algorithms with public key OID rsaEncryption */
+          rsa_pss_rsae_sha256(0x0804),
+          rsa_pss_rsae_sha384(0x0805),
+          rsa_pss_rsae_sha512(0x0806),
+
+          /* EdDSA algorithms */
+          ed25519(0x0807),
+          ed448(0x0808),
+
+          /* RSASSA-PSS algorithms with public key OID RSASSA-PSS */
+          rsa_pss_pss_sha256(0x0809),
+          rsa_pss_pss_sha384(0x080a),
+          rsa_pss_pss_sha512(0x080b),
+
+          /* Legacy algorithms */
+          rsa_pkcs1_sha1(0x0201),
+          ecdsa_sha1(0x0203),
+
+          /* Reserved Code Points */
+          obsolete_RESERVED(0x0000..0x0200),
+          dsa_sha1_RESERVED(0x0202),
+          obsolete_RESERVED(0x0204..0x0400),
+          dsa_sha256_RESERVED(0x0402),
+          obsolete_RESERVED(0x0404..0x0500),
+          dsa_sha384_RESERVED(0x0502),
+          obsolete_RESERVED(0x0504..0x0600),
+          dsa_sha512_RESERVED(0x0602),
+          obsolete_RESERVED(0x0604..0x06FF),
+          private_use(0xFE00..0xFFFF),
+          (0xFFFF)
+      } SignatureScheme;
+```
 
 
 ------------------------------------------------------
@@ -724,4 +1065,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/HTTPS-extensions/](https://halfrost.com/https-extensions/)
