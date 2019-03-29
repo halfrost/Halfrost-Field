@@ -135,7 +135,7 @@ Keccak 采用了和 SHA-1、SHA-2 完全不同的**海绵结构(sponge construct
 <img src='https://img.halfrost.com/Blog/ArticleImage/102_8.png'>
 </p>
 
-上图就是海绵结构，整个计算过程分为 2 步。第一步是**吸收阶段(absorbing phase)**，第二步是**(squeezing phase)**。
+上图就是海绵结构，整个计算过程分为 2 步。第一步是**吸收阶段(absorbing phase)**，第二步是 **挤出阶段(squeezing phase)**。
 
 第一步，吸收阶段：
 
