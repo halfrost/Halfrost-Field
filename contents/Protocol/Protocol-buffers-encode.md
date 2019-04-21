@@ -614,7 +614,19 @@ message Test1 {
 
 从上面的表格里面可以看到 wire\_type = 0 中包含了无符号的 varints，但是如果是一个无符号数呢？
 
-一个负数一般会被表示为一个很大的整数，因为计算机定义负数的符号位为数字的最高位。如果采用 Varint 表示一个负数，那么一定需要 10 个 byte 长度。为此 Google Protocol Buffer 定义了 sint32 这种类型，采用 zigzag 编码。**将所有整数映射成无符号整数，然后再采用 varint 编码方式编码**，这样，绝对值小的整数，编码后也会有一个较小的 varint 编码值。
+一个负数一般会被表示为一个很大的整数，因为计算机定义负数的符号位为数字的最高位。如果采用 Varint 表示一个负数，那么一定需要 10 个 byte 长度。
+
+> 为何 32 位和 64 位的负数都需要 10 个 byte 长度呢？
+> 
+>```c
+>inline void CodedOutputStream::WriteVarint32SignExtended(int32 value) {
+>  WriteVarint64(static_cast<uint64>(value));
+>}
+>```
+>因为源码里面是这么规定的。32 位的有符号数都会转换成 64 位无符号来处理。至于源码为什么要这么规定呢，猜想可能是怕 32 位的负数转换会有溢出的可能。(只是猜想)
+>
+
+为此 Google Protocol Buffer 定义了 sint32 这种类型，采用 zigzag 编码。**将所有整数映射成无符号整数，然后再采用 varint 编码方式编码**，这样，绝对值小的整数，编码后也会有一个较小的 varint 编码值。
 
 Zigzag 映射函数为：
 
