@@ -20,7 +20,7 @@
 
 ## 一.PromiseKit简介
 
-PromiseKit是iOS/OS X 中一个用来出来异步编程框架。这个框架是由Max Howell(Mac下Homebrew的作者，传说中因为"不会"写反转二叉树而没有拿到Google offer)大神级人物开发出来的。
+PromiseKit是iOS/OS X 中一个用来处理异步编程框架。这个框架是由Max Howell(Mac下Homebrew的作者，传说中因为"不会"写反转二叉树而没有拿到Google offer)大神级人物开发出来的。
 
 在PromiseKit中，最重要的一个概念就是Promise的概念，Promise是异步操作后的future的一个值。
 
