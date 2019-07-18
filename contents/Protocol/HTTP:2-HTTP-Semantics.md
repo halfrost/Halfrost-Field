@@ -170,7 +170,7 @@ cookie：e = f
 
 使用除 101 之外的 1xx 状态代码的信息响应被作为 HEADERS 帧发送，接着是零个或多个 CONTINUATION 帧。
 
-在请求或响应头块以及所有 DATA 帧都已发送之后，尾随头字段作为头块发送。以 trailers 头块为开始的 HEADERS 帧设置了 END\_STREAM 标志。以下示例包括 100（继续）状态代码，该代码是为响应在 Expect 标头字段中包含 “100-continue” 标记的请求而发送的，以及尾随头字段。
+在请求或响应头块以及所有 DATA 帧都已发送之后，尾随头字段作为头块发送。以 trailers 头块为开始的 HEADERS 帧设置了 END\_STREAM 标志。以下示例包括 100（继续）状态代码，该代码是为响应在 Expect 头字段中包含 “100-continue” 标记的请求而发送的，以及尾随头字段。
 
 ```c
      HTTP/1.1 100 Continue            HEADERS
@@ -235,7 +235,44 @@ Promised 的请求必须是可缓存的（参见[[RFC7231]，第 4.2.3 节](http
 
 ### 1. Push Requests
 
-服务器推送在语义上等同于响应一个请求的服务器; 但是，在这种情况下，该请求也是由服务器发送，作为一个 PUSH\_PROMISE 帧。
+服务器推送在语义上等同于服务器响应一个请求; 但是，在这种情况下，该请求也是由服务器发送，作为一个 PUSH\_PROMISE 帧。
+
+PUSH\_PROMISE 帧包括一个 header 块，其中包含服务器为请求定义的一组完整的请求头字段。不能将 response 推送给包含 request body 的 request。
+
+推送的响应始终与来自客户端的显式请求相关联。服务器发送的 PUSH\_PROMISE 帧在该显式请求的 stream 流上发送。PUSH\_PROMISE 帧还包括一个 promised 流标识符，该标识符是从服务器可用的流标识符中选择的（参见[第 5.1.1 节](https://tools.ietf.org/html/rfc7540#section-5.1.1)）。
+
+PUSH\_PROMISE 中的 header 字段和任何后续的 CONTINUATION 帧必须是一组有效且完整的请求头字段（[第 8.1.2.3 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.3)）。服务器必须在 “:method” 伪头字段中包含一个安全且可缓存的方法。如果客户端收到的 PUSH\_PROMISE 不包含完整有效的头字段集，或者 “:method” 伪头字段标识了一个不安全的方法，它必须以 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2)）作为响应。
+
+服务器应该在发送任何引用 promised 响应的帧之前发送 PUSH\_PROMISE 帧（[第 6.6 节](https://tools.ietf.org/html/rfc7540#section-6.6)）。这样做可以避免客户端在接收任何 PUSH\_PROMISE 帧之前发出请求的竞争。
+
+例如，如果服务器收到一个包含多个图像文件的嵌入式链接的文档的请求，并且服务器选择将这些附加的图片推送到客户端，则在包含图像链接的 DATA 帧之前发送 PUSH\_PROMISE 帧可确保客户端能够在发现嵌入式链接之前看到被推送的资源。类似地，如果服务器推送响应被头块所引用（例如，在链接头字段中），则在发送 header 块之前发送 PUSH\_PROMISE 可确保客户端不请求这些资源。
+
+**PUSH\_PROMISE 帧不得由客户端发送**。
+
+PUSH\_PROMISE 帧可以由服务器发送，用来响应任何客户端发起的 stream 流，但是 stream 流必须处于相对于服务器来说的 "打开" 或 "半关闭(远程)" 状态。PUSH\_PROMISE 帧散布在包含 response 的帧中，尽管它们不能穿插在包含单个 header 块的 HEADERS 和 CONTINUATION 帧中。
+
+
+发送 PUSH\_PROMISE 帧会创建一个新的 stream 流，并将该流置于服务器的 "保留(本地)" 状态和客户端的 "保留(远程)" 状态。
+
+
+
+### 2. Push Responses
+
+
+发送 PUSH\_PROMISE 帧后，服务器可以开始将推送的响应作为 response（[第 8.1.2.4 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.4)）发送到使用 promised 的流标识符并且由服务器开启的 stream 流上。服务器使用这个 stream 流来传输 HTTP response，使用与[第 8.1 节](https://tools.ietf.org/html/rfc7540#section-8.1)中定义的相同的帧序列。在发送初始 HEADERS 帧之后，该 stream 流变为对客户端来说的 "半闭" 状态（[第 5.1 节](https://tools.ietf.org/html/rfc7540#section-5.1)）。一旦客户端收到 PUSH\_PROMISE 帧并选择接受该推送的响应的时候，客户端不应该在 promised 的流关闭之前发出对 promised 响应的任何请求。
+
+如果客户端由于特殊原因确定它不希望从服务器接收推送的响应，或者如果服务器花费太长时间开始发送promised 的响应，则客户端可以发送 RST\_STREAM 帧，使用 CANCEL 或 REFUSED\_STREAM 代码并引用推送流的标识符。
+
+
+客户端可以使用 SETTINGS\_MAX\_CONCURRENT\_STREAMS 设置来限制服务器同时推送的 response 数量。为了阻止服务器创建必要的 stream 流，可以将 SETTINGS\_MAX\_CONCURRENT\_STREAMS 值设为零来禁用服务器推送。这样做并不禁止服务器发送 PUSH\_PROMISE 帧；客户端需要重置任何不需要的 promised 流。
+
+接收推送响应的客户端必须验证服务器是否具有权威性（参见[第 10.1 节](https://tools.ietf.org/html/rfc7540#section-10.1)），或者为相应的请求提供能够为其推送响应的代理。例如，只有 "example.com" DNS-ID 或 Common Name 证书的服务器不允许推送 "https://www.example.org/doc" 的响应。
+
+PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流置于服务器的 "半闭（远程）" 状态和客户端的 "半闭（本地）" 状态，并携带 END\_STREAM 的帧为结束，这个帧会将流置于 "关闭" 状态。
+
+注意：客户端永远不会发送带有 END\_STREAM 标志的帧以进行服务器推送。
+
+
 
 ## 三. The CONNECT Method
 
