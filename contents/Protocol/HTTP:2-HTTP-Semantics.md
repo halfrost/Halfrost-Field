@@ -277,6 +277,17 @@ PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流�
 ## 三. The CONNECT Method
 
 
+在 HTTP/1.x 中，伪方法 CONNECT ([[RFC7231]，第 4.3.6 节](https://tools.ietf.org/html/rfc7231#section-4.3.6)) 用于将 HTTP 连接转换为与远程主机的隧道。CONNECT 主要与 HTTP 代理一起使用，以便与源服务器建立 TLS 会话，以便与 "https" 资源进行交互。
+
+在 HTTP/2 中，CONNECT 方法可以被用来在单个 HTTP/2 stream 流上建立与远程主机的隧道，以实现 HTTP/1.x 中类似目的。HTTP 头字段映射的工作方式定义在[第 8.1.2.3 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.3)(“请求伪头字段”)，但有一些区别。特别：
+
+
+- ":method" 伪头字段设置为 "CONNECT"。  
+- 必须省略 ":scheme" 和 ":path" 伪头字段。
+- ":authority" 伪头字段包含 host 主机和要连接的主机的端口(相当于 CONNECT 请求的请求目标的权限形式[参见[RFC7230]，第 5.3 节](https://tools.ietf.org/html/rfc7230#section-5.3)）。
+
+
+
 
 
 
