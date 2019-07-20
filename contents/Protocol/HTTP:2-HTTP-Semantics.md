@@ -287,8 +287,15 @@ PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流�
 - ":authority" 伪头字段包含 host 主机和要连接的主机的端口(相当于 CONNECT 请求的请求目标的权限形式[参见[RFC7230]，第 5.3 节](https://tools.ietf.org/html/rfc7230#section-5.3)）。
 
 
+不符合上面这些限制的 CONNECT 请求格式是不正确的（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。支持 CONNECT 的代理与 ":authority" 伪头字段中标识的服务器建立 TCP 连接[[TCP]](https://tools.ietf.org/html/rfc7540#ref-TCP)。一旦连接成功建立以后，代理会将会把包含有 2xx 系列状态代码的 HEADERS 帧发送到客户端，如 [[RFC7231] 第 4.3.6 节](https://tools.ietf.org/html/rfc7231#section-4.3.6)中所定义。
+
+在每个对等体发送完初始 HEADERS 帧之后，所有后续的 DATA 帧对应于在 TCP 连接上发送的数据。客户端发送的任何 DATA 帧的有效载荷由代理转发送给 TCP 服务器；从 TCP 服务器接收的数据由代理组装成 DATA 帧。除了 DATA 或流管理帧(RST\_STREAM，WINDOW\_UPDATE 和 PRIORITY) 之外的帧类型不能在连接的流上发送，并且如果收到则必须被视为流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))。
 
 
+任何一个对端都可以关闭 TCP 连接。DATA 帧上的 END\_STREAM 标志被视为等同于 TCP FIN 位。在接收到带有 END\_STREAM 标志的帧之后，客户端才能发送设置了 END\_STREAM 标志的 DATA 帧。接收到了带有 END\_STREAM 标志的 DATA 帧的代理，可以发送附加数据并在最后一个 TCP 段上设置 FIN 位。接收设置了 FIN 位的 TCP 段的代理发送一个设置了 END\_STREAM 标志的 DATA 帧。请注意，最终的 TCP 段或 DATA 帧可能为空。
+
+
+使用 RST\_STREAM 来标识一个 TCP 连接错误。代理 TCP 连接中的任何错误都视为 CONNECT\_ERROR 类型的流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))，包括接收到了设置了 RST 位的 TCP 段。相应地，如果代理检测到流或 HTTP/2 连接有错误，代理必须发送一个带有 RST 位的 TCP 段。
 
 
 
