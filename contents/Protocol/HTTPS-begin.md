@@ -100,7 +100,7 @@ Chrome 62 版本以后，如果网页有输入框，没有 HTTPS 的网页一律
 
 ### 7. iOS ATS 要求
 
-苹果为了推广HTTPS，在 WWDC 2017 上也宣布新的 App 必须要开启 APS (App Transport Security)安全特性。
+苹果为了推广HTTPS，在 WWDC 2017 上也宣布新的 App 必须要开启 ATS (App Transport Security)安全特性。
 
 ## 三、HTTPS 中的密码学
 
