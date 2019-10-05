@@ -122,7 +122,7 @@ HTTP/2 头字段编码允许在 HTTP/1.1 使用的 Internet 消息语法中表�
 
 与 HTTP/1.1 连接相比，HTTP/2 连接可能需要更多的资源来进行操作。头压缩和流控制的使用取决于用于存储大量状态的资源承诺大小。这些功能的设置可确保严格限制这些功能的内存承诺大小。
 
-PUSH\_PROMISE 帧的数量不受相同方式的限制。接受服务器推送的客户端应该限制允许处于“保留(远程)”状态的流的数量。过多的服务器推送流可被视为类型为 ENHANCE\_YOUR\_CALM 的流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))。处理容量不能像状态容量那样有效地受到保护。SETTINGS 帧可能被滥用，导致对等方花费额外的处理时间。例如，无意义地更改 SETTINGS 参数，设置多个未定义的参数或在同一帧中多次更改相同的设置。WINDOW\_UPDATE 或 PRIORITY 框架可能会被滥用，从而造成不必要的资源浪费。
+PUSH\_PROMISE 帧的数量不受相同方式的限制。接受服务器推送的客户端应该限制允许处于“保留(远程)”状态的流的数量。过多的服务器推送流可被视为类型为 ENHANCE\_YOUR\_CALM 的流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))。处理容量不能像状态容量那样有效地受到保护。SETTINGS 帧可能被滥用，导致对等方花费额外的处理时间。例如，无意义地更改 SETTINGS 参数，设置多个未定义的参数或在同一帧中多次更改相同的设置。WINDOW\_UPDATE 或 PRIORITY frame 帧可能会被滥用，从而造成不必要的资源浪费。
 
 大量的小帧或空帧可能会被滥用，从而导致对等方花费更多的时间处理帧头。但是请注意，某些使用是完全合法的，例如在流的末尾发送空的 DATA 或 CONTINUATION 帧。头压缩还提供了一些浪费处理资源的机会；有关潜在滥用的更多详细信息，请参见[[压缩]](https://tools.ietf.org/html/rfc7540#ref-COMPRESSION)的第 7 节。
 
@@ -175,38 +175,156 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 ## 三. IANA 注意事项
 
 
-在 [TLS-ALPN] 中建立的“应用程序层协议协商（ALPN）协议ID”注册表中输入用于识别HTTP / 2的字符串。
-
-本文档为框架类型，设置和错误代码建立了注册表。 这些新注册表出现在新的“超文本传输协议版本2（HTTP / 2）参数”部分中。
-
-本文档注册了HTTP2-Settings标头字段以用于HTTP； 它还注册421（错误请求）状态代码。
-
-本文档注册了用于HTTP的“ PRI”方法，以避免与连接序言冲突（第3.5节）。
+在建立 [TLS-ALPN] 中注册的用于标识 HTTP/2 的字符串 "应用程序层协议协商(ALPN)协议 ID"。本文档为 frame 类型，设置和错误代码建立了一个注册表。这些新注册表出现在新的"超文本传输协议版本 2(HTTP/2) 参数"部分中。本文档注册了 HTTP2-Settings 头字段以用于HTTP；它还注册 421(错误请求)状态码。本文档注册了用于 HTTP 的 "PRI" 方法，以避免与连接序言冲突([第 3.5 节](https://tools.ietf.org/html/rfc7540#section-3.5))。
 
 ### 1. HTTP/2 标识字符串注册
 
+本文档在 [[TLS-ALPN]](https://tools.ietf.org/html/rfc7540#ref-TLS-ALPN) 建立张中注册了 "Application-Layer Protocol Negotiation (ALPN) Protocol IDs"，并创建了 2 个注册字符串用来标识 HTTP/2 (详情见[第 3.3 节](https://tools.ietf.org/html/rfc7540#section-3.3))，
+
+"h2" 字符串用来标识使用 TLS 的 HTTP/2。标识序列：0x68 0x32 ("h2")。"h2c" 字符串用来标识使用明文 TCP 的 HTTP/2。标识序列：0x68 0x32 0x63 ("h2c")。
 
 
 ### 2. 帧类型注册
+
+本文档为 HTTP/2 帧类型代码建立了一个注册表。“HTTP/2 帧类型”注册表管理一个 8 位空间。“HTTP/2 帧类型”注册了 0x00 和 0xef 之间的值，并遵循 “IETF 审查” 或 “IESG 批准” 策略 [[RFC5226]](https://tools.ietf.org/html/rfc5226) 中的规范，其中 0xf0 和 0xff 之间的值保留供实验使用。
+
+想要在此注册表中的注册新条目需要提供以下信息：
+
+帧类型：帧类型的名字或者标签。
+码：一个 8 位的码标识帧类型。
+规范：对规范的引用，其中包括：对 frame 帧布局的描述，以及帧使用的语义和标志(帧类型用到的类型、包括帧用到的任何有条件的地方)
+
+被本文档注册过的值见下表：
+
+|Frame Type|Code|Section|
+|:--------:|:--------:|:----------:|
+| DATA |0x0|[Section 6.1](https://tools.ietf.org/html/rfc7540#section-6.1)|  
+| HEADERS       | 0x1  | [Section 6.2](https://tools.ietf.org/html/rfc7540#section-6.2)  |  
+| PRIORITY      | 0x2  | [Section 6.3](https://tools.ietf.org/html/rfc7540#section-6.3)  |  
+| RST\_STREAM    | 0x3  | [Section 6.4](https://tools.ietf.org/html/rfc7540#section-6.4)  |  
+| SETTINGS      | 0x4  | [Section 6.5](https://tools.ietf.org/html/rfc7540#section-6.5)  |  
+| PUSH\_PROMISE  | 0x5  | [Section 6.6](https://tools.ietf.org/html/rfc7540#section-6.6)  |  
+| PING          | 0x6  | [Section 6.7](https://tools.ietf.org/html/rfc7540#section-6.7)  |  
+| GOAWAY        | 0x7  | [Section 6.8](https://tools.ietf.org/html/rfc7540#section-6.8)  |  
+| WINDOW\_UPDATE | 0x8  | [Section 6.9](https://tools.ietf.org/html/rfc7540#section-6.9)  |  
+| CONTINUATION  | 0x9  | [Section 6.10](https://tools.ietf.org/html/rfc7540#section-6.10) |  
+ 
 
 
 ### 3. Settings 注册
 
 
+本文档为 HTTP/2 Settings 建立了一个注册表。“HTTP/2 Settings”注册表管理一个 16 位空间。“HTTP/2 Settings”注册了从 0x0000 到 0xefff 之间的值，并且遵循在 “Expert Review” 策略 [[RFC5226]](https://tools.ietf.org/html/rfc5226) 中的规范，其中 0xf000 和 0xffff 之间的值保留供实验使用。
+
+
+想要在此注册表中的注册新条目需要提供以下信息：
+
+名称：setting 的名字，指定 setting 名字是可选的。
+码：分配给 setting 用的 16 位的码。
+初始值：setting 的初始值。
+规范：对描述 setting 的使用规范的可选参考。
+
+被本文档注册过的值见下表：
+
+       
+| Name |Code|Initial Value| Specification |  
+|:--------:|:--------:|:----------:|:----------:|  
+| HEADER\_TABLE\_SIZE      | 0x1  | 4096          | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+| ENABLE\_PUSH            | 0x2  | 1             | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+| MAX\_CONCURRENT\_STREAMS | 0x3  | (infinite)    | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+| INITIAL\_WINDOW\_SIZE    | 0x4  | 65535         | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+| MAX\_FRAME\_SIZE         | 0x5  | 16384         | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+| MAX\_HEADER\_LIST\_SIZE   | 0x6  | (infinite)    | [Section 6.5.2](https://tools.ietf.org/html/rfc7540#section-6.5.2) |
+
+
+
 ### 4. 错误码注册
+
+本文档为 HTTP/2 错误码建立了一个注册表。“HTTP/2 Error Code”注册表管理一个 32 位空间。“HTTP/2 Error Code”遵循注册在 “Expert Review” 策略 [[RFC5226]](https://tools.ietf.org/html/rfc5226) 中的规范。
+
+
+注册错误码必须包含错误码的描述。专家会审阅新的错误码，防止新的错误码和老的错误码重复。鼓励尽量使用现有注册过的错误码，但不强制使用。
+
+
+想要在此注册表中的注册新条目需要提供以下信息：
+
+名称：错误码的名字，指定错误码的名字是可选的。
+码：32 位的错误码。
+描述：错误码语义的简短描述，没有没有更加详细的规范说明，描述可以更长一些。
+规范：对定义错误码使用规范的可选参考。
+
+被本文档注册过的值见下表：
+
+
+| Name |Code| Description | Specification |  
+|:--------:|:--------:|:----------:|:----------:|  
+| NO\_ERROR            | 0x0  | Graceful shutdown    | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+| PROTOCOL\_ERROR      | 0x1  | Protocol error       | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | detected             |               |
+| INTERNAL\_ERROR      | 0x2  | Implementation fault | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+| FLOW\_CONTROL\_ERROR  | 0x3  | Flow-control limits  | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | exceeded             |               |
+| SETTINGS\_TIMEOUT    | 0x4  | Settings not         | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | acknowledged         |               |
+| STREAM\_CLOSED       | 0x5  | Frame received for   | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | closed stream        |               |
+| FRAME\_SIZE\_ERROR    | 0x6  | Frame size incorrect | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+| REFUSED\_STREAM      | 0x7  | Stream not processed | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+| CANCEL              | 0x8  | Stream cancelled     | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+| COMPRESSION\_ERROR   | 0x9  | Compression state    | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | not updated          |               |
+| CONNECT\_ERROR       | 0xa  | TCP connection error | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | for CONNECT method   |               |
+| ENHANCE\_YOUR\_CALM   | 0xb  | Processing capacity  | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | exceeded             |               |
+| INADEQUATE\_SECURITY | 0xc  | Negotiated TLS       | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | parameters not       |               |
+|                     |      | acceptable           |               |
+| HTTP\_1\_1\_REQUIRED   | 0xd  | Use HTTP/1.1 for the | [Section 7](https://tools.ietf.org/html/rfc7540#section-7)     |
+|                     |      | request              |               |
 
 
 ### 5. HTTP2-Settings 头字段注册
 
+这一节在 "Permanent Message Header Field Names" [[BCP90]](https://tools.ietf.org/html/rfc7540#ref-BCP90) 中注册了 HTTP2-Settings 头字段。
+
+头字段名字：HTTP2-Settings
+应用协议：HTTP
+状态：标准
+作者/变更管理者：IETF
+规范文档：[Section 3.2.1](https://tools.ietf.org/html/rfc7540#section-3.2.1)
+有关信息：这个头字段只会被 HTTP/2 中的客户端使用，用来升级协商的时候使用。
+
+
 
 ### 6. PRI 方法注册
 
+这一节在 "HTTP Method Registry" [[RFC7231], Section 8.1](https://tools.ietf.org/html/rfc7231#section-8.1) 中注册了 "PRI" 方法。
 
+方法名：PRI
+安全性：是
+幂等性：是
+规范文档：[Section 3.5](https://tools.ietf.org/html/rfc7540#section-3.5)
+有关信息：这个方法实际上永远都不会被客户端使用。这个方法会出现在当一个 HTTP/1.1 服务器或者一个中间件尝试解析 HTTP/2 的连接序言。
 
 ### 7. 421 HTTP 状态码
 
+这一节在 "HTTP Status Codes" [[RFC7231], Section 8.2](https://tools.ietf.org/html/rfc7231#section-8.2)中注册了 421 (方向错误的请求) HTTP 状态码。
+
+状态码：421
+简短描述：方向错误的请求
+规范：[Section 9.1.2](https://tools.ietf.org/html/rfc7540#section-9.1.2)
+
 
 ### 8. 关于 h2c 升级 token
+
+这一节在 "HTTP Upgrade Tokens" [[RFC7230], Section 8.6](https://tools.ietf.org/html/rfc7230#section-8.6)中注册了 "h2c" 升级 token。
+
+
+值：h2c
+描述：Hypertext Transfer Protocol version 2 (HTTP/2) 
+预期版本 tokens：无
+引用：[Section 3.2](https://tools.ietf.org/html/rfc7540#section-3.2)
 
 
 
