@@ -10,7 +10,7 @@ HTTP/2 协议设计之初就为了与当前使用的 HTTP 尽可能兼容。这�
 
 ## 一. HTTP Request/Response Exchange
 
-客户端使用先前未使用的流标识符在新流上发送 HTTP 请求 ([第 5.1.1 节](https://tools.ietf.org/html/rfc7540#section-5.1.1))。服务器在与请求相同的流上发送 HTTP 响应。
+客户端使用先前未使用的流标识符在新流上发送 HTTP 请求 ([第 5.1.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-stream-%E6%A0%87%E8%AF%86%E7%AC%A6))。服务器在与请求相同的流上发送 HTTP 响应。
 
 HTTP消息（请求或响应）包括：
 
@@ -26,7 +26,7 @@ HTTP/2 使用 DATA 帧来携带消息有效载荷。[[RFC7230] 第 4.1 节](http
 尾随 header 字段在 header 块 header block 中携带，该 header 块也终止该流。这样的 header 块是以 HEADERS 帧开始的序列，后跟零个或多个 CONTINUATION 帧，其中 HEADERS 帧带有 END\_STREAM 标志。第一个不终止 stream 流的头块不是 HTTP 请求或响应的一部分。
 
 
-HEADERS 帧(和相关的 CONTINUATION 帧)只能出现在 stream 流的开头或结尾。在收到最终(非信息)状态代码后，接收到未设置 END\_STREAM 标志的 HEADERS 帧的端点必须将相应的请求或响应视为格式错误([第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6))。
+HEADERS 帧(和相关的 CONTINUATION 帧)只能出现在 stream 流的开头或结尾。在收到最终(非信息)状态代码后，接收到未设置 END\_STREAM 标志的 HEADERS 帧的端点必须将相应的请求或响应视为格式错误([第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields))。
 
 HTTP 请求/响应交换完全消耗单个 stream 流。请求以 HEADERS 帧开始，将 stream 流置于“打开”状态。请求以带有 END\_STREAM 的帧结束，这使得流成为客户端的“半关闭（本地）”和服务器的“半关闭（远程）”。响应以 HEADERS 帧开始，以带有 END\_STREAM 的帧结束，该帧将流转换为“关闭”状态。
 
@@ -35,29 +35,29 @@ HTTP 请求/响应交换完全消耗单个 stream 流。请求以 HEADERS 帧开
 
 ### 1. Upgrading from HTTP/2
 
-HTTP/2 删除了对 101（交换协议）信息状态代码的支持（[[RFC7231]，第 6.2.2 节](https://tools.ietf.org/html/rfc7231#section-6.2.2)）。101（交换协议）的语义不适用于多路复用协议。替代协议能够使用与 HTTP/2 相同机制去协商其使用（参见 [第 3 节](https://tools.ietf.org/html/rfc7540#section-3) ）。
+HTTP/2 删除了对 101（交换协议）信息状态代码的支持（[[RFC7231]，第 6.2.2 节](https://tools.ietf.org/html/rfc7231#section-6.2.2)）。101（交换协议）的语义不适用于多路复用协议。替代协议能够使用与 HTTP/2 相同机制去协商其使用（参见 [第 3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#1-http2-version-identification)）。
 
 
 ### 2. HTTP Header Fields
 
-HTTP 头字段通过一系列的键值对的方式来携带信息。有关已注册 HTTP headers 的列表，请参阅 <https://www.iana.org/assignments/message-headers> 上维护的“消息头字段”已注册列表。与 HTTP/1.x 中一样， header 字段名称是 ASCII 字符串，以不区分大小写的方式进行比较。但是，在 HTTP/2 编码之前，必须将 Header 头字段名称转换为小写。包含大写 header 字段名称的请求或响应必须被视为格式错误（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。
+HTTP 头字段通过一系列的键值对的方式来携带信息。有关已注册 HTTP headers 的列表，请参阅 <https://www.iana.org/assignments/message-headers> 上维护的“消息头字段”已注册列表。与 HTTP/1.x 中一样， header 字段名称是 ASCII 字符串，以不区分大小写的方式进行比较。但是，在 HTTP/2 编码之前，必须将 Header 头字段名称转换为小写。包含大写 header 字段名称的请求或响应必须被视为格式错误（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。
 
 #### (一) Pseudo-Header Fields
 
 虽然 HTTP/1.x 使用消息起始行（参见 [[RFC7230]，第 3.1 节](https://tools.ietf.org/html/rfc7230#section-3.1)）来传达目标 URI，请求方法和响应的状态代码，但 HTTP/2 使用特殊的伪头字段 ':' 字符（ASCII 0x3a）开头来达到相同的目的。伪头字段不是 HTTP 头字段。端点绝不能生成本文档中没有定义的伪头字段。
 
-伪头字段仅在定义它们的上下文中有效。为 requests 请求定义的伪头字段决不能出现在 responses 响应中；为 responses 响应定义的伪头字段绝不能出现在 requests 请求中。伪头字段不得出现在 trailers 中。端点必须将包含未定义或无效伪头字段的请求或响应视为格式错误（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。
+伪头字段仅在定义它们的上下文中有效。为 requests 请求定义的伪头字段决不能出现在 responses 响应中；为 responses 响应定义的伪头字段绝不能出现在 requests 请求中。伪头字段不得出现在 trailers 中。端点必须将包含未定义或无效伪头字段的请求或响应视为格式错误（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。
 
-所有伪头字段必须出现在头块中，并在常规头字段之前。任何请求或者响应中包含有出现在头块中的伪头字段，并且这些伪头字段在常规字段之后才出现的，这些都应该被视为格式错误（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。
+所有伪头字段必须出现在头块中，并在常规头字段之前。任何请求或者响应中包含有出现在头块中的伪头字段，并且这些伪头字段在常规字段之后才出现的，这些都应该被视为格式错误（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。
 
 
 #### (二) Connection-Specific Header Fields
 
-HTTP/2 不会使用连接头字段去标识特定的连接头字段。在这个协议中，特定的连接元数据是通过其他的方法进行传输的。端点禁止生成一条包含有特定连接头字段的消息。任何包含有特定连接头字段的消息就会被视为格式错误（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。
+HTTP/2 不会使用连接头字段去标识特定的连接头字段。在这个协议中，特定的连接元数据是通过其他的方法进行传输的。端点禁止生成一条包含有特定连接头字段的消息。任何包含有特定连接头字段的消息就会被视为格式错误（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。
 
 唯一例外的字段是 TE 头字段，该字段会出现在 HTTP/2 的请求中。它不能包含 trailers 以外的任何值。这意味着将 HTTP/1.x 消息转换为 HTTP/2 的网络中间件将需要删除 Connection 头字段提及到的任何头字段以及 Connection 头字段本身。这些网络中间件还应该删除其他特定于连接的头字段，例如 Keep-Alive，Proxy-Connection，Transfer-Encoding 和 Upgrade，即使它们不是由 Connection 头字段指定的。
 
-**注意：HTTP/2 故意不支持升级到其他协议。[第 3 节](https://tools.ietf.org/html/rfc7540#section-3)中描述的握手方法被认为足以被用来协商替代协议**。
+**注意：HTTP/2 故意不支持升级到其他协议。[第 3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#1-http2-version-identification)中描述的握手方法被认为足以被用来协商替代协议**。
 
 #### (三) Request Pseudo-Header Fields
 
@@ -69,11 +69,11 @@ HTTP/2 不会使用连接头字段去标识特定的连接头字段。在这个�
 - ":path" 伪头字段包含目标 URI 的路径和查询部分。绝对路径和可选的 "?" 字符后的查询部分。（见 [[RFC3986]的第 3.3 和 3.4 节](https://tools.ietf.org/html/rfc3986)），星号形式的请求包括 ":path" 伪头字段的值 '\*'。对于 "http" 或 "https" 的 URI，此伪头字段不能为空；不包含路径组件的 "http" 或 "https" 的 URI 必须包含值 "/"。此规则的例外是对不包含路径组件的 "http" 或 "https" 的 URI 的 OPTIONS 请求；这些必须包含一个 ":path" 伪头字段，其值为 '\*'（参见 [[RFC7230]，第 5.3.4 节](https://tools.ietf.org/html/rfc7230#section-5.3.4)）。
 
 
-除非是 CONNECT 请求，否则所有 HTTP/2 请求必须包含 ":method"，":scheme" 和 ":path" 伪头字段的一个有效值（[第 8.3 节](https://tools.ietf.org/html/rfc7540#section-8.3)）。省略强制伪头字段的 HTTP 请求格式不正确（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。HTTP/2 没有定义携带 HTTP/1.1 请求行中包含的版本标识符的方法。
+除非是 CONNECT 请求，否则所有 HTTP/2 请求必须包含 ":method"，":scheme" 和 ":path" 伪头字段的一个有效值（[第 8.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%B8%89-the-connect-method)）。省略强制伪头字段的 HTTP 请求格式不正确（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。HTTP/2 没有定义携带 HTTP/1.1 请求行中包含的版本标识符的方法。
 
 #### (四) Response Pseudo-Header Fields
 
-对于 HTTP/2 响应，定义了一个带有 HTTP 状态代码字段的 ":status" 伪头字段（参见[[RFC7231]，第 6 节](https://tools.ietf.org/html/rfc7231#section-6)）。这个伪头字段必须包含在所有响应中; 否则，响应的格式不正确（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。HTTP/2 没有定义携带 HTTP/1.1 状态行中包含的版本或原因短语的方法。
+对于 HTTP/2 响应，定义了一个带有 HTTP 状态代码字段的 ":status" 伪头字段（参见[[RFC7231]，第 6 节](https://tools.ietf.org/html/rfc7231#section-6)）。这个伪头字段必须包含在所有响应中; 否则，响应的格式不正确（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。HTTP/2 没有定义携带 HTTP/1.1 状态行中包含的版本或原因短语的方法。
 
 
 
@@ -99,7 +99,7 @@ cookie：e = f
 
 包括有效 payload 负载主体的请求或响应可以包括内容长度报头字段。如果内容长度 header 字段的值不等于形成 body 的 DATA 帧有效负载长度的总和，则请求或响应也会视为格式错误。如 [[RFC7230]第 3.3.2 节](https://tools.ietf.org/html/rfc7230#section-3.3.2) 中所述，被定义为没有有效负载的 response 响应，可以具有非零的内容长度报头字段，即使 DATA 帧中不包含任何内容。
 
-处理 HTTP 请求或响应的网络中间件（即，任何不充当隧道的网络中间件）都不得转发格式错误的请求或响应。检测到的格式错误的请求或响应必须被视为 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2)）。对于格式错误的请求，服务器可以在关闭或重置流之前发送 HTTP 响应。客户不得接受格式错误的 response 响应。请注意，这些要求旨在防止针对 HTTP 的多种类型的常见攻击；它们是故意严格的，因为宽松会引起一些漏洞。
+处理 HTTP 请求或响应的网络中间件（即，任何不充当隧道的网络中间件）都不得转发格式错误的请求或响应。检测到的格式错误的请求或响应必须被视为 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）。对于格式错误的请求，服务器可以在关闭或重置流之前发送 HTTP 响应。客户不得接受格式错误的 response 响应。请注意，这些要求旨在防止针对 HTTP 的多种类型的常见攻击；它们是故意严格的，因为宽松会引起一些漏洞。
 
 
 ### 3. Examples
@@ -222,15 +222,15 @@ HTTP/2 允许服务器对先前客户端发起的相关联的请求，预先发�
 
 客户端请求的时候可以指明禁用服务器推送这一功能，尽管这是针对每一跳单独协商的。SETTINGS\_ENABLE\_PUSH 设置可以设置为 0 ，表示禁用服务器推送。
 
-Promised 的请求必须是可缓存的（参见[[RFC7231]，第 4.2.3 节](https://tools.ietf.org/html/rfc7231#section-4.2.3)），必须是安全的（参见 [[RFC7231]，第 4.2.1 节](https://tools.ietf.org/html/rfc7231#section-4.2.1)），并且不得包含请求体。接收到不可缓存的 promised 请求，这种情况是不安全的，或者指明了存在请求体的客户端必须使用 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2)）重置 promised 的流。请注意，如果客户端无法判断新定义的方法是否是安全，则可能导致重置 promised 的流。
+Promised 的请求必须是可缓存的（参见[[RFC7231]，第 4.2.3 节](https://tools.ietf.org/html/rfc7231#section-4.2.3)），必须是安全的（参见 [[RFC7231]，第 4.2.1 节](https://tools.ietf.org/html/rfc7231#section-4.2.1)），并且不得包含请求体。接收到不可缓存的 promised 请求，这种情况是不安全的，或者指明了存在请求体的客户端必须使用 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）重置 promised 的流。请注意，如果客户端无法判断新定义的方法是否是安全，则可能导致重置 promised 的流。
 
 如果客户端实现了 HTTP 缓存，则可以缓存可缓存的推送响应（参见[[RFC7234]，第 3 节](https://tools.ietf.org/html/rfc7234#section-3)）。当 promised 流 ID 标识的 stream 流仍然处于打开状态的时候，推送响应可以在源服务器上被成功的验证（例如，如果存在“无缓存”缓存响应指令（[[RFC7234]，第 5.2.2 节](https://tools.ietf.org/html/rfc7234#section-5.2.2)））。不可缓存的推送响应禁止被任何 HTTP 缓存存储。它们可以单独提供给应用程序。
 
-如果服务器是有权限的，那么就需要在 ":authority" 伪头字段中包含一个值（参见[第 10.1 节](https://tools.ietf.org/html/rfc7540#section-10.1)）。客户端必须将没有权限的服务器的 PUSH\_PROMISE 视为 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2)）。
+如果服务器是有权限的，那么就需要在 ":authority" 伪头字段中包含一个值（参见[第 10.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%9D%83%E9%99%90)）。客户端必须将没有权限的服务器的 PUSH\_PROMISE 视为 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）。
 
 中间件可以从服务器接收推送，并选择不将它们转发到客户端。换句话说，如何利用推送的信息取决于该中间件。同样，中间件可能会选择向客户端进行额外的推送，而不会对服务器采取任何操作。
 
-客户端无法推送。因此，服务器必须将 PUSH\_PROMISE 帧的接收视为 PROTOCOL\_ERROR 类型的连接错误（[第 5.4.1 节](https://tools.ietf.org/html/rfc7540#section-5.4.1)）。客户端必须拒绝任何将 SETTINGS\_ENABLE\_PUSH 设置更改为 0 以外的值的尝试，如果遇到这种情况，可以将更改设置的这条消息视为 PROTOCOL\_ERROR 类型的连接错误（[第 5.4.1 节](https://tools.ietf.org/html/rfc7540#section-5.4.1)）。
+客户端无法推送。因此，服务器必须将 PUSH\_PROMISE 帧的接收视为 PROTOCOL\_ERROR 类型的连接错误（[第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）。客户端必须拒绝任何将 SETTINGS\_ENABLE\_PUSH 设置更改为 0 以外的值的尝试，如果遇到这种情况，可以将更改设置的这条消息视为 PROTOCOL\_ERROR 类型的连接错误（[第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）。
 
 
 ### 1. Push Requests
@@ -239,11 +239,11 @@ Promised 的请求必须是可缓存的（参见[[RFC7231]，第 4.2.3 节](http
 
 PUSH\_PROMISE 帧包括一个 header 块，其中包含服务器为请求定义的一组完整的请求头字段。不能将 response 推送给包含 request body 的 request。
 
-推送的响应始终与来自客户端的显式请求相关联。服务器发送的 PUSH\_PROMISE 帧在该显式请求的 stream 流上发送。PUSH\_PROMISE 帧还包括一个 promised 流标识符，该标识符是从服务器可用的流标识符中选择的（参见[第 5.1.1 节](https://tools.ietf.org/html/rfc7540#section-5.1.1)）。
+推送的响应始终与来自客户端的显式请求相关联。服务器发送的 PUSH\_PROMISE 帧在该显式请求的 stream 流上发送。PUSH\_PROMISE 帧还包括一个 promised 流标识符，该标识符是从服务器可用的流标识符中选择的（参见[第 5.1.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-stream-%E6%A0%87%E8%AF%86%E7%AC%A6)）。
 
-PUSH\_PROMISE 中的 header 字段和任何后续的 CONTINUATION 帧必须是一组有效且完整的请求头字段（[第 8.1.2.3 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.3)）。服务器必须在 “:method” 伪头字段中包含一个安全且可缓存的方法。如果客户端收到的 PUSH\_PROMISE 不包含完整有效的头字段集，或者 “:method” 伪头字段标识了一个不安全的方法，它必须以 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2)）作为响应。
+PUSH\_PROMISE 中的 header 字段和任何后续的 CONTINUATION 帧必须是一组有效且完整的请求头字段（[第 8.1.2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。服务器必须在 “:method” 伪头字段中包含一个安全且可缓存的方法。如果客户端收到的 PUSH\_PROMISE 不包含完整有效的头字段集，或者 “:method” 伪头字段标识了一个不安全的方法，它必须以 PROTOCOL\_ERROR 类型的流错误（[第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）作为响应。
 
-服务器应该在发送任何引用 promised 响应的帧之前发送 PUSH\_PROMISE 帧（[第 6.6 节](https://tools.ietf.org/html/rfc7540#section-6.6)）。这样做可以避免客户端在接收任何 PUSH\_PROMISE 帧之前发出请求的竞争。
+服务器应该在发送任何引用 promised 响应的帧之前发送 PUSH\_PROMISE 帧（[第 6.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E5%85%AD-push_promise-%E5%B8%A7)）。这样做可以避免客户端在接收任何 PUSH\_PROMISE 帧之前发出请求的竞争。
 
 例如，如果服务器收到一个包含多个图像文件的嵌入式链接的文档的请求，并且服务器选择将这些附加的图片推送到客户端，则在包含图像链接的 DATA 帧之前发送 PUSH\_PROMISE 帧可确保客户端能够在发现嵌入式链接之前看到被推送的资源。类似地，如果服务器推送响应被头块所引用（例如，在链接头字段中），则在发送 header 块之前发送 PUSH\_PROMISE 可确保客户端不请求这些资源。
 
@@ -259,14 +259,14 @@ PUSH\_PROMISE 帧可以由服务器发送，用来响应任何客户端发起的
 ### 2. Push Responses
 
 
-发送 PUSH\_PROMISE 帧后，服务器可以开始将推送的响应作为 response（[第 8.1.2.4 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.4)）发送到使用 promised 的流标识符并且由服务器开启的 stream 流上。服务器使用这个 stream 流来传输 HTTP response，使用与[第 8.1 节](https://tools.ietf.org/html/rfc7540#section-8.1)中定义的相同的帧序列。在发送初始 HEADERS 帧之后，该 stream 流变为对客户端来说的 "半闭" 状态（[第 5.1 节](https://tools.ietf.org/html/rfc7540#section-5.1)）。一旦客户端收到 PUSH\_PROMISE 帧并选择接受该推送的响应的时候，客户端不应该在 promised 的流关闭之前发出对 promised 响应的任何请求。
+发送 PUSH\_PROMISE 帧后，服务器可以开始将推送的响应作为 response（[第 8.1.2.4 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）发送到使用 promised 的流标识符并且由服务器开启的 stream 流上。服务器使用这个 stream 流来传输 HTTP response，使用与[第 8.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%B8%80-http-requestresponse-exchange)中定义的相同的帧序列。在发送初始 HEADERS 帧之后，该 stream 流变为对客户端来说的 "半闭" 状态（[第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%9B%9B-stream-%E6%B5%81%E7%8A%B6%E6%80%81%E6%9C%BA)）。一旦客户端收到 PUSH\_PROMISE 帧并选择接受该推送的响应的时候，客户端不应该在 promised 的流关闭之前发出对 promised 响应的任何请求。
 
 如果客户端由于特殊原因确定它不希望从服务器接收推送的响应，或者如果服务器花费太长时间开始发送promised 的响应，则客户端可以发送 RST\_STREAM 帧，使用 CANCEL 或 REFUSED\_STREAM 代码并引用推送流的标识符。
 
 
 客户端可以使用 SETTINGS\_MAX\_CONCURRENT\_STREAMS 设置来限制服务器同时推送的 response 数量。为了阻止服务器创建必要的 stream 流，可以将 SETTINGS\_MAX\_CONCURRENT\_STREAMS 值设为零来禁用服务器推送。这样做并不禁止服务器发送 PUSH\_PROMISE 帧；客户端需要重置任何不需要的 promised 流。
 
-接收推送响应的客户端必须验证服务器是否具有权威性（参见[第 10.1 节](https://tools.ietf.org/html/rfc7540#section-10.1)），或者为相应的请求提供能够为其推送响应的代理。例如，只有 "example.com" DNS-ID 或 Common Name 证书的服务器不允许推送 "https://www.example.org/doc" 的响应。
+接收推送响应的客户端必须验证服务器是否具有权威性（参见[第 10.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%9D%83%E9%99%90)），或者为相应的请求提供能够为其推送响应的代理。例如，只有 "example.com" DNS-ID 或 Common Name 证书的服务器不允许推送 "https://www.example.org/doc" 的响应。
 
 PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流置于服务器的 "半闭（远程）" 状态和客户端的 "半闭（本地）" 状态，并携带 END\_STREAM 的帧为结束，这个帧会将流置于 "关闭" 状态。
 
@@ -279,7 +279,7 @@ PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流�
 
 在 HTTP/1.x 中，伪方法 CONNECT ([[RFC7231]，第 4.3.6 节](https://tools.ietf.org/html/rfc7231#section-4.3.6)) 用于将 HTTP 连接转换为与远程主机的隧道。CONNECT 主要与 HTTP 代理一起使用，以便与源服务器建立 TLS 会话，以便与 "https" 资源进行交互。
 
-在 HTTP/2 中，CONNECT 方法可以被用来在单个 HTTP/2 stream 流上建立与远程主机的隧道，以实现 HTTP/1.x 中类似目的。HTTP 头字段映射的工作方式定义在[第 8.1.2.3 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.3)(“请求伪头字段”)，但有一些区别。特别：
+在 HTTP/2 中，CONNECT 方法可以被用来在单个 HTTP/2 stream 流上建立与远程主机的隧道，以实现 HTTP/1.x 中类似目的。HTTP 头字段映射的工作方式定义在[第 8.1.2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)(“请求伪头字段”)，但有一些区别。特别：
 
 
 - ":method" 伪头字段设置为 "CONNECT"。  
@@ -287,15 +287,15 @@ PUSH\_PROMISE 流的响应从 HEADERS 帧开始，该帧会立即将 stream 流�
 - ":authority" 伪头字段包含 host 主机和要连接的主机的端口(相当于 CONNECT 请求的请求目标的权限形式[参见[RFC7230]，第 5.3 节](https://tools.ietf.org/html/rfc7230#section-5.3)）。
 
 
-不符合上面这些限制的 CONNECT 请求格式是不正确的（[第 8.1.2.6 节](https://tools.ietf.org/html/rfc7540#section-8.1.2.6)）。支持 CONNECT 的代理与 ":authority" 伪头字段中标识的服务器建立 TCP 连接[[TCP]](https://tools.ietf.org/html/rfc7540#ref-TCP)。一旦连接成功建立以后，代理会将会把包含有 2xx 系列状态代码的 HEADERS 帧发送到客户端，如 [[RFC7231] 第 4.3.6 节](https://tools.ietf.org/html/rfc7231#section-4.3.6)中所定义。
+不符合上面这些限制的 CONNECT 请求格式是不正确的（[第 8.1.2.6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。支持 CONNECT 的代理与 ":authority" 伪头字段中标识的服务器建立 TCP 连接[[TCP]](https://tools.ietf.org/html/rfc7540#ref-TCP)。一旦连接成功建立以后，代理会将会把包含有 2xx 系列状态代码的 HEADERS 帧发送到客户端，如 [[RFC7231] 第 4.3.6 节](https://tools.ietf.org/html/rfc7231#section-4.3.6)中所定义。
 
-在每个对等体发送完初始 HEADERS 帧之后，所有后续的 DATA 帧对应于在 TCP 连接上发送的数据。客户端发送的任何 DATA 帧的有效载荷由代理转发送给 TCP 服务器；从 TCP 服务器接收的数据由代理组装成 DATA 帧。除了 DATA 或流管理帧(RST\_STREAM，WINDOW\_UPDATE 和 PRIORITY) 之外的帧类型不能在连接的流上发送，并且如果收到则必须被视为流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))。
+在每个对等体发送完初始 HEADERS 帧之后，所有后续的 DATA 帧对应于在 TCP 连接上发送的数据。客户端发送的任何 DATA 帧的有效载荷由代理转发送给 TCP 服务器；从 TCP 服务器接收的数据由代理组装成 DATA 帧。除了 DATA 或流管理帧(RST\_STREAM，WINDOW\_UPDATE 和 PRIORITY) 之外的帧类型不能在连接的流上发送，并且如果收到则必须被视为流错误([第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
 
 任何一个对端都可以关闭 TCP 连接。DATA 帧上的 END\_STREAM 标志被视为等同于 TCP FIN 位。在接收到带有 END\_STREAM 标志的帧之后，客户端才能发送设置了 END\_STREAM 标志的 DATA 帧。接收到了带有 END\_STREAM 标志的 DATA 帧的代理，可以发送附加数据并在最后一个 TCP 段上设置 FIN 位。接收设置了 FIN 位的 TCP 段的代理发送一个设置了 END\_STREAM 标志的 DATA 帧。请注意，最终的 TCP 段或 DATA 帧可能为空。
 
 
-使用 RST\_STREAM 来标识一个 TCP 连接错误。代理 TCP 连接中的任何错误都视为 CONNECT\_ERROR 类型的流错误([第 5.4.2 节](https://tools.ietf.org/html/rfc7540#section-5.4.2))，包括接收到了设置了 RST 位的 TCP 段。相应地，如果代理检测到流或 HTTP/2 连接有错误，代理必须发送一个带有 RST 位的 TCP 段。
+使用 RST\_STREAM 来标识一个 TCP 连接错误。代理 TCP 连接中的任何错误都视为 CONNECT\_ERROR 类型的流错误([第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))，包括接收到了设置了 RST 位的 TCP 段。相应地，如果代理检测到流或 HTTP/2 连接有错误，代理必须发送一个带有 RST 位的 TCP 段。
 
 
 
@@ -309,4 +309,5 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: []()
+> Source: [https://halfrost.com/http2-http-semantics/](https://halfrost.com/http2-http-semantics/)
+> 
