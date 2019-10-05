@@ -54,7 +54,7 @@ HTTP/2 使用 HTTP/1.1 使用的相同 "http" 和 "https" URI scheme。HTTP/2 �
 
 - 字符串 "h2" 标识 HTTP/2 使用传输层安全性(TLS)[TLS12](https://tools.ietf.org/html/rfc7540#ref-TLS12)的协议。该标识符用于 TLS 应用层协议协商(ALPN)扩展[TLS-ALPN](https://tools.ietf.org/html/rfc7540#ref-TLS-ALPN)字段以及识别 HTTP/2 over TLS 的任何地方。
 
-"h2\" 字符串被序列化为 ALPN 协议标识符，作为两个八位字节序列：0x68,0x32。
+"h2"字符串被序列化为 ALPN 协议标识符，作为两个八位字节序列：0x68,0x32。
 
 - 字符串 "h2c" 标识通过明文 TCP 运行 HTTP/2 的协议。此标识符用于 HTTP/1.1 升级标头字段以及标识 HTTP/2 over TCP 的任何位置。
 
