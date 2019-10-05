@@ -1,5 +1,5 @@
 <p align='center'>
-<img src='https://img.halfrost.com/Blog/ArticleImage/128_0.png'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/128_0.jpg'>
 </p>
 
 # HTTP/2 中的值得关注的问题
