@@ -178,4 +178,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/how\_http2\_connect/](https://halfrost.com/how_http2_connect/)
+> Source: [https://halfrost.com/http2\_begin/](https://halfrost.com/http2_begin/)
