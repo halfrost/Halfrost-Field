@@ -7,7 +7,7 @@
 
 超文本传输协议(HTTP)是一种非常成功的协议。 但是，HTTP/1.1 使用底层传输的方式([[RFC7230]，第 6 节](https://tools.ietf.org/html/rfc7230#section-6))，其中有几个特性对今天的应用程序性能有负面影响。
 
-特别是，HTTP/1.0 在给定的 TCP 连接上一次只允许一个请求未完成。HTTP/1.1 添加了请求流水线操作(request pipelining)，但这只是部分地解决了请求并发性，并且仍然受到队首阻塞的影响。因此，需要发出许多请求的 HTTP/1.0 和 HTTP/1.1 客户端使用多个连接到服务器以实现并发，从而减少延迟。
+特别是，HTTP/1.0 在给定的 TCP 连接上一次只允许一个请求未完成。HTTP/1.1 添加了请求流水线操作(request pipelining)，但这只是部分地解决了请求并发性，并且仍然受到**队首阻塞**的影响。因此，需要发出许多请求的 HTTP/1.0 和 HTTP/1.1 客户端使用多个连接到服务器以实现并发，从而减少延迟。
 
 此外，HTTP 头字段通常是重复且冗长的，导致不必要的网络流量以及导致初始 TCP [TCP](https://tools.ietf.org/html/rfc7540#ref-TCP) 拥塞窗口被快速的填满。当在新的 TCP 连接上发出多个请求时，这可能导致过多的延迟。
 
@@ -21,13 +21,32 @@ HTTP/2 为 HTTP 语义提供了优化的传输。 HTTP/2 支持 HTTP/1.1 的所�
 
 HTTP/2 中的基本协议单元是一个帧([第 4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%80-frame-format-%E5%B8%A7%E6%A0%BC%E5%BC%8F))。每种帧类型都有不同的用途。例如，HEADERS 和 DATA 帧构成了 HTTP 请求和响应的基础([第 8.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%B8%80-http-requestresponse-exchange))；其他帧类型(如 SETTINGS，WINDOW\_UPDATE 和 PUSH\_PROMISE)用于支持其他 HTTP/2 功能。
 
+> HTTP/2 是一个彻彻底底的二进制协议，头信息和数据包体都是二进制的，统称为“帧”。对比 HTTP/1.1 ，在 HTTP/1.1 中，头信息是文本编码(ASCII编码)，数据包体可以是二进制也可以是文本。使用二进制作为协议实现方式的好处，更加灵活。在 HTTP/2 中定义了 10 种不同类型的帧。
+>
+
+
+
 通过使每个 HTTP 请求/响应交换与其自己的 stream 流相关联来实现请求的多路复用([第 5 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%9B%9B-stream-%E6%B5%81%E7%8A%B6%E6%80%81%E6%9C%BA))。stream 流在很大程度上是彼此独立的，因此阻塞或停止的请求或响应不会阻止其他 stream 流的通信。
+
+>由于 HTTP/2 的数据包是乱序发送的，因此在同一个连接里会收到不同请求的 response。不同的数据包携带了不同的标记，用来标识它属于哪个 response。
+>
+>HTTP/2 把每个 request 和 response 的数据包称为一个数据流(stream)。每个数据流都有自己全局唯一的编号。每个数据包在传输过程中都需要标记它属于哪个数据流 ID。规定，客户端发出的数据流，ID 一律为奇数，服务器发出的，ID 为偶数。
+>
+>数据流在发送中的任意时刻，客户端和服务器都可以发送信号(RST\_STREAM 帧)，取消这个数据流。HTTP/1.1 中想要取消数据流的唯一方法，就是关闭 TCP 连接。而 HTTP/2 可以取消某一次请求，同时保证 TCP 连接还打开着，可以被其他请求使用。
+>
 
 流量控制和优先级确保可以有效地使用多路复用流。流量控制([第 5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%BA%94-%E6%B5%81%E9%87%8F%E6%8E%A7%E5%88%B6))有助于确保只传输接收者可以使用的数据。确定优先级([第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))可确保首先将有限的资源定向到最重要的流。
 
 HTTP/2 添加了一种新的交互模式，服务器可以将响应推送到客户端([第 8.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%BA%8C-server-push))。服务器推送允许服务器推测性地将数据发送到服务器预测客户端将需要这些数据的客户端，通过牺牲一些网络流量来抵消潜在的延迟。服务器通过合成请求来完成此操作，并将其作为 PUSH\_PROMISE 帧发送。然后，服务器能够在单独的流上发送对合成请求的响应。
 
 由于连接中使用的 HTTP 头字段可能包含大量冗余数据，因此压缩包含它们的帧([第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%89-header-compression-and-decompression))。允许将许多请求压缩成一个分组的做法对于通常情况下的请求大小具有特别有利的影响。
+
+
+>HTTP 协议不带有状态，每次请求都必须附上所有信息。所以，请求的很多字段都是重复的，比如 Cookie 和 User Agent，每次请求即使是完全一样的内容，依旧必须每次都携带，这会浪费很多带宽，也影响速度。
+>
+>HTTP/2 对这一点做了优化，引入了头信息压缩机制(header compression)。一方面，头信息使用 gzip 或 compress 压缩后再发送；另一方面，客户端和服务器同时维护一张头信息表，所有字段都会存入这个表，生成一个索引号，以后就不发送同样字段了，只发送索引号，这样就提高速度了。 
+> 
+>头部压缩大概可能有 95% 左右的提升，HTTP/1.1 统计的平均响应头大小有 500 个字节左右，而 HTTP/2 的平均响应头大小只有 20 多个字节，提升比较大。
 
 
 接下来分 4 部分详细讨论 HTTP/2。
