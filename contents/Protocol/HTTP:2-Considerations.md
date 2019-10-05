@@ -190,9 +190,9 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 
 想要在此注册表中的注册新条目需要提供以下信息：
 
-帧类型：帧类型的名字或者标签。
-码：一个 8 位的码标识帧类型。
-规范：对规范的引用，其中包括：对 frame 帧布局的描述，以及帧使用的语义和标志(帧类型用到的类型、包括帧用到的任何有条件的地方)
+帧类型：帧类型的名字或者标签。  
+码：一个 8 位的码标识帧类型。  
+规范：对规范的引用，其中包括：对 frame 帧布局的描述，以及帧使用的语义和标志(帧类型用到的类型、包括帧用到的任何有条件的地方)  
 
 被本文档注册过的值见下表：
 
@@ -219,10 +219,10 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 
 想要在此注册表中的注册新条目需要提供以下信息：
 
-名称：setting 的名字，指定 setting 名字是可选的。
-码：分配给 setting 用的 16 位的码。
-初始值：setting 的初始值。
-规范：对描述 setting 的使用规范的可选参考。
+名称：setting 的名字，指定 setting 名字是可选的。  
+码：分配给 setting 用的 16 位的码。  
+初始值：setting 的初始值。  
+规范：对描述 setting 的使用规范的可选参考。  
 
 被本文档注册过的值见下表：
 
@@ -248,10 +248,10 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 
 想要在此注册表中的注册新条目需要提供以下信息：
 
-名称：错误码的名字，指定错误码的名字是可选的。
-码：32 位的错误码。
-描述：错误码语义的简短描述，没有没有更加详细的规范说明，描述可以更长一些。
-规范：对定义错误码使用规范的可选参考。
+名称：错误码的名字，指定错误码的名字是可选的。  
+码：32 位的错误码。  
+描述：错误码语义的简短描述，没有没有更加详细的规范说明，描述可以更长一些。  
+规范：对定义错误码使用规范的可选参考。  
 
 被本文档注册过的值见下表：
 
@@ -288,12 +288,12 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 
 这一节在 "Permanent Message Header Field Names" [[BCP90]](https://tools.ietf.org/html/rfc7540#ref-BCP90) 中注册了 HTTP2-Settings 头字段。
 
-头字段名字：HTTP2-Settings
-应用协议：HTTP
-状态：标准
-作者/变更管理者：IETF
-规范文档：[Section 3.2.1](https://tools.ietf.org/html/rfc7540#section-3.2.1)
-有关信息：这个头字段只会被 HTTP/2 中的客户端使用，用来升级协商的时候使用。
+头字段名字：HTTP2-Settings  
+应用协议：HTTP  
+状态：标准  
+作者/变更管理者：IETF  
+规范文档：[Section 3.2.1](https://tools.ietf.org/html/rfc7540#section-3.2.1)  
+有关信息：这个头字段只会被 HTTP/2 中的客户端使用，用来升级协商的时候使用。  
 
 
 
@@ -301,30 +301,30 @@ HTTP/2 使用单个 TCP 连接的首选项允许将用户在站点上的活动�
 
 这一节在 "HTTP Method Registry" [[RFC7231], Section 8.1](https://tools.ietf.org/html/rfc7231#section-8.1) 中注册了 "PRI" 方法。
 
-方法名：PRI
-安全性：是
-幂等性：是
-规范文档：[Section 3.5](https://tools.ietf.org/html/rfc7540#section-3.5)
-有关信息：这个方法实际上永远都不会被客户端使用。这个方法会出现在当一个 HTTP/1.1 服务器或者一个中间件尝试解析 HTTP/2 的连接序言。
+方法名：PRI  
+安全性：是  
+幂等性：是  
+规范文档：[Section 3.5](https://tools.ietf.org/html/rfc7540#section-3.5)  
+有关信息：这个方法实际上永远都不会被客户端使用。这个方法会出现在当一个 HTTP/1.1 服务器或者一个中间件尝试解析 HTTP/2 的连接序言。  
 
 ### 7. 421 HTTP 状态码
 
 这一节在 "HTTP Status Codes" [[RFC7231], Section 8.2](https://tools.ietf.org/html/rfc7231#section-8.2)中注册了 421 (方向错误的请求) HTTP 状态码。
 
-状态码：421
-简短描述：方向错误的请求
-规范：[Section 9.1.2](https://tools.ietf.org/html/rfc7540#section-9.1.2)
+状态码：421  
+简短描述：方向错误的请求  
+规范：[Section 9.1.2](https://tools.ietf.org/html/rfc7540#section-9.1.2)  
 
 
 ### 8. 关于 h2c 升级 token
 
-这一节在 "HTTP Upgrade Tokens" [[RFC7230], Section 8.6](https://tools.ietf.org/html/rfc7230#section-8.6)中注册了 "h2c" 升级 token。
+这一节在 "HTTP Upgrade Tokens" [[RFC7230], Section 8.6](https://tools.ietf.org/html/rfc7230#section-8.6)中注册了 "h2c" 升级 token。  
 
 
-值：h2c
-描述：Hypertext Transfer Protocol version 2 (HTTP/2) 
-预期版本 tokens：无
-引用：[Section 3.2](https://tools.ietf.org/html/rfc7540#section-3.2)
+值：h2c  
+描述：Hypertext Transfer Protocol version 2 (HTTP/2)   
+预期版本 tokens：无   
+引用：[Section 3.2](https://tools.ietf.org/html/rfc7540#section-3.2)  
 
 
 
