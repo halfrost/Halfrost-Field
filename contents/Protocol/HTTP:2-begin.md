@@ -22,7 +22,13 @@ HTTP/2 对网络更友好，因为与 HTTP/1.x 相比，可以使用更少的 TC
 >4. 使用 HTTP/1.X 的客户端和服务器可以无缝的通过代理方式转接到 HTTP/2 上。
 >5. 不识别 HTTP/2 的代理服务器可以将请求降级到 HTTP/1.X。
 
+
+
 ## 一. HTTP/2 Protocol Overview
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/129_5.png)
+
 
 HTTP/2 为 HTTP 语义提供了优化的传输。 HTTP/2 支持 HTTP/1.1 的所有核心功能，但旨在通过多种方式提高效率。
 
@@ -54,6 +60,11 @@ HTTP/2 添加了一种新的交互模式，服务器可以将响应推送到客�
 >HTTP/2 对这一点做了优化，引入了头信息压缩机制(header compression)。一方面，头信息使用 gzip 或 compress 压缩后再发送；另一方面，客户端和服务器同时维护一张头信息表，所有字段都会存入这个表，生成一个索引号，以后就不发送同样字段了，只发送索引号，这样就提高速度了。 
 > 
 >头部压缩大概可能有 95% 左右的提升，HTTP/1.1 统计的平均响应头大小有 500 个字节左右，而 HTTP/2 的平均响应头大小只有 20 多个字节，提升比较大。
+
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/129_1.png)
+
 
 
 接下来分 4 部分详细讨论 HTTP/2。
