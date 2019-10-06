@@ -218,6 +218,15 @@ HTTP/2 提供了两种机制，用于向客户端提供尚未处理请求的保�
 
 ## 二. Server Push
 
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/129_2.jpg)
+
+![](https://img.halfrost.com/Blog/ArticleImage/129_3.jpg)
+
+![](https://img.halfrost.com/Blog/ArticleImage/129_4.jpg)
+
+
 HTTP/2 允许服务器对先前客户端发起的相关联的请求，预先发送（或“推送”）响应（以及相应的“承诺”请求）到客户端。当服务器知道客户端需要这些响应以便完全处理对原始请求的响应时，Server Push 可能很有用。
 
 客户端请求的时候可以指明禁用服务器推送这一功能，尽管这是针对每一跳单独协商的。SETTINGS\_ENABLE\_PUSH 设置可以设置为 0 ，表示禁用服务器推送。
