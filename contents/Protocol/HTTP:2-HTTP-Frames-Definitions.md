@@ -327,6 +327,7 @@ PUSH\_PROMISE 帧以两种方式修改连接状态。首先，包含头块([第 
 
 PUSH\_PROMISE 帧可以包括填充。填充字段和 flag 标志与为 DATA 帧定义的字段和标志相同([第 6.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E4%B8%80-data-%E5%B8%A7))。
 
+>客户端会从 1 开始设置 stream ID，之后每开启一个流，都会增加 2，并且之后一直用奇数。服务器开启在 PUSH\_PROMISE 中标明的流时，设置的 stream ID 从 2 开始，并且之后一直用偶数。这样设计避免了客户端和服务器之间的 stream ID 冲突，也可以轻松的判断哪些对象是由服务端推送的。0 是保留数字，用于连接控制消息，不能用于创建新的 stream 流。
 
 ## 七. PING 帧
 
@@ -484,7 +485,12 @@ CONTINUATION 帧改变了([第 4.3 节](https://github.com/halfrost/Halfrost-Fie
 
 一个 CONTINUATION 帧必须在 HEADERS，PUSH\_PROMISE 或 CONTINUATION 帧之前，并且没有设置 END\_HEADERS 标志。观察到有违反此规则的接收方必须响应 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
   
-  
+>可以把 CONTINUATION 帧当做特殊的 HEADERAS 帧。那么为什么要设计这个新的类型的帧呢？而不是直接使用 HEADERAS 帧？如果重复使用 HEADERAS 帧，那么后续的 HEADERAS 帧的负载就需要经过特殊处理才能和之前的拼接起来，这些帧首部是否需要重复？如果帧之间存在分歧该怎么办？协议制定者觉得这些都是模棱两可的问题，在未来可能还会引起麻烦，所以工作组决定增加一个明确的帧类型，以避免实现混淆。
+>
+>由于 HEADERAS 帧和 CONTINUATION 帧必须是有序的，所以使用 CONTINUATION 帧会破坏或者减少多路复用的好处。CONTINUATION 帧是解决重要场景(大首部)的工具，但只能在必要时使用。
+>
+
+
 ## 十一. Error Codes
 
 错误代码是在 RST\_STREAM 和 GOAWAY 帧中使用的 32 位字段，用于表示流或连接错误的原因。错误代码共享公共代码空间。某些错误代码仅适用于流或整个连接，并且在其他上下文中没有定义的语义。

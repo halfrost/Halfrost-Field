@@ -183,6 +183,7 @@ HTTP/2 over TLS 使用 "h2" 协议标识符。"h2c" 协议标识符不得由客�
 
 >注意：选择客户端连接前奏，以便大部分 HTTP/1.1 或 HTTP/1.0 服务器和中间件不会尝试处理更多帧。请注意，这并未解决 [TALKING](https://tools.ietf.org/html/rfc7540#ref-TALKING) 中提出的问题。
 
+>连接前奏里面的字符串连起来是 PRISM ，这个单词的意思是“棱镜”，就是 2013 年斯诺登爆出的“棱镜计划”。
 
 服务器连接前奏包含一个可能为空的 SETTINGS 帧([第 6.5 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E4%BA%94-settings-%E5%B8%A7))，该帧必须是服务器在 HTTP/2 连接中发送的第一帧。
 
