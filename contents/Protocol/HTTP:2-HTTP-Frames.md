@@ -8,6 +8,13 @@
 
 ## 一. Frame Format 帧格式
 
+HTTP/2 会发送有着不同类型的二进制帧，但他们都有如下的公共字段：Type, Length, Flags, Stream Identifier 和 frame payload。本规范中一共定义了 10 种不同的帧，其中最基础的两种分别对应于 HTTP 1.1 的 DATA 和 HEADERS。
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/125_2.png'>
+</p>
+
+
 所有帧都以固定的 9 字节大小的头作为帧开始，后跟可变长度的有效载荷 payload。
 
 ```c
@@ -87,6 +94,8 @@ header 压缩是有状态的。一个压缩上下文和一个解压缩上下文�
 
 
 ## 四. stream 流状态机
+
+![](https://img.halfrost.com/Blog/ArticleImage/125_1.png)
 
 stream 流是在 HTTP/2 连接内在客户端和服务器之间交换的独立的双向帧序列。stream 流有几个重要的特征:     
 
@@ -261,6 +270,22 @@ websocket 原生协议由于没有这个 stream ID 类似的字段，所以它�
 
 
 ### 2. stream 并发
+
+流的多路复用意味着在同一连接中来自各个流的数据包会被混合在一起。就好像两个（或者更多）独立的“数据列车”被拼凑到了一辆列车上，但它们最终会在终点站被分开。下图就是两列“数据火车”的示例
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/125_3.jpg'>
+</p>
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/125_4.jpg'>
+</p>
+
+它们就是这样通过多路复用的方式被组装到了同一列火车上。
+
+<p align='center'>
+<img src='https://img.halfrost.com/Blog/ArticleImage/125_5.jpg'>
+</p>
 
 对端可以使用 SETTINGS 帧内的 SETTINGS\_MAX\_CONCURRENT\_STREAMS 参数(参见[第 6.5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-defined-settings-parameters))限制并发活动流的数量。每个端点有各自的最大并发流设置，并且这个设置仅适用于接收设置的对端。也就是说，客户端指定服务器可以启动的最大并发流数，服务器指定客户端可以启动的最大并发流数。
 
@@ -477,8 +502,9 @@ HTTP/2 规范中没有规定谈判扩展使用的具体方法，但是设置([�
 
 Reference：  
 
-[RFC 7540](https://tools.ietf.org/html/rfc7540)  
-[HTTP/2 简介](https://developers.google.com/web/fundamentals/performance/http2/?hl=zh-cn)
+[RFC 7540](https://tools.ietf.org/html/rfc7540)    
+[HTTP/2 简介](https://developers.google.com/web/fundamentals/performance/http2/?hl=zh-cn)    
+[http2 讲解](https://legacy.gitbook.com/book/ye11ow/http2-explained/details)  
 
 > GitHub Repo：[Halfrost-Field](https://github.com/halfrost/Halfrost-Field)
 > 
