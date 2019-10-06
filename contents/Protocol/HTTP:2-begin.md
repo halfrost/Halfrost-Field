@@ -15,6 +15,13 @@ HTTP/2 通过定义了一个优化过的 HTTP 语义，它与底层连接映射�
 
 HTTP/2 对网络更友好，因为与 HTTP/1.x 相比，可以使用更少的 TCP 连接。这意味着与其他流量和长连接的竞争减少，反过来可以更好地利用可用网络容量。最后，HTTP/2 还可以通过使用二进制消息帧来更有效地处理消息。
 
+>HTTP/2 最大限度的兼容 HTTP/1.1 原有行为：  
+>1. 在应用层上修改，基于并充分挖掘 TCP 协议性能。
+>2. 客户端向服务端发送 request 请求的模型没有变化。
+>3. scheme 没有发生变化，没有 http2://
+>4. 使用 HTTP/1.X 的客户端和服务器可以无缝的通过代理方式转接到 HTTP/2 上。
+>5. 不识别 HTTP/2 的代理服务器可以将请求降级到 HTTP/1.X。
+
 ## 一. HTTP/2 Protocol Overview
 
 HTTP/2 为 HTTP 语义提供了优化的传输。 HTTP/2 支持 HTTP/1.1 的所有核心功能，但旨在通过多种方式提高效率。
@@ -42,7 +49,7 @@ HTTP/2 添加了一种新的交互模式，服务器可以将响应推送到客�
 由于连接中使用的 HTTP 头字段可能包含大量冗余数据，因此压缩包含它们的帧([第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%89-header-compression-and-decompression))。允许将许多请求压缩成一个分组的做法对于通常情况下的请求大小具有特别有利的影响。
 
 
->HTTP 协议不带有状态，每次请求都必须附上所有信息。所以，请求的很多字段都是重复的，比如 Cookie 和 User Agent，每次请求即使是完全一样的内容，依旧必须每次都携带，这会浪费很多带宽，也影响速度。
+>HTTP 协议不带有状态，每次请求都必须附上所有信息。所以，请求的很多字段都是重复的，比如 Cookie 和 User Agent，每次请求即使是完全一样的内容，依旧必须每次都携带，这会浪费很多带宽，也影响速度。HTTP/1.1 虽然可以压缩请求体，但是不能压缩消息头。有时候消息头部很大。
 >
 >HTTP/2 对这一点做了优化，引入了头信息压缩机制(header compression)。一方面，头信息使用 gzip 或 compress 压缩后再发送；另一方面，客户端和服务器同时维护一张头信息表，所有字段都会存入这个表，生成一个索引号，以后就不发送同样字段了，只发送索引号，这样就提高速度了。 
 > 
@@ -185,7 +192,21 @@ HTTP/2 over TLS 使用 "h2" 协议标识符。"h2c" 协议标识符不得由客�
 
 客户端和服务器必须将无效的连接前奏视为 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。在这种情况下可以省略 GOAWAY 帧([第 6.8 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E5%85%AB-goaway-%E5%B8%A7))，因为无效的连接前奏表明对等方没有使用 HTTP/2。
 
+最后，我们抓包看一下 HTTP/2 over TLS 是如何建立连接的。当 TLS 握手结束以后(TLS 握手的流程这里暂时省略，想要了解的同学可以看这里的[系列文章](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTPS-TLS1.2_handshake.md))，客户端和服务端已经通过 ALPN 协商出了接下来应用层使用 HTTP/2 协议进行通信，于是会见到类似如下的抓包图：
 
+![](https://img.halfrost.com/Blog/ArticleImage/124_1.png)
+
+可以看到在 TLS 1.3 Finished 消息之后，紧接着就是 HTTP/2 的连接序言，Magic 帧。
+
+![](https://img.halfrost.com/Blog/ArticleImage/124_2_0.png)
+
+客户端连接前奏以 24 个八位字节的序列开始，以十六进制表示法为：
+
+```c
+     0x505249202a20485454502f322e300d0a0d0a534d0d0a0d0a
+```
+
+连接前奏就是字符串 "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" 开头。Magic 帧之后紧跟着 SETTINGS 帧。当服务端成功 ack 了这条消息，并且没有连接报错，那么 HTTP/2 协议就算连接建立完成了。
 
 ------------------------------------------------------
 

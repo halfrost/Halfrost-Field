@@ -8,9 +8,28 @@
 
 特定的帧类型的传输可以改变连接的状态。如果端点无法维持连接状态的同步视图，则无法在连接内继续成功通信。因此，重要的是端点必须共享的理解状态，在使用了任何给定帧的情况下，这些状态是如何受到它们影响的。
 
+
+>Connection 连接:1 个 TCP 连接，包含 1 个或者多个 stream。所有通信都在一个 TCP 连接上完成，此连接可以承载任意数量的双向数据流。  
+>  
+>Stream 数据流：一个双向通信的数据流，包含 1 条或者多条 Message。每个数据流都有一个唯一的标识符和可选的优先级信息，用于承载双向消息。  
+>
+>Message 消息：对应 HTTP/1.1 中的请求 request 或者响应 response，包含 1 条或者多条 Frame。  
+>
+>Frame 数据帧：最小通信单位，以二进制压缩格式存放内容。来自不同数据流的帧可以交错发送，然后再根据每个帧头的数据流标识符重新组装。  
+>  
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_1.svg)
+
+在  HTTP/1.1 中的一个消息是由 Start Line + header + body 组成的，而 HTTP/2 中一个消息是由 HEADER frame + 若干个 DATA frame 组成的，如下图：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_2.svg)
+
+
+
 ## 一. DATA 帧
 
-DATA 帧(类型 = 0x0)可以传输与流相关联的任意可变长度的八位字节序列。例如，使用一个或多个 DATA 帧来承载 HTTP 请求或响应有效载荷。DATA 帧也可以包含填充。可以将填充添加到 DATA 帧用来模糊消息的大小。填充是一种安全的功能；具体见[第 10.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#7-%E4%BD%BF%E7%94%A8%E5%A1%AB%E5%85%85)。
+DATA 帧(类型 = 0x0)可以传输与流相关联的任意可变长度的八位字节序列。例如，使用一个或多个 DATA 帧来承载 HTTP 请求或响应有效载荷。DATA 帧也可以包含填充。可以将填充添加到 DATA 帧用来模糊消息的大小。填充是一种安全的功能；具体见[第 10.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#7-%E4%BD%BF%E7%94%A8%E5%A1%AB%E5%85%85)。此帧专门用来传递 **HTTP header** 的。
 
 DATA 帧结构如下：
 
@@ -55,7 +74,7 @@ DATA 帧会受到流量控制，只能在流处于“打开”或“半关闭(�
 
 ## 二. HEADERS 帧
 
-HEADERS 帧 (类型 = 0x1) 用于打开一个流([第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%9B%9B-stream-%E6%B5%81%E7%8A%B6%E6%80%81%E6%9C%BA))，另外还带有 header block fragment 头块片段。HEADERS 帧可以在“空闲”，“保留(本地)”，“打开”或“半关闭(远程)”状态的流上发送。
+HEADERS 帧 (类型 = 0x1) 用于打开一个流([第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%9B%9B-stream-%E6%B5%81%E7%8A%B6%E6%80%81%E6%9C%BA))，另外还带有 header block fragment 头块片段。HEADERS 帧可以在“空闲”，“保留(本地)”，“打开”或“半关闭(远程)”状态的流上发送。此帧专门用来传递 **HTTP header(相当于 HTTP/1.1 中的 start line + header)** 的。
 
 ```c
     +---------------+
@@ -122,7 +141,7 @@ HEADERS 帧中的优先级信息在逻辑上等同于单独的 PRIORITY 帧，�
 
 ## 三. PRIORITY 帧
 
-PRIORITY 帧(类型 = 0x2)指定了流的发送方的建议优先级([第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。它可以在任何流的状态下发送，包括空闲或关闭的流。
+PRIORITY 帧(类型 = 0x2)指定了 stream 流的发送方的建议优先级([第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。它可以在任何流的状态下发送，包括空闲或关闭的流。
 
 
 ```c
@@ -142,9 +161,9 @@ PRIORITY 帧包含以下几个字段:
   此流所依赖的流的 31 位流标识符(参见[第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。
   
 - Weight:  
-  无符号的 8 位整数，表示流的优先级权重(参见[第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。这个值代表获得 1 到 256 之间的权重。
+  无符号的 8 位整数，表示流的优先级权重(参见[第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。这个值代表获得 1 到 256 之间的权重。默认权重 16。
   
-PRIORITY 不包含任何 flag 标识。
+**PRIORITY 不包含任何 flag 标识**。
 
 
 PRIORITY 帧始终标识一个流。如果接收到流标识符为 0x0 的 PRIORITY 帧，则接收方必须以 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))进行响应。
@@ -169,7 +188,7 @@ RST\_STREAM帧(类型 = 0x3)允许立即终止一个 stream 流。发送 RST\_ST
 
 RST\_STREAM 帧包含一个无符号的 32 位整数，用于标识错误代码([第 7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E5%8D%81%E4%B8%80-error-codes))。错误代码表明了流被终止的原因。
 
-RST\_STREAM 帧不定义任何 flag 标志。
+**RST\_STREAM 帧没有定义任何 flag 标志**。
 
 RST\_STREAM 帧完全终止引用的流并使其进入"关闭"状态。在流上接收到 RST\_STREAM 后，接收方不得为该流发送额外的帧，但 PRIORITY 帧除外。但是，在发送 RST\_STREAM 之后，发送端点必须准备好接收和处理在 RST\_STREAM 帧到达之前，可能已经由对端在发送的流上发送的附加帧。
 
@@ -224,9 +243,10 @@ SETTINGS 帧的有效负载由零个或多个参数组成，每个参数由无�
 - SETTINGS\_MAX\_CONCURRENT\_STREAMS(0x3):      
   表示发送方允许的最大并发流数。此限制是有方向性的：它适用于发送方允许接收方创建的流的数量。初始化的时候，此值没有限制。建议此值不小于 100，以免不必要地限制并行性。当 SETTINGS\_MAX\_CONCURRENT\_STREAMS 的值 0 不应被端点视为特殊值。零值确实会阻止创建新流；但是，另外它也适用于被激活的流用尽的任何限制。服务器应该只为短连接设置零值；如果服务器不希望接受请求，则关闭连接更合适。
 
+>SETTINGS\_MAX\_CONCURRENT\_STREAMS 仅统计 open 和 half-close 状态的流，不包含用于推送状态的 reserved 状态的流。
 
 - SETTINGS\_INITIAL\_WINDOW\_SIZE(0x4):    
-  表示发送方的初始窗口大小(以八位字节为单位)，用于流级别流量控制。初始值为 2^16-1（65,535）个八位字节。此设置会影响所有流的窗口大小(请参阅[第 6.9.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-initial-flow-control-window-size))。高于最大流量控制窗口大小 2^31-1 的值必须被视为 FLOW\_CONTROL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
+  表示发送方的初始窗口大小(以八位字节为单位)，用于 stream 流级别流量控制。初始值为 2^16-1（65,535）个八位字节。此设置会影响所有流的窗口大小(请参阅[第 6.9.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-initial-flow-control-window-size))。高于最大流量控制窗口大小 2^31-1 的值必须被视为 FLOW\_CONTROL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
 - SETTINGS\_MAX\_FRAME\_SIZE(0x5):    
   表示发送方愿意接收的最大帧有效负载的大小(以八位字节为单位)。初始值为 2^14（16,384）个八位字节。端点广播的值必须在此初始值与允许的最大帧大小（2^24-1 或 16,777,215个八位字节）之间(包括两者)。超出此范围的值必须视为 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
@@ -251,7 +271,7 @@ SETTINGS 帧中的值必须按照它们出现的顺序进行处理，而值之�
 
 ## 六. PUSH_PROMISE 帧
 
-PUSH\_PROMISE帧(类型 = 0x5) 用于在发送方打算发起的流之前提前通知对端。PUSH\_PROMISE 帧包括端点计划创建的流的无符号 31 位标识符以及为流提供附加上下文的一组头。[8.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%BA%8C-server-push)详细描述了 PUSH\_PROMISE 帧的使用。
+PUSH\_PROMISE帧(类型 = 0x5) 用于在发送方打算发起的流之前提前通知对端。PUSH\_PROMISE 帧包括端点计划创建的流的无符号 31 位标识符以及为流提供附加上下文的一组头。[8.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%BA%8C-server-push)详细描述了 PUSH\_PROMISE 帧的使用。此帧是服务端推送资源时描述请求的帧。
 
 ```c
     +---------------+
@@ -310,7 +330,7 @@ PUSH\_PROMISE 帧可以包括填充。填充字段和 flag 标志与为 DATA 帧
 
 ## 七. PING 帧
 
-PING 帧(类型 = 0x6)是用于测量来自发送方的最小往返时间以及确定空闲连接是否仍然起作用的机制。 PING 帧可以从任何端点发送。
+PING 帧(类型 = 0x6)是用于测量来自发送方的最小往返时间以及确定空闲连接是否仍然起作用的机制。 PING 帧可以从任何端点发送。可用作**心跳检测，兼具计算 RTT 往返时间的功能**。
 
 ```c
     +---------------------------------------------------------------+
@@ -334,7 +354,7 @@ PING 帧不与任何单个流相关联。如果接收到具有除 0x0 以外的�
 
 ## 八. GOAWAY 帧
 
-GOAWAY 帧(类型 = 0x7) 用于启动连接关闭或发出严重错误信号。GOAWAY 允许端点优雅地停止接受新流，同时仍然完成先前建立的流的处理。这可以实现管理员的操作，例如服务器维护。
+GOAWAY 帧(类型 = 0x7) 用于启动连接关闭或发出严重错误信号。GOAWAY 允许端点优雅地停止接受新流，同时仍然完成先前建立的流的处理。这可以实现管理员的操作，例如服务器维护。GOAWAY 帧用来**优雅的终止连接或者通知错误**。
 
 在开始新流的端点和远程发送 GOAWAY 帧之间存在固有的竞争条件。为了处理这种情况，GOAWAY 包含在此连接中已经或可能在发送端点上处理的最后一个流标识符。例如，如果服务器发送 GOAWAY 帧，则标识的流是客户端发起的流编号最高的流。GOAWAY 帧一旦发送，如果这个流具有高于所包括的最后流标识符的标识符，则发送方将忽略由接收方发起的流上发送的帧。尽管可以为新流建立新连接，但 GOAWAY 帧的接收者不得在这个连接上打开其他流。
 
@@ -354,7 +374,7 @@ GOAWAY 帧(类型 = 0x7) 用于启动连接关闭或发出严重错误信号。G
     +---------------------------------------------------------------+
 ```
 
-GOAWAY 帧没有定义任何 flag 标识：
+**GOAWAY 帧没有定义任何 flag 标识**：
 
 
 GOAWAY 帧适用于连接，而不是特定的流。端点必须将具有除 0x0 以外的流标识符的 GOAWAY 帧视为 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
@@ -384,6 +404,8 @@ WINDOW\_UPDATE帧(类型 = 0x8) 用于实现流量控制；有关概述，请参
 
 所有类型的流量控制都是逐跳的，即仅在两个端点之间。中间件不在依赖的连接之间转发 WINDOW\_UPDATE 帧。但是，任何接收方对数据传输的限制都可能间接导致流量控制信息向原始发送方传播。
 
+>流量控制仅针对直接建立 TCP 连接的两端。如果对端是代理服务器，代理服务器不需要向上游转发 WINDOW\_UPDATE 帧。不过接收端缩小流量控制的窗口会最终传递到源发送端。
+
 流量控制仅适用于被识别为受流量控制的帧。在 HTTP/2 中定义的帧类型中，这仅包括 DATA 帧。除非接收方无法为处理帧分配资源，否则必须接受和处理免于流量控制的帧。如果接收方无法接受帧，则可以使用 FLOW\_CONTROL\_ERROR 类型的流错误([第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))或连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))进行响应。
 
 
@@ -395,9 +417,7 @@ WINDOW\_UPDATE帧(类型 = 0x8) 用于实现流量控制；有关概述，请参
 
 WINDOW\_UPDATE 帧的有效负载是一个保留位加上无符号 31 位整数，表示除现有流量控制窗口外，发送方可以发送的八位字节数。流量控制窗口增量的合法范围是 1 到 2^31-1 (2,147,483,647) 个八位字节。
 
-WINDOW\_UPDATE 帧没有定义任何标志。
-
-WINDOW\_UPDATE 帧可以特定于流或整个连接。在前一种情况下，帧的流标识符指示受影响的流; 在后者中，值 "0" 表示整个连接都受这个帧的影响。
+**WINDOW\_UPDATE 帧没有定义任何 flag 标志**。WINDOW\_UPDATE 帧可以特定于流或整个连接。在前一种情况下，帧的流标识符指示受影响的流; 在后者中，值 "0" 表示整个连接都受这个帧的影响。
 
 接收方必须将流量控制窗口增量为 0 的 WINDOW\_UPDATE 帧的接收视为 PROTOCOL\_ERROR 类型的流错误([第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))；连接的流量控制窗口上的错误必须被视为连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
@@ -443,7 +463,7 @@ HTTP/2 中的流量控制是通过每个流上每个发送者保留一个窗口�
 
 ## 十. CONTINUATION 帧
 
-CONTINUATION 帧(类型 = 0x9) 用于继续一系列 header block fragments 头块片段([第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%89-header-compression-and-decompression))。只要前一帧在同一个流上并且是没有设置 END\_HEADERS 标志的 HEADERS，PUSH\_PROMISE 或 CONTINUATION 帧，就可以发送任意数量的 CONTINUATION 帧。
+CONTINUATION 帧(类型 = 0x9) 用于继续一系列 header block fragments 头块片段([第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%89-header-compression-and-decompression))。只要前一帧在同一个流上并且是没有设置 END\_HEADERS 标志的 HEADERS，PUSH\_PROMISE 或 CONTINUATION 帧，就可以发送任意数量的 CONTINUATION 帧。此帧专门用于**传递较大 HTTP 头部时的持续帧**。
  
  
 ```c
@@ -487,7 +507,7 @@ CONTINUATION 帧改变了([第 4.3 节](https://github.com/halfrost/Halfrost-Fie
   端点发送了 SETTINGS 帧，但没有及时收到响应。请参见[第 6.5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#3-settings-synchronization) ("设置同步")。
 
 - STREAM\_CLOSED (0x5):    
-  端点在流半关闭后收到一帧。
+  端点在流半关闭后收到一帧。stream 已经处于半关闭状态不再接收 frame 帧的时候，又接收到了 frame 帧。
 
 - FRAME\_SIZE\_ERROR (0x6):  
   端点收到的帧大小无效。
@@ -505,7 +525,7 @@ CONTINUATION 帧改变了([第 4.3 节](https://github.com/halfrost/Halfrost-Fie
   为响应 CONNECT 请求而建立的连接([第 8.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%B8%89-the-connect-method))被重置或异常关闭。
 
 - ENHANCE\_YOUR\_CALM (0xb):    
-  端点检测到其对端正在表现出可能产生过多负载的行为。
+  端点检测到其对端正在表现出可能产生过多负载的行为。提醒对方"冷静"点。
 
 - INADEQUATE\_SECURITY (0xc):  
   底层传输具有不满足最低安全要求的属性(参见[第 9.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#2-%E4%BD%BF%E7%94%A8-tls-%E7%89%B9%E6%80%A7))。

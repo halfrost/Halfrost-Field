@@ -25,7 +25,7 @@
 帧头的字段定义如下：
 
 - Length：  
-  帧有效负载的长度表示为无符号的 24 位整数。除非接收方为 SETTINGS\_MAX\_FRAME\_SIZE 设置了较大的值，否则不得发送大于2 ^ 14（16,384）的值。**帧头的 9 个八位字节不包含在此值中**。
+  帧有效负载的长度表示为无符号的 24 位整数。除非接收方为 SETTINGS\_MAX\_FRAME\_SIZE 设置了较大的值(详情见[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-defined-settings-parameters))，否则不得发送大于2 ^ 14（16,384）的值。**帧头的 9 个八位字节不包含在此值中**。
   
 - Type：  
   这 8 位用来表示帧类型的。帧类型确定帧的格式和语义。实现方必须忽略并丢弃任何类型未知的帧。
@@ -41,6 +41,12 @@
   
 帧有效载荷 payload 的结构和内容完全取决于帧类型。
 
+
+抓包看看实际帧头部的样子，这里任取一个帧类型，比如 SETTINGS 帧：
+
+![](https://img.halfrost.com/Blog/ArticleImage/124_3_0.png)
+
+抓包显示的帧结构的头部结构确实是开头 9 字节大小。
 
 ## 二. Frame Size 帧大小
 
@@ -224,9 +230,24 @@ stream 流有以下几种状态：
 
 ### 1. stream 标识符
 
-stream 流使用无符号的 31 位整数标识。由客户端发起的流必须使用奇数编号的流标识符；那些由服务器发起的必须使用偶数编号的流标识符。流标识符零(0x0)用于连接控制消息；零流标识符不能用于建立新的 stream 流。
 
-升级到 HTTP/2的 HTTP/1.1请求(参见[第 3.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#2-starting-http2-for-http-uris))用流标识符 1 (0x1) 进行响应。升级完成后，客户端的流 0x1 为 "half-closed (local)" 状态。因此，从 HTTP/1.1 升级的客户端不能选择流 0x1 作为新的流标识符。
+stream 流使用无符号的 31 位整数标识。**由客户端发起的流必须使用奇数编号的流标识符**；**那些由服务器发起的必须使用偶数编号的流标识符。****流标识符零(0x0)用于连接控制消息**；零流标识符不能用于建立新的 stream 流。
+
+总结一下，stream ID 的作用：
+
+- 实现多路复用的关键。接收端的实现可以根据这个 ID 并发组装消息。同一个 stream 内 frame 必须是有序的。SETTINGS\_MAX\_CONCURRENT\_STREAMS 控制着最大并发数。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_3.svg)
+
+websocket 原生协议由于没有这个 stream ID 类似的字段，所以它原生不支持多路复用。在同一个 stream 内部的 frame 由于没有其他的 ID 编号了，所以无法乱序，必须有序，无法并发(如果想要并发，可以再新启一个 stream)。
+
+- 推送依赖性请求的关键。客户端发起的流是奇数编号，服务端发起的流是偶数编号。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_4.svg)
+
+- 流状态管理的约束性规定。规定见下面几段：
+
+"h2c" 方式升级到 HTTP/2的 HTTP/1.1请求(参见[第 3.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#2-starting-http2-for-http-uris))用流标识符 1 (0x1) 进行响应。升级完成后，客户端的流 0x1 为 "half-closed (local)" 状态。因此，从 HTTP/1.1 升级的客户端不能选择流 0x1 作为新的流标识符。
 
 新建立的流的标识符必须在数字上大于发起端点已打开或保留的所有流。这样就管理了使用 HEADERS 帧打开的流和使用 PUSH\_PROMISE 保留的流。接收到意料之外的流标识符的端点必须视为 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))
 
@@ -263,6 +284,10 @@ HTTP/2 流的流量控制旨在允许使用各种流量控制算法而无需协�
 - 5. 帧类型确定流量控制是否适用于帧。在本文档中指定的帧中，只有 DATA 帧受流量控制；所有其他帧类型在广播其流量控制窗口的时候，不占用空间。这确保了重要的控制帧不会被流量控制阻挡。
 - 6. 无法禁用流量控制。
 - 7. HTTP/2 仅定义 WINDOW\_UPDATE 帧的格式和语义([第 6.9 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E4%B9%9D-window_update-%E5%B8%A7))。本文档未规定接收方如何决定何时发送此帧或其发送的值，也未规定发送方如何选择发送数据包。实现方能够选择任何适合其需求的算法。
+
+
+> 服务器和客户端都具备流量控制能力，发送和接收可以独立的设置流量控制。
+> 
 
 
 实现方还负责管理基于优先级发送请求和响应的方式，选择如何避免请求的队首阻塞以及管理新的流的创建。这些算法的选择可以与流量控制算法相互作用。
