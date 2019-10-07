@@ -2,7 +2,7 @@
 <img src='https://img.halfrost.com/Blog/ArticleImage/128_0.jpg'>
 </p>
 
-# HTTP/2 中的值得关注的问题
+# HTTP/2 中的注意事项
 
 
 ## 一. HTTP 值得关注的问题

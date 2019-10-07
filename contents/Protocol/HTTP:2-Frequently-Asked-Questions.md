@@ -2,7 +2,7 @@
 <img src='https://img.halfrost.com/Blog/ArticleImage/131_0.png'>
 </p>
 
-# HTTP/2 常见问题
+# HTTP/2 中的常见问题
 
 以下是有关 HTTP/2 的常见问题。
 
