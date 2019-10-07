@@ -7,7 +7,7 @@
 
 ## 一. 静态表定义
 
-静态表（请参阅[第 2.3.1 节](https://tools.ietf.org/html/rfc7541#section-2.3.1)）包含一个预定义且不可更改的 header 字段列表。
+静态表（请参阅[第 2.3.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-%E9%9D%99%E6%80%81%E8%A1%A8)）包含一个预定义且不可更改的 header 字段列表。
 
 静态表是根据流行网站使用的最频繁的 header 字段创建的，并添加了 HTTP/2 特定的伪 header 字段（请参见 [[HTTP2]的 8.1.2.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#2-http-header-fields)）。对于具有一些频繁值的 header 字段，为每个这些频繁值添加了一个条目。对于其他标题字段，添加了带有空值的条目。
 
@@ -80,7 +80,7 @@
 
 ## 二. 霍夫曼编码
 
-当使用霍夫曼编码对字符串字面进行编码时，使用以下霍夫曼代码（请参见[第 5.2 节](https://tools.ietf.org/html/rfc7541#section-5.2)）。
+当使用霍夫曼编码对字符串字面进行编码时，使用以下霍夫曼代码（请参见[第 5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#2-string-literal-representation)）。
 
 此霍夫曼代码是从大量 HTTP header 样本获得的统计信息中生成的。这是规范的霍夫曼代码（请参见 [[CANONICAL]](https://tools.ietf.org/html/rfc7541#ref-CANONICAL)），需要进行一些调整以确保没有符号具有唯一的代码长度。
 
@@ -368,7 +368,7 @@ len：代表符号的代码的位数。
 
 ### 1. 整数表示的示例
 
-本节详细显示了整数值的表示形式（请参见[第 5.1 节](https://tools.ietf.org/html/rfc7541#section-5.1)）。
+本节详细显示了整数值的表示形式（请参见[第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-integer-representation)）。
 
 ### (1). 使用 5 位前缀对 10 进行编码
 
