@@ -273,6 +273,8 @@ SETTINGS 帧中的值必须按照它们出现的顺序进行处理，而值之�
 
 ## 六. PUSH_PROMISE 帧
 
+![](https://img.halfrost.com/Blog/ArticleImage/130_4.svg)
+
 PUSH\_PROMISE帧(类型 = 0x5) 用于在发送方打算发起的流之前提前通知对端。PUSH\_PROMISE 帧包括端点计划创建的流的无符号 31 位标识符以及为流提供附加上下文的一组头。[8.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Semantics.md#%E4%BA%8C-server-push)详细描述了 PUSH\_PROMISE 帧的使用。此帧是服务端推送资源时描述请求的帧。
 
 ```c

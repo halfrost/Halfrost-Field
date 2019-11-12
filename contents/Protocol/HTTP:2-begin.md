@@ -15,7 +15,7 @@
 </p>
 
 
-此外，HTTP 头字段通常是重复且冗长的，导致不必要的网络流量以及导致初始 TCP [TCP](https://tools.ietf.org/html/rfc7540#ref-TCP) 拥塞窗口被快速的填满。当在新的 TCP 连接上发出多个请求时，这可能导致过多的延迟。
+此外，HTTP 头字段通常是重复且冗长的，导致不必要的网络流量以及导致初始 [TCP](https://tools.ietf.org/html/rfc7540#ref-TCP) 拥塞窗口被快速的填满。当在新的 TCP 连接上发出多个请求时，这可能导致过多的延迟。
 
 HTTP/2 通过定义了一个优化过的 HTTP 语义，它与底层连接映射，用这种方式来解决这些问题。具体而言，它允许在同一连接上交错请求和响应消息，并使用 HTTP 头字段的有效编码。它还允许对请求进行优先级排序，使更多重要请求更快地完成，从而进一步提高性能。
 
@@ -86,7 +86,7 @@ HTTP/2 添加了一种新的交互模式，服务器可以将响应推送到客�
 
 HTTP/2 连接是在 TCP 连接([TCP](https://tools.ietf.org/html/rfc7540#ref-TCP))之上运行的应用层协议。客户端是 TCP 连接发起者。
 
-HTTP/2 使用 HTTP/1.1 使用的相同 "http" 和 "https" URI scheme。HTTP/2 共享相同的默认端口号: "http" URI 为 80，"https" URI 为 443。因此，需要处理对目标资源 URI (例如 "http://example.org/foo" 或 "https://example.com/bar")的请求的实现，首先需要发现上游服务器(客户端希望建立连接的直接对等方)是否支持 HTTP/2。
+HTTP/2 使用 HTTP/1.1 使用的相同 "http" 和 "https" URI scheme。HTTP/2 共享相同的默认端口号: "http" URI 为 80，"https" URI 为 443。因此，需要处理对目标资源 URI (例如 "[http://example.org/foo](http://example.org/foo)" 或 "[https://example.com/bar](https://example.com/bar)")的请求的实现，首先需要发现上游服务器(客户端希望建立连接的直接对等方)是否支持 HTTP/2。
 
 对于 "http" 和 "https" URI，确定支持 HTTP/2 的方式是不同的。"http" URI 的发现在 [3.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#2-starting-http2-for-http-uris)中描述。[第 3.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-begin.md#4-starting-http2-for-https-uris)描述了 "https" URI 的发现。
 

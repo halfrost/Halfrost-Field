@@ -141,7 +141,7 @@ SPDY/2 建议每个方都使用单独的 GZIP 上下文进行消息头压缩，�
 ```c
 The resulting specification(s) are expected to meet these goals for common existing deployments of HTTP; in particular, Web browsing (desktop and mobile), non-browsers ("HTTP APIs"), Web serving (at a variety of scales), and intermediation (by proxies, corporate firewalls, "reverse" proxies and Content Delivery Networks). Likewise, current and future semantic extensions to HTTP/1.x (e.g., headers, methods, status codes, cache directives) should be supported in the new protocol.
 
-正在组织的规范需要满足现在已经普遍部署了的 HTTP 的功能要求；具体来说主要包括，Web 浏览（桌面端和移动端），非浏览器（“HTTP APIs” 形式的），Web 服务（大范围的），还有各种网络中介（借助代理，企业防火墙，反向代理以及内容分发网络实现的）。同样的，对 HTTP/1.x 当前和未来的语义扩展 (例如，消息头，方法，状态码，缓存指令) 都应该在新的协议中支持。
+正在制定的规范需要满足现在已经普遍部署了的 HTTP 的功能要求；具体来说主要包括，Web 浏览（桌面端和移动端），非浏览器（“HTTP APIs” 形式的），Web 服务（大范围的），还有各种网络中介（借助代理，企业防火墙，反向代理以及内容分发网络实现的）。同样的，对 HTTP/1.x 当前和未来的语义扩展 (例如，消息头，方法，状态码，缓存指令) 都应该在新的协议中支持。
 
 
 Note that this does not include uses of HTTP where non-specified behaviours are relied upon (e.g., connection state such as timeouts or client affinity,and "interception" proxies); these uses may or may not be enabled by the final product.
