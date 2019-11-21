@@ -230,7 +230,7 @@ RST\_STREAM 帧必须与流相关联。如果接收到具有流标识符 0x0 的
 
 ![](https://img.halfrost.com/Blog/ArticleImage/130_15.png)
 
-RST\_STREAM 帧由于没有 flag 标志，是十种帧类型里面比较简单的类型。
+RST\_STREAM 帧由于没有 flag 标志，是十种帧类型里面比较简单的类型。这里的 Error Code 是 CANCEL (0x8)。
 
 ## 五. SETTINGS 帧
 
@@ -438,7 +438,7 @@ GOAWAY 帧还包含一个 32 位错误代码([第 7 节](https://github.com/half
 
 ![](https://img.halfrost.com/Blog/ArticleImage/130_16.png)
 
-GOAWAY 帧也比较简单。R 是保留标志位。这个帧的 Stream ID 是 0，说明它即将要关闭连接，promised 流标识符必须是发送方发送的下一个流的有效选择，promised-stream-ID 是 3 。
+GOAWAY 帧也比较简单。R 是保留标志位。这个帧的 Stream ID 是 0，说明它即将要关闭连接，promised 流标识符必须是发送方发送的下一个流的有效选择，promised-stream-ID 是 3 。这里的 Error Code 是 NO_ERROR (0x0)。
 
 
 ## 九. WINDOW\_UPDATE 帧
