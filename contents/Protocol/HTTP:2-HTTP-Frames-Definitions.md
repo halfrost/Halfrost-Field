@@ -73,6 +73,11 @@ DATA 帧会受到流量控制，只能在流处于“打开”或“半关闭(�
 
 > 注意：通过包含值为零的 Pad Length 字段，可以将帧的大小增加一个八位字节。
 
+data 帧比较简单，抓包看看它的内容：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_14.png)
+
+上图中可以看到两个 flag 标记位，END\_STREAM 和 PADDED。END\_STREAM 是 false。由于 PADDED 是 false，无填充，所以 Pad Length 是 0。
 
 ## 二. HEADERS 帧
 
@@ -141,6 +146,30 @@ HEADERS 帧可以包含填充段。填充字段和标志与为 DATA 帧定义的
 HEADERS 帧中的优先级信息在逻辑上等同于单独的 PRIORITY 帧，但是优先级信息包含在 HEADERS 中可避免在创建新流时流优先级流失的可能性。HEADERS 帧中的优先级字段在 stream 流上的第一个 HEADERS 帧之后会重新确定流的优先级([第 5.3.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#3-%E4%BC%98%E5%85%88%E7%BA%A7%E8%B0%83%E6%95%B4))。
 
 
+抓取一个实际的包看看 HEADERS 帧中有哪些内容。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_7_0.png)
+
+Flag 里面包含了上面提到的 END\_STREAM、END\_HEADERS、PADDED、PRIORITY 标识。再看看其他字段，Pad Length 由于 PADDED 设置是 false，所以这里没有填充。PRIORITY 设置了值，所以 E 这个单位标志位存在。Stream Dependency 是 0，Stream Indentifer 是 1。Weight 是 255，没有 Padding。 剩下的部分全部都是 Header Block Fragment。如下图：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_8.png)
+
+在图中可以看到，HTTP/2 中对 HTTP 1.X 中的首部字段的名字做了一些变更。例如 HTTP 1.X 中的 HOST，对应 HTTP/2 中的 :authoriity。HTTP 1.X 中的请求行变成了 HTTP/2 中的 :method、:scheme、:path。其他的字段例如 user-agent 虽然名字没有变化，但是存储方式都发生了变化。具体变化在 HPACK 中细讲。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_9.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_10.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_11.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_12.png)
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_13.png)
+
+上面这连续的 5 张图展示了 HTTP/2 中的 Header Block Fragment 存储方式。从头部字段中可以看出 HTTP/2 全新的存储方式和更高的压缩率。更加详细的分析见 HPACK 详解。
+
+
 ## 三. PRIORITY 帧
 
 PRIORITY 帧(类型 = 0x2)指定了 stream 流的发送方的建议优先级([第 5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E5%85%AD-stream-%E4%BC%98%E5%85%88%E7%BA%A7))。它可以在任何流的状态下发送，包括空闲或关闭的流。
@@ -198,6 +227,10 @@ RST\_STREAM 帧必须与流相关联。如果接收到具有流标识符 0x0 的
 
 不得为“空闲”状态的流发送 RST\_STREAM 帧。如果接收到标识空闲流的 RST\_STREAM 帧，则接收方必须将其视为 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。长度不超过 4 个八位字节的 RST\_STREAM 帧必须被视为 FRAME\_SIZE\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_15.png)
+
+RST\_STREAM 帧由于没有 flag 标志，是十种帧类型里面比较简单的类型。
 
 ## 五. SETTINGS 帧
 
@@ -267,6 +300,8 @@ SETTINGS 帧中的值必须按照它们出现的顺序进行处理，而值之�
 
 如果 SETTINGS 帧的发送方在合理的时间内没有收到确认，则可能会发出 SETTINGS\_TIMEOUT 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
+
+### 4. For Example
 
 
 
@@ -399,6 +434,11 @@ GOAWAY 帧中的最后一个流标识符包含最高编号的流标识符，GOAW
 在发送 GOAWAY 帧之后，发送端能丢弃流标识符大于最终流标识的流的帧。但是，任何改变连接状态的帧都不能完全忽略。例如，必须对 HEADERS，PUSH\_PROMISE 和 CONTINUATION 帧进行最低限度的处理，以确保为头压缩保持的状态是一致的(参见[第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#%E4%B8%89-header-compression-and-decompression))；类似地，DATA 帧必须被计算入连接的流量控制窗口中。如果无法处理这些帧可能会导致流量控制或报头压缩状态变得不同步。
 
 GOAWAY 帧还包含一个 32 位错误代码([第 7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#%E5%8D%81%E4%B8%80-error-codes))，其中包含关闭连接的原因。端点可以将不透明数据附加到任何 GOAWAY 帧的有效载荷中。其他调试数据仅用于诊断目的，不带语义值。调试信息可能包含安全或隐私敏感数据。记录或以其他方式持久存储的调试数据必须有足够的安全措施来防止未经授权的访问。
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_16.png)
+
+GOAWAY 帧也比较简单。R 是保留标志位。这个帧的 Stream ID 是 0，说明它即将要关闭连接，promised 流标识符必须是发送方发送的下一个流的有效选择，promised-stream-ID 是 3 。
 
 
 ## 九. WINDOW\_UPDATE 帧
