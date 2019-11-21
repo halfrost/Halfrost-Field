@@ -57,7 +57,7 @@ HTTP/2 会发送有着不同类型的二进制帧，但他们都有如下的公�
 
 ![](https://img.halfrost.com/Blog/ArticleImage/124_3_0.png)
 
-抓包显示的帧结构的头部结构确实是开头 9 字节大小。
+抓包显示的帧结构的头部结构确实是开头 9 字节大小。Length 是 18，Type 是 4，Flags 标记位是 ACK，R 是保留位，对应上图抓包图中的 Reserved。Stream Identifier 是 0 。
 
 ## 二. Frame Size 帧大小
 
@@ -499,7 +499,7 @@ HTTP/2 允许扩展协议。在本章节描述的限制范围内，协议扩展�
 
 有些扩展会改变现有协议组件的语义，这些扩展在使用前必须先协商。例如，在对端发出可接受的正信号之前，不能使用更改 HEADERS 帧布局的扩展。在这种情况下，也可能需要在修改后的布局生效的时候进行适配。注意，把除了 DATA 帧之外的任何帧都可以视为流量控制，这是语义上的改变，这种改变只能通过协商来完成。
 
-HTTP/2 规范中没有规定谈判扩展使用的具体方法，但是设置([第 6.5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-defined-settings-parameters))可用于此目的。如果两个对端都设置了表示愿意使用扩展的值，则可以使用扩展。如果这个设置是用于扩展协商的，则必须以默认禁用扩展的方式来定义该初始值。
+HTTP/2 规范中没有规定谈判扩展使用的具体方法，但是设置帧([第 6.5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-defined-settings-parameters))可用于此目的。如果两个对端都设置了表示愿意使用扩展的值，则可以使用扩展。如果这个设置是用于扩展协商的，则必须以默认禁用扩展的方式来定义该初始值。
 
 
 
