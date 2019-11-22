@@ -154,7 +154,7 @@ Flag 里面包含了上面提到的 END\_STREAM、END\_HEADERS、PADDED、PRIORI
 
 ![](https://img.halfrost.com/Blog/ArticleImage/130_8.png)
 
-在图中可以看到，HTTP/2 中对 HTTP 1.X 中的首部字段的名字做了一些变更。例如 HTTP 1.X 中的 HOST，对应 HTTP/2 中的 :authoriity。HTTP 1.X 中的请求行变成了 HTTP/2 中的 :method、:scheme、:path。其他的字段例如 user-agent 虽然名字没有变化，但是存储方式都发生了变化。具体变化在 HPACK 中细讲。
+在图中可以看到，HTTP/2 中对 HTTP 1.X 中的首部字段的名字做了一些变更。例如 HTTP 1.X 中的 HOST，对应 HTTP/2 中的 :authority:。HTTP 1.X 中的请求行变成了 HTTP/2 中的 :method:、:scheme:、:path:。其他的字段例如 user-agent 虽然名字没有变化，但是存储方式都发生了变化。具体变化在 HPACK 中细讲。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/130_9.png)
 
@@ -168,6 +168,12 @@ Flag 里面包含了上面提到的 END\_STREAM、END\_HEADERS、PADDED、PRIORI
 ![](https://img.halfrost.com/Blog/ArticleImage/130_13.png)
 
 上面这连续的 5 张图展示了 HTTP/2 中的 Header Block Fragment 存储方式。从头部字段中可以看出 HTTP/2 全新的存储方式和更高的压缩率。更加详细的分析见 HPACK 详解。
+
+上面的抓包是一个 request 的 HEADERS 帧，再举一个 response 的例子。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_17.png)
+
+上图中可以看到，HTTP 1.X 中的 response 中的状态行转变成了 HTTP/2 中的 :status:，其他 HTTP 1.X 中的首部字段也相应的在 HEADERS 帧中。
 
 
 ## 三. PRIORITY 帧
@@ -209,6 +215,8 @@ PRIORITY 帧可以在任何状态下在 stream 流上发送，但不能在包含
 
 ## 四. RST\_STREAM 帧
 
+> 在 HTTP 1.X 中，一个连接同一时间内只发送一个请求，如果需要中途中止，直接关闭连接即可。但是在 HTTP/2 中，多个 Stream 会共享同一个连接。如果关闭连接会影响其他的 Stream 流，RST\_STREAM 帧也就出现了，它允许立刻中止一个未完成的流。
+
 RST\_STREAM帧(类型 = 0x3)允许立即终止一个 stream 流。发送 RST\_STREAM 以请求取消一个流或指示已发生错误的情况。
 
 ```c
@@ -236,7 +244,7 @@ RST\_STREAM 帧由于没有 flag 标志，是十种帧类型里面比较简单�
 
 SETTINGS 帧(类型 = 0x4)传递影响端点通信方式的配置参数，例如设置对端行为的首选项和约束。SETTINGS 帧还用于确认收到这些参数。单独地，SETTINGS 参数也可以称为"设置"。
 
-SETTINGS 参数不是通过协商来确定的；它们描述了发送对端的特征，它们由接收对端使用。相同的参数对不同的对等端设置可能不同。例如，客户端可能会设置较高的初始流量控制窗口，而服务器可能会设置较低的值以节省资源。
+**SETTINGS 参数不是通过协商来确定的**；它们描述了发送对端的特征，它们由接收对端使用。相同的参数对不同的对等端设置可能不同。例如，客户端可能会设置较高的初始流量控制窗口，而服务器可能会设置较低的值以节省资源。
 
 SETTINGS 帧必须由两个端点在连接开始时发送，并且可以在任何其他时间由任一端点在连接的生命周期内发送。实现方必须支持 HTTP/2 规范定义的所有参数。
 
