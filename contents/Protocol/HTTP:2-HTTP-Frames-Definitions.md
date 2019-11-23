@@ -175,6 +175,26 @@ Flag 里面包含了上面提到的 END\_STREAM、END\_HEADERS、PADDED、PRIORI
 
 上图中可以看到，HTTP 1.X 中的 response 中的状态行转变成了 HTTP/2 中的 :status:，其他 HTTP 1.X 中的首部字段也相应的在 HEADERS 帧中。
 
+HEADERS 帧会经常使用 Weight 权重字段，例如，不同文件感觉重要性不同，有不同的权重：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_20_.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_26.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_21_.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_27.png)
+
+上面图中这个例子，html 文件和 woff 字体文件的权重就比 js 文件和 jpg 图片文件的权重高。
+
+同一种类型的文件，也会有权重的高低不同，例如都是 CSS 文件：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_25.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_28.png)
+
+上面图中这个例子，同样是 css 文件，权重也有不同。
+
 
 ## 三. PRIORITY 帧
 
@@ -211,7 +231,9 @@ PRIORITY 帧可以在任何状态下在 stream 流上发送，但不能在包含
 
 长度不超过 5 个八位字节的 PRIORITY 帧必须被视为 FRAME\_SIZE\_ERROR 类型的流错误([第 5.4.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#2-%E6%B5%81%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)）
 
+![](https://img.halfrost.com/Blog/ArticleImage/130_22_.png)
 
+在上面抓包截图中可以看到，PRIORITY 帧的 Exclusive = true，代表该流的依赖是独占的。Stream Dependency = 49，依赖第 49 号的流。Weight 权重是 219。
 
 ## 四. RST\_STREAM 帧
 
@@ -311,7 +333,11 @@ SETTINGS 帧中的值必须按照它们出现的顺序进行处理，而值之�
 
 ### 4. For Example
 
+举个例子，SETTINGS 帧的有效负载有多个参数的情况：
 
+![](https://img.halfrost.com/Blog/ArticleImage/130_18.png)
+
+在上图中，上面一个 SETTINGS 帧的 ACK 的值是 false，表示该帧已经被对等的 SETTINGS 帧的接收和应用。这个 SETTINGS 帧带了 3 个参数，SETTINGS\_MAX\_CONCURRENT\_STREAMS(0x3) = 128、SETTINGS\_INITIAL\_WINDOW\_SIZE(0x4) = 65536、SETTINGS\_MAX\_FRAME\_SIZE(0x5) = 16777215 。下面的 SETTINGS 帧一个参数也没有携带，ACK 标记位是 true。
 
 
 ## 六. PUSH_PROMISE 帧
@@ -376,6 +402,12 @@ PUSH\_PROMISE 帧可以包括填充。填充字段和 flag 标志与为 DATA 帧
 
 >客户端会从 1 开始设置 stream ID，之后每开启一个流，都会增加 2，并且之后一直用奇数。服务器开启在 PUSH\_PROMISE 中标明的流时，设置的 stream ID 从 2 开始，并且之后一直用偶数。这样设计避免了客户端和服务器之间的 stream ID 冲突，也可以轻松的判断哪些对象是由服务端推送的。0 是保留数字，用于连接控制消息，不能用于创建新的 stream 流。
 
+举个 PUSH\_PROMISE 帧的例子：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_29.png)
+
+上图的例子中，Promised Stream ID = 2，偶数开始的。END\_HEADERS 是 true，R 保留位是 0。padded 是 false，所以 pad length 也是 0，之后紧接着是 Header Block Fragment。
+
 ## 七. PING 帧
 
 PING 帧(类型 = 0x6)是用于测量来自发送方的最小往返时间以及确定空闲连接是否仍然起作用的机制。 PING 帧可以从任何端点发送。可用作**心跳检测，兼具计算 RTT 往返时间的功能**。
@@ -399,6 +431,15 @@ PING 帧定义了如下的 flag 标识：
 
 PING 帧不与任何单个流相关联。如果接收到具有除 0x0 以外的流标识符字段值的 PING 帧，则接收方必须以 PROTOCOL\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))进行响应。接收到长度字段值不是 8 的 PING 帧必须被视为 FRAME\_SIZE\_ERROR 类型的连接错误([第 5.4.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames.md#1-%E8%BF%9E%E6%8E%A5%E9%94%99%E8%AF%AF%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86))。
 
+举个 HTTP/2 PING 帧的例子：
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_23_.png)
+
+ping 里面的 ACK 标识位是 false。
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_24_.png)
+
+pong 里面的 ACK 标识位是 true。
 
 ## 八. GOAWAY 帧
 
@@ -513,6 +554,11 @@ HTTP/2 中的流量控制是通过每个流上每个发送者保留一个窗口�
 
 在发送减少初始流量控制窗口大小的 SETTINGS 帧之后，接收方可以继续处理超过流量控制限制的流。 允许流继续禁止接收方立即减少它为流量控制窗口预留的空间。由于需要 WINDOW\_UPDATE 帧以允许发送方继续发送，因此这些流的进度也会停滞。接收方也可以为受影响的流发送一个错误代码为FLOW\_CONTROL\_ERROR 的 RST\_STREAM。
 
+### 4. For Example
+
+![](https://img.halfrost.com/Blog/ArticleImage/130_19.png)
+
+在上图的抓包中可以看到，WINDOW\_UPDATE 帧的 R 位是 0，Window Size Increment 是 2147418112 。
 
 ## 十. CONTINUATION 帧
 
