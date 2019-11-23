@@ -24,7 +24,7 @@ header 字段表将 header 字段映射到索引值，从而得到编码。这�
 
 在编码形式中，header 字段以字面形式表示或作为对 header 字段表中的一个 header 字段的引用。因此，可以使用引用和字面值的混合来编码 header 字段的列表。
 
-字面值可以直接编码，也可以使用静态霍夫曼编码。
+字面值可以直接编码，也可以使用静态霍夫曼编码(最高压缩比 8:5)。
 
 编码器负责决定将哪些 header 字段作为新条目插入 header 字段表中。解码器执行对编码器指定的 header 字段表的修改，从而在此过程中重建 header 字段的列表。这使解码器保持简单并可以与多种编码器互操作。
 
@@ -161,7 +161,7 @@ header 块是 header 字段表示形式的串联。[第 6 节](https://github.co
 
 header 块中包含的所有 header 字段表示形式将按照它们出现的顺序进行处理，如下所示。有关各种 header 字段表示形式的格式的详细信息以及一些其他处理指令，请参见[第 6 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-%E7%B4%A2%E5%BC%95-header-%E5%AD%97%E6%AE%B5%E8%A1%A8%E7%A4%BA)。
 
-\_indexed 表示形式\_需要执行以下操作：
+\_indexed representation\_需要执行以下操作：
 
 - 与静态表或动态表中被引用条目相对应的 header 字段被附加到解码后的 header 列表中。
 
