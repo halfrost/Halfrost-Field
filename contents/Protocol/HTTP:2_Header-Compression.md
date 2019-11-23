@@ -11,11 +11,13 @@
 
 SPDY [[SPDY]](https://tools.ietf.org/html/rfc7541#ref-SPDY) 最初通过使用 DEFLATE [[DEFLATE]](https://tools.ietf.org/html/rfc7541#ref-DEFLATE) 格式压缩 header 字段来解决此冗余问题，事实证明，这种格式非常有效地表示了冗余 header 字段。但是，这种方法暴露了安全风险，如 CRIME（轻松实现压缩率信息泄漏）攻击所证明的安全风险（请参阅 [[CRIME]](https://tools.ietf.org/html/rfc7541#ref-CRIME)）。
 
-本规范定义了 HPACK，这是一种新的压缩器，它消除了多余的 header 字段，将漏洞限制为已知的安全攻击，并且在受限的环境中具有有限的内存需求。[第 7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-%E6%8E%A2%E6%B5%8B%E5%8A%A8%E6%80%81%E8%A1%A8%E7%8A%B6%E6%80%81)介绍了 HPACK 的潜在安全问题。
+本规范定义了 HPACK，这是一种新的压缩方法，它消除了多余的 header 字段，将漏洞限制到已知的安全攻击，并且在受限的环境中具有有限的内存需求。[第 7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-%E6%8E%A2%E6%B5%8B%E5%8A%A8%E6%80%81%E8%A1%A8%E7%8A%B6%E6%80%81)介绍了 HPACK 的潜在安全问题。
 
 HPACK 格式特意被设计成简单且不灵活的形式。两种特性都降低了由于实现错误而引起的互操作性或安全性问题的风险。没有定义扩展机制；只能通过定义完整的替换来更改格式。
 
 ### 1. 总览
+
+![](https://img.halfrost.com/Blog/ArticleImage/132_1.png)
 
 本规范中定义的格式将 header 字段列表视为 name-value 对的有序集合，其中可以包括重复的对。名称和值被认为是八位字节的不透明序列，并且 header 字段的顺序在压缩和解压缩后保持不变。
 
@@ -176,7 +178,11 @@ header 块中包含的所有 header 字段表示形式将按照它们出现的�
 
 ## 四. 动态表管理
 
+![](https://img.halfrost.com/Blog/ArticleImage/132_2.png)
+
 为了限制解码器端的存储要求，动态表的 size 受到限制。
+
+> 动态字典上下文有关，需要为每个 HTTP/2 连接维护不同的字典。
 
 ### 1. Calculating Table Size
 
@@ -199,6 +205,7 @@ header 块中包含的所有 header 字段表示形式将按照它们出现的�
 
 使用此机制通过将最大 size 设置为 0，从动态表中完全清除条目，然后可以将其恢复。
 
+> HTTP/2 提倡使用尽可能少的连接数，头部压缩是其中一个重要的原因：在同一个连接上产生的请求和响应越多，动态字典累积的越全，头部压缩的效果就越好。
 
 ### 3. Entry Eviction When Dynamic Table Size Changes
 
@@ -591,6 +598,9 @@ HPACK 的实现不是在 HTTP 用户上施加约束，而是可以约束压缩�
 ### 2. 静态霍夫曼编码
 
 目前还没有针对静态霍夫曼编码的攻击。一项研究表明，使用静态霍夫曼编码表会造成信息泄漏； 但是，同一项研究得出的结论是，攻击者无法利用此信息泄漏来恢复任何有意义的信息量（请参阅 [[PETAL]](https://tools.ietf.org/html/rfc7541#ref-PETAL)）
+
+>动态的霍夫曼编码容易受到攻击！
+
 
 ### 3. 内存管理
 
