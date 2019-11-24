@@ -15,6 +15,7 @@ SPDY [[SPDY]](https://tools.ietf.org/html/rfc7541#ref-SPDY) 最初通过使用 D
 
 HPACK 格式特意被设计成简单且不灵活的形式。两种特性都降低了由于实现错误而引起的互操作性或安全性问题的风险。没有定义扩展机制；只能通过定义完整的替换来更改格式。
 
+
 ### 1. 总览
 
 ![](https://img.halfrost.com/Blog/ArticleImage/132_1.png)
@@ -33,6 +34,8 @@ header 字段表将 header 字段映射到索引值，从而得到编码。这�
 [附录C](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_HPACK-Example.md#1-%E6%95%B4%E6%95%B0%E8%A1%A8%E7%A4%BA%E7%9A%84%E7%A4%BA%E4%BE%8B) 中提供了使用这些不同的机制表示 header 字段的示例。
 
 
+>注：在 HTTP/2 中，请求和响应标头字段的定义保持不变，仅有一些微小的差异：所有标头字段名称均为小写，请求行现在拆分成各个 :method、:scheme、:authority 和 :path 伪标头字段。
+>
 
 ### 2. 约定
 
@@ -88,7 +91,7 @@ HPACK 使用两个表将 header 字段与索引相关联。静态表（请参阅
 ### (2) 动态表
 
 
-动态表包含以先进先出顺序维护的 header 字段列表。动态表中的第一个条目和最新条目在最低索引处，而动态表的最旧条目在最高索引处。
+动态表包含以**先进先出**的顺序维护的 header 字段列表。动态表中的第一个条目和最新条目在最低索引处，而动态表的最旧条目在最高索引处。
 
 
 动态表最初是空的。当每个 header 块被解压缩时，将添加条目。动态表可以包含重复的条目（即，具有相同名称和相同值的条目）。因此，解码器不得将重复的条目视为错误。
@@ -113,16 +116,8 @@ HPACK 使用两个表将 header 字段与索引相关联。静态表（请参阅
 
 对于 s 的静态表 size 和 k 的动态表 size ，下图显示了整个有效索引地址空间
 
-```c
-<----------  Index Address Space ---------->
-<-- Static  Table -->  <-- Dynamic Table -->
-+---+-----------+---+  +---+-----------+---+
-| 1 |    ...    | s |  |s+1|    ...    |s+k|
-+---+-----------+---+  +---+-----------+---+
-                       ^                   |
-                       |                   V
-                Insertion Point      Dropping Point
-```
+
+![](https://img.halfrost.com/Blog/ArticleImage/132_3_.png)
 
 
 
@@ -234,31 +229,16 @@ HPACK 编码使用两种原始类型：无符号的可变长度整数和八位�
 
 如果整数值足够小，即严格小于 2^N-1，则将其编码在 N 位前缀中。
 
+![](https://img.halfrost.com/Blog/ArticleImage/132_4.png)
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | ? | ? | ? |       Value       |
-   +---+---+---+-------------------+
+上图的例子中，N = 5，所以能表示的最大的整数是 2^5-1 = 31
 
-    Figure 2: Integer Value Encoded within the Prefix (Shown for N = 5)
-```
-否则，将前缀的所有位设置为 1，并使用一个或多个八位字节的列表对减少了 2^N-1 的值进行编码。每个八位字节的最高有效位用作连续标志：除了列表中的最后一个八位字节，其值均设置为 1。八位字节的其余位用于对减小的值进行编码。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | ? | ? | ? | 1   1   1   1   1 |
-   +---+---+---+-------------------+
-   | 1 |    Value-(2^N-1) LSB      |
-   +---+---------------------------+
-                  ...
-   +---+---------------------------+
-   | 0 |    Value-(2^N-1) MSB      |
-   +---+---------------------------+
+如果整数数值大于 2^N-1，则将前缀的所有位设置为 1，并使用一个或多个八位字节的列表对减少了 2^N-1 的值进行编码。每个八位字节的最高有效位用作连续标志：除了列表中的最后一个八位字节，其值均设置为 1。八位字节的其余位用于对减小的值进行编码。
 
-    Figure 3: Integer Value Encoded after the Prefix (Shown for N = 5)
-```
+
+![](https://img.halfrost.com/Blog/ArticleImage/132_5_.png)
+
 
 从八位字节列表中解码整数值是通过反转八位字节在列表中的顺序开始的。 然后，对于每个八位字节，将其最高有效位删除。八位字节的其余位被级联起来，结果值增加 2^N-1 以获得整数值。
 
@@ -295,7 +275,7 @@ HPACK 编码使用两种原始类型：无符号的可变长度整数和八位�
 [附录 C.1](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_HPACK-Example.md#1-%E6%95%B4%E6%95%B0%E8%A1%A8%E7%A4%BA%E7%9A%84%E7%A4%BA%E4%BE%8B) 中提供了说明整数编码的示例。
 
 
-整数表示形式允许使用不确定大小的值。编码器也可能发送大量的零值，这可能浪费八位字节，并可能使整数值溢出。超出实现限制的整数编码-值或八位字节长度-必须视为解码错误。基于实现方的约束，可以为整数的每种不同用途设置不同的限制。
+整数表示形式允许使用不确定大小的值。编码器也可能发送大量的零值，这可能浪费八位字节，并可能使整数值溢出。超出实现限制的整数编码(值或八位字节长度)必须视为解码错误。基于实现方的约束，可以为整数的每种不同用途设置不同的限制。
 
 
 
@@ -303,16 +283,9 @@ HPACK 编码使用两种原始类型：无符号的可变长度整数和八位�
 
 header 字段 name 和 header 字段 value 可以表示为字符串字面量。可以通过直接编码字符串字面的八位字节或使用霍夫曼代码将字符串字面编码为八位字节序列（请参见[[HUFFMAN]](https://tools.ietf.org/html/rfc7541#ref-HUFFMAN)）
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | H |    String Length (7+)     |
-   +---+---------------------------+
-   |  String Data (Length octets)  |
-   +-------------------------------+
 
-   Figure 4: String Literal Representation
-```
+![](https://img.halfrost.com/Blog/ArticleImage/132_6.png)
+
 
 字符串字面表示形式包含以下字段：
 
@@ -338,23 +311,19 @@ header 字段 name 和 header 字段 value 可以表示为字符串字面量。�
 
 ### 1. 索引 header 字段表示
 
+
 索引 header 字段表示可标识静态表或动态表中的条目（请参见[第 2.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#3-indexing-tables)）。
 
 索引的 header 字段表示会将 header 字段添加到已解码的 header 列表中，如[第 3.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#2-header-field-representation-processing)所述。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 1 |        Index (7+)         |
-   +---+---------------------------+
 
-   Figure 5: Indexed Header Field
-```
+![](https://img.halfrost.com/Blog/ArticleImage/132_7_.png)
+
+**上面这种情况对应的是 Name 和 Value 都在索引表(包括静态表和动态表)中**。
 
 索引 header 字段以 1 位模式 “1” 开头，后跟匹配 header 字段的索引，以 7 位前缀的整数表示（请参阅[第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-integer-representation)）。
 
 不使用索引值 0。如果在索引 header 域表示中发现了索引值 0，则必须将其视为解码错误。
-
 
 
 
@@ -368,38 +337,18 @@ header 字段表示形式包含字面 header 字段 value。header 字段名称 
 
 ### (1). 带增量索引的字面 header 字段
 
+
+
 具有增量索引表示形式的字面 header 字段会将 header 字段附加到已解码的 header 列表中，并将其作为新条目插入动态表中。
 
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 1 |      Index (6+)       |
-   +---+---+-----------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
+![](https://img.halfrost.com/Blog/ArticleImage/132_9.png)
 
-   Figure 6: Literal Header Field with Incremental Indexing -- Indexed Name
-```
+**上面这种情况对应的是 Name 在索引表(包括静态表和动态表)中，Value 需要编码传递，并同时新增到动态表中**。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 1 |           0           |
-   +---+---+-----------------------+
-   | H |     Name Length (7+)      |
-   +---+---------------------------+
-   |  Name String (Length octets)  |
-   +---+---------------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
+![](https://img.halfrost.com/Blog/ArticleImage/132_10.png)
 
-   Figure 7: Literal Header Field with Incremental Indexing -- New Name
-```
+**上面这种情况对应的是 Name 和 Value 都需要编码传递，并同时新增到动态表中**。
 
 具有增量索引表示的字面 header 字段以 “01” 2 位模式开头。
 
@@ -409,40 +358,22 @@ header 字段表示形式包含字面 header 字段 value。header 字段名称 
 
 两种形式的 header 字段名称 name 表示形式之后跟着的是以字符串字面表示的 header 字段值 value（参见[第 5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#2-string-literal-representation)）。
 
+
+
 ### (2). 不带索引的字面 header 字段
+
 
 
 没有索引表示形式的字面 header 字段会使在不更改动态表的情况下将 header 字段附加到已解码的 header 列表中。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 0 | 0 | 0 |  Index (4+)   |
-   +---+---+-----------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
 
-   Figure 8: Literal Header Field without Indexing -- Indexed Name
-```
+![](https://img.halfrost.com/Blog/ArticleImage/132_11.png)
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 0 | 0 | 0 |       0       |
-   +---+---+-----------------------+
-   | H |     Name Length (7+)      |
-   +---+---------------------------+
-   |  Name String (Length octets)  |
-   +---+---------------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
+**上面这种情况对应的是 Name 在索引表(包括静态表和动态表)中，Value 需要编码传递，并不新增到动态表中**。
 
-   Figure 9: Literal Header Field without Indexing -- New Name
-```
+![](https://img.halfrost.com/Blog/ArticleImage/132_12.png)
+
+**上面这种情况对应的是 Name 和 Value 需要编码传递，并不新增到动态表中**。
 
 没有索引表示的字面 header 字段以 “0000” 4 位模式开头。
 
@@ -458,36 +389,14 @@ header 字段表示形式包含字面 header 字段 value。header 字段名称 
 
 字面 header 字段永不索引表示形式会使得在不更改动态表的情况下将 header 字段附加到已解码的 header 列表中。中间件必须使用相同的表示形式来编码该 header 字段。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 0 | 0 | 1 |  Index (4+)   |
-   +---+---+-----------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
+![](https://img.halfrost.com/Blog/ArticleImage/132_13.png)
 
-   Figure 10: Literal Header Field Never Indexed -- Indexed Name
-```
+**上面这种情况对应的是 Name 在索引表(包括静态表和动态表)中，Value 需要编码传递，并永远不新增到动态表中**。
 
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 0 | 0 | 1 |       0       |
-   +---+---+-----------------------+
-   | H |     Name Length (7+)      |
-   +---+---------------------------+
-   |  Name String (Length octets)  |
-   +---+---------------------------+
-   | H |     Value Length (7+)     |
-   +---+---------------------------+
-   | Value String (Length octets)  |
-   +-------------------------------+
+![](https://img.halfrost.com/Blog/ArticleImage/132_14.png)
 
-   Figure 11: Literal Header Field Never Indexed -- New Name
-```
+**上面这种情况对应的是 Name 和 Value 需要编码传递，并永远不新增到动态表中**。
 
 字面 header 字段永不索引的表示形式以 “0001” 4 位模式开头。
 
@@ -501,21 +410,17 @@ header 字段表示形式包含字面 header 字段 value。header 字段名称 
 
 动态表 size 更新代表更改动态表 size。
 
-```c
-     0   1   2   3   4   5   6   7
-   +---+---+---+---+---+---+---+---+
-   | 0 | 0 | 1 |   Max size (5+)   |
-   +---+---------------------------+
+![](https://img.halfrost.com/Blog/ArticleImage/132_8.png)
 
-   Figure 12: Maximum Dynamic Table Size Change
-```
-
-动态表 size 更新从 “001” 3 位模式开始，然后是新的最大 size，以5 位前缀的整数表示（请参阅[第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-integer-representation)）。
+动态表 size 更新从 “001” 3 位模式开始，然后是新的最大 size，以 5 位前缀的整数表示（请参阅[第 5.1 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#1-integer-representation)）。
 
 新的最大 size 必须小于或等于协议使用 HPACK 确定的限制。超过此限制的值必须视为解码错误。在 HTTP/2 中，此限制是从解码器接收并由编码器（请参见 [[HTTP2]的 6.5.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#3-settings-synchronization)）确认的 SETTINGS\_HEADER\_TABLE\_SIZE （请参见 [[HTTP2]的 6.5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-HTTP-Frames-Definitions.md#2-defined-settings-parameters)）参数的最后一个值。
 
-减小动态表的最大 size 会导致驱逐条目（请参见[第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#3-entry-eviction-when-dynamic-table-size-changes)）。
+减小动态表的最大 size 会导致驱逐条目(先进先出)（请参见[第 4.3 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#3-entry-eviction-when-dynamic-table-size-changes)）。
 
+>
+>动态表大小更新有上述这两种方式，一种是在 HEADERS 帧中直接修改(“001” 3 位模式开始)，另外一种方式是通过 SETTINGS 帧中的 SETTINGS\_HEADER\_TABLE\_SIZE 中设置的。
+>
 
 ## 七. 安全注意事项
 
