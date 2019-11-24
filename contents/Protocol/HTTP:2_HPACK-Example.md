@@ -2,8 +2,15 @@
 <img src='https://img.halfrost.com/Blog/ArticleImage/133_0.jpeg'>
 </p>
 
-# 霍夫曼编码在 HTTP/2 HPACK 中的应用
+# HTTP/2 HPACK 实际应用举例
 
+在上篇文章中，具体说明了 HPACK 算法中的 8 种场景(7 种 Name-value 的场景 + 1 种动态表更新场景)。
+
+
+>动态表大小更新有两种方式，一种是在 HEADERS 帧中直接修改(“001” 3 位模式开始)，另外一种方式是通过 SETTINGS 帧中的 SETTINGS\_HEADER\_TABLE\_SIZE 中设置的。
+>
+
+在介绍 HPACK 实际应用之前，需要先来看看静态表的定义和 HTTP/2 中霍夫曼编码的定义。
 
 ## 一. 静态表定义
 
@@ -80,11 +87,32 @@
 
 ## 二. 霍夫曼编码
 
+### 1. 霍夫曼算法
+
+
+如果每个字符都是等长的编码形式，是否有一种算法能保证大幅压缩这些数据？等长的编码形式首先面临的一个问题是如何避免解压的时候出现歧义误读。
+
+霍夫曼在 1952 年发现了最优前缀码的算法，算法的核心思想是：出现概率比较大的符号采用较短的编码，概率较小的符号采用较长的编码。
+
+举个例子，一篇文章中有很多单词，我们讲所有字母出现的频率都统计出来，以 a、b、c、d、e、f 这 6 个字母为例，它们的出现频率分别如下：
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_1.png)
+
+第一步先从这些频率中选取频率最小的 2 个，进行合并。左子树小，右子树大。合并成新的节点以后，再放回原有的节点中。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_2.png)
+
+重复第一步，直到所有节点都合并到一棵树上。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_3.png)
+
+最后给每个左子树的指针上编码为 0，右子树的指针上编码为 1。以上 6 个字母的最终编码是 a = 0, b = 101, c = 100, d = 111, e = 1101, f = 1100 。
+
+### 2. 霍夫曼编码在 HTTP/2 中的定义
+
 当使用霍夫曼编码对字符串字面进行编码时，使用以下霍夫曼代码（请参见[第 5.2 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2_Header-Compression.md#2-string-literal-representation)）。
 
 此霍夫曼代码是从大量 HTTP header 样本获得的统计信息中生成的。这是规范的霍夫曼代码（请参见 [[CANONICAL]](https://tools.ietf.org/html/rfc7541#ref-CANONICAL)），需要进行一些调整以确保没有符号具有唯一的代码长度。
-
->霍夫曼编码的核心思想是：出现概率比较大的符号采用较短的编码，概率较小的符号采用较长的编码。
 
 表中的每一行均定义用于表示符号的代码：
 
@@ -446,6 +474,12 @@ custom-key: custom-header
                                            |   custom-header
 ```
 
+![](https://img.halfrost.com/Blog/ArticleImage/133_4.png)
+
+由于 H 位传了 0，所以后面字符串用的字面形式表示，即 ASCII 码表示，通过查表可以知道，6375 7374 6f6d 2d6b 6579 表示的值是 custom-key，6375 7374 6f6d 2d68 6561 6465 72 表示的值是 custom-header。
+
+
+
 编码后的动态表：
 
 ```c
@@ -486,6 +520,12 @@ header 字段表示使用索引名称 name 和字面值 value。header 字段未
    2f73 616d 706c 652f 7061 7468           | /sample/path
                                            | -> :path: /sample/path
 ```
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_5_.png)
+
+
+由于 H 位传了 0，所以后面字符串用的字面形式表示，即 ASCII 码表示，通过查表可以知道，2f73 616d 706c 652f 7061 7468 表示的值是 /sample/path。由于 :path 存在于静态表中，所以只需要传 index = 4 即可。
+
 
 
 编码后的动态表：
@@ -531,6 +571,10 @@ header 字段表示使用字面名称 name 和字面值 value。header 字段不
                                            | -> password: secret
 ```
 
+![](https://img.halfrost.com/Blog/ArticleImage/133_6.png)
+
+
+由于 H 位传了 0，所以后面字符串用的字面形式表示，即 ASCII 码表示，通过查表可以知道，7061 7373 776f 7264  表示的值是 password。7365 6372 6574 表示的值是 secret。
 
 编码后的动态表：
 
@@ -573,6 +617,9 @@ header 字段表示使用静态表中的索引 header 字段。
                                            | -> :method: GET
 ```
 
+![](https://img.halfrost.com/Blog/ArticleImage/133_7.png)
+
+由于 :method 和 GET 都在静态表中，所以用静态表中的 index 即可。
 
 编码后的动态表：
 
@@ -1511,6 +1558,68 @@ header 字段表示使用静态表中的索引 header 字段。
    content-encoding: gzip
    set-cookie: foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1
 ```
+
+### 7. 一些抓包的例子
+
+先来看看首次请求中 HPACK 是如何压缩 HEADERS 帧中的首部字段的。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_8.png)
+
+:method:GET 在静态表中的第 2 项。Name 和 Value 都已经存在了。所以直接用 2 即可表示这一项头部字段。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_9.png)
+
+相同的，:path:/ 在静态表中的第 4 项。Name 和 Value 都已经存在了。所以直接用 4 即可表示这一项头部字段。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_10.png)
+
+再来看看第二次请求中，同样是 :method:GET，和第一次请求一样，直接用 2 即可表示这一项头部字段。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_11.png)
+
+回到首次请求中，if-none-match 首部字段，在静态表中的第 41 项，但是静态表里面没有值。根据前一篇文章讲解的 HPACK 算法，压缩串以 01 开头，101001 是 41，10011110，第一个 1 代表是霍夫曼编码，0011110 代表 30，表明 value 是紧接着的 30 个字节里面的内容。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_12.png)
+
+还是首次请求，user-agent 首部字段，在静态表中的第 58 项，但是静态表里面没有值。根据前一篇文章讲解的 HPACK 算法，压缩串以 01 开头，111010 是 58，11011011，第一个 1 代表是霍夫曼编码，1011011 代表 91，表明 value 是紧接着的 91 个字节里面的内容。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_13.png)
+
+到了第二次请求中，user-agent 首部字段在动态表中已经存储了 name 和 value 了，所以直接命中动态表中第 86 项。1010110 代表的就是 86。这个例子可以很明显的看到，动态表大幅缩减了 header 大小。
+
+对比同一个 HTTP/2 连接中的 2 次相同的请求。可以看到首部大小已经大幅减少了。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_14.png)
+
+在首次请求中，HAPCK 使得原有的头部减少了 44%。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_15.png)
+
+在第二次请求中，由于补充了动态表，HAPCK 使得原有的头部减少了 97%。
+
+### 8. HPACK 优化效果
+
+最后，让我们用工具具体测试一下 HPACK 的“威力”。可以使用 [h2load 工具测试](https://nghttp2.org/documentation/h2load-howto.html)。
+
+以下分别是 3 个测试用例，第一个测试用例只请求一次，第二个测试用例请求二次，第三个测试用例请求三次，看每次测试用来能缩小头部字段开销。
+
+![](https://img.halfrost.com/Blog/ArticleImage/133_16_.png)
+
+从上图中可以看到，请求越多，头部字段越来越小。
+
+|请求次数|首部字段占比|节约百分比|
+|:----:|:----:|:----:|
+|1|1.002% | 29.89%|
+|2|0.521% | 63.75%|
+|3|0.359% | 75.04%|
+|5|0.241% | 83.28%|
+|10|0.137% | 90.48%|
+|20|0.092% | 93.65%|
+|30|0.074% | 94.85%|
+|50|0.061% | 95.75%|
+|100|0.052% | 96.39%|
+
+由此可以看出 HTTP/2 中的 HPACK 算法对 header 整体的压缩率还是非常不错的。
 
 
 ------------------------------------------------------
