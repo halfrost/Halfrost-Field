@@ -340,5 +340,5 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](https://github.com/halfrost)
 >
-> Source: [https://halfrost.com/http2\_considerations/](https://halfrost.com/http2_considerations/)
+> Source: [https://halfrost.com/http2-considerations/](https://halfrost.com/http2-considerations/)
 > 
