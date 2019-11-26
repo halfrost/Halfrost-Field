@@ -119,4 +119,4 @@ Reference：
 > 
 > Follow: [halfrost · GitHub](HTTPS://github.com/halfrost)
 >
-> Source: [https://halfrost.com/HTTP2\_RFC7541/](https://halfrost.com/HTTP2_RFC7541/)
+> Source: [https://halfrost.com/http2\_rfc7541/](https://halfrost.com/http2_rfc7541/)
