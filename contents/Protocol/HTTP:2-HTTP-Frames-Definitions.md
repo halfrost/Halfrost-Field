@@ -31,7 +31,7 @@ HTTP/2 所有性能增强的核心在于新的二进制分帧层，它定义了�
 
 ## 一. DATA 帧
 
-DATA 帧(类型 = 0x0)可以传输与流相关联的任意可变长度的八位字节序列。例如，使用一个或多个 DATA 帧来承载 HTTP 请求或响应有效载荷。DATA 帧也可以包含填充。可以将填充添加到 DATA 帧用来模糊消息的大小。填充是一种安全的功能；具体见[第 10.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#7-%E4%BD%BF%E7%94%A8%E5%A1%AB%E5%85%85)。此帧专门用来传递 **HTTP header** 的。
+DATA 帧(类型 = 0x0)可以传输与流相关联的任意可变长度的八位字节序列。例如，使用一个或多个 DATA 帧来承载 HTTP 请求或响应有效载荷。DATA 帧也可以包含填充。可以将填充添加到 DATA 帧用来模糊消息的大小。填充是一种安全的功能；具体见[第 10.7 节](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/HTTP:2-Considerations.md#7-%E4%BD%BF%E7%94%A8%E5%A1%AB%E5%85%85)。
 
 DATA 帧结构如下：
 
