@@ -137,6 +137,8 @@ Latest：[目录](https://github.com/halfrost/Halfrost-Field/blob/master/content
 
 感谢Star！
 
+[![Stargazers over time](https://starchart.cc/halfrost/Halfrost-Field.svg)](https://starchart.cc/halfrost/Halfrost-Field)
+
 
 ## ©️ 转载
 
