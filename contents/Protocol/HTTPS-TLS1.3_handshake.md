@@ -316,7 +316,9 @@ psk\_dhe\_ke: PSK 和 (EC)DHE 建立。在这种模式下，Client 和 Server �
 
 supported\_versions 是 TLS 1.3 中必带的扩展，如果没有这个扩展，Server 会认为 Client 只能支持 TLS 1.2，于是接下来的握手会进行 TLS 1.2 的握手流程。
 
-![](https://img.halfrost.com/Blog/ArticleImage/122_28.png)
+![](https://img.halfrost.com/Blog/ArticleImage/122_28_.png)
+
+![](https://img.halfrost.com/Blog/ArticleImage/122_28_0.png)
 
 在 ServerHello 中回应 Client，supported\_versions 扩展中包含了协商以后的协议版本。
 
