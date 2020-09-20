@@ -5,7 +5,8 @@
 </p>
 
 <p align='center'>
-<img src="https://img.shields.io/badge/Total%20Reading-3.08M-success">
+<img src="https://img.shields.io/badge/Total%20Reading-3.18M-success">
+<img src="https://img.shields.io/badge/Total%20Word%20Count-578129-success">
 <img src="https://img.shields.io/badge/build-passing-brightgreen.svg">
 <img src="https://img.shields.io/badge/platform-%20iOS | Android | Mac | Web%20-ff69b4.svg">
 <img src="https://img.shields.io/badge/language-Objective--C-orange.svg">
