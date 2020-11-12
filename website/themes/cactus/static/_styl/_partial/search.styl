@@ -1,0 +1,46 @@
+.search-input
+  padding: 4px 7px
+  width: 100%
+  outline: none
+  border: solid 1px $color-accent-3
+  border-radius: 5px
+  background-color: $color-background
+  color: $color-text
+  font-size: 1.2rem
+  -webkit-border-radius: 5px
+  -moz-border-radius: 5px
+
+  &:focus
+    border: solid 1px $color-accent-1
+
+#search-result
+  ul.search-result-list
+    padding: 0
+    list-style-type: none
+
+  li
+    margin: 2em auto
+
+  a.search-result-title
+    background-image: none
+    color: $color-text
+    text-transform: capitalize
+    font-weight: bold
+    line-height: 1.2
+
+  p.search-result
+    overflow: hidden
+    margin: .4em auto
+    max-height: 13em
+    text-align: justify
+    font-size: .8em
+
+  em.search-keyword
+    border-bottom: 1px dashed $color-link
+    color: $color-link
+    font-weight: bold
+
+.search-no-result
+  display: none
+  padding-bottom: .5em
+  color: $color-text

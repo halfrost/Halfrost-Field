@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode }}">
+{{ partial "head.html" . }}
+<body class="max-width mx-auto px3 ltr">
+  <div class="content index py4">
+
+  {{ partial "page_nav.html" . }}
+
+  <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+    <header>
+      <h1 class="posttitle" itemprop="name headline">
+        {{ .Title }}
+      </h1>
+      <div class="meta">
+        {{ if (or (isset .Site "author") (isset .Site "title"))}}
+        <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <span itemprop="name">
+            {{ if isset .Site "author" }}
+              {{ .Site.Author }}
+            {{ else if isset .Site "title" }}
+              {{ .Site.Title }}
+            {{ end }}
+          </span>
+        </span>
+        {{ end }}
+        <div class="postdate">
+          {{ $dataFormat := .Site.Params.dateFormat | default "2006-01-02" }}
+          <time datetime="{{ .Date }}" itemprop="datePublished">{{ .Date.Format $dataFormat }}</time>
+          {{ if (and .Site.Params.show_updated (ne .Lastmod .Date)) }}
+            (Updated: <time datetime="{{ .Lastmod }}" itemprop="dateModified">{{ .Lastmod.Format $dataFormat }}</time>)
+          {{ end }}
+        </div>
+        {{ if gt .Params.categories 0 }}
+        <div class="article-category">
+            <i class="fas fa-archive"></i>
+            {{ range $index, $value := .Params.categories }}
+            {{ if gt $index 0 }} {{ print ", " }} {{ end }}
+            <a class="category-link" href="{{ "/categories/" | relLangURL }}{{ $value | urlize }}">{{ $value }}</a>
+            {{ end }}
+        </div>
+        {{ end }}
+        {{ if gt .Params.tags 0 }}
+        <div class="article-tag">
+            <i class="fas fa-tag"></i>
+            {{ range $index, $value := .Params.tags }}
+            {{ if gt $index 0 }} {{ print ", " }} {{ end }}
+            <a class="tag-link" href="{{ "/tags/" | relLangURL }}{{ $value | urlize }}" rel="tag">{{ $value }}</a>
+            {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </header>
+
+  {{ with .Resources.ByType "image" }}
+    <div class="article-gallery">
+      {{ range $index, $value := . }}
+      <a class="gallery-item" href="{{ .RelPermalink }}" rel="gallery_{{ $index }}">
+          <img src="{{ .RelPermalink }}" itemprop="image" />
+      </a>
+      {{ end }}
+    </div>
+  {{ end }}
+    <div class="content" itemprop="articleBody">
+      {{ .Content}}
+    </div>
+  </article>
+
+  {{ partial "comments.html" . }}
+
+  {{ partial "page_nav_mobile.html" . }}
+
+  {{ partial "footer.html" . }}
+
+  </div>
+</body>
+
+<link rel="stylesheet" href={{ "/lib/font-awesome/css/all.min.css" | relURL }}>
+<script src={{ "/lib/jquery/jquery.min.js" | relURL }}></script>
+<script src={{ "/js/main.js" | relURL }}></script>
+{{ $mathjax := false }}
+{{ if isset .Params "mathjax" }}
+  {{ $mathjax = .Params.mathjax }}
+{{ else if isset .Site.Params "mathjax" }}
+  {{ $mathjax = .Site.Params.mathjax }}
+{{ end }}
+{{ if $mathjax }}
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+{{ end }}
+</html>

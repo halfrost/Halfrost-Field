@@ -1,0 +1,41 @@
+{{ define "main" }}
+<article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="content" itemprop="articleBody">
+    {{ if (eq .Type "tags")}}
+    <div id="tag-cloud">
+      {{ if (eq (len .Data.Terms) 0) }}
+      <div class="tag-cloud-title">
+        No tags
+      </div>
+      {{ end }}
+      <div class="tag-cloud-tags">
+        {{ $AllRegularPagesCount := len .Site.RegularPages }}
+        {{ range $elem := .Data.Terms.Alphabetical }}
+        <a style="font-size: {{ (add 0.8 (mul 15 (div (float $elem.Count) $AllRegularPagesCount))) }}rem;" href="{{ $elem.Page.Permalink }}">
+          {{- .Page.Title -}}
+        </a>
+        {{ end }}
+      </div>
+    </div>
+    {{ else if (eq .Type "categories")}}
+      <div id="categories">
+        {{ if (eq (len .Data.Terms) 0) }}
+        <div class="category-list-title">
+          No categories
+        </div>
+        {{ end }}
+        <div class="category-list">
+          <ul class="category-list">
+            {{ range .Data.Terms.Alphabetical }}
+            <li class="category-list-item">
+              <a class="category-list-link" href="{{ .Page.Permalink }}">{{ .Page.Title }}</a>
+              <span class="category-list-count">{{ .Count }}</span>
+            </li>
+            {{ end }}
+          </ul>
+        </div>
+      </div>
+      {{ end }}
+  </div>
+</article>
+{{ end }}

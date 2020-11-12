@@ -1,0 +1,64 @@
+<ul>
+  {{ $icon_class_name := .Scratch.Get "icon_class_name"}}
+  {{ if .Description }}
+    {{ .Scratch.Set "description" .Description }}
+  {{ else }}
+    {{ .Scratch.Set "description" .Summary }}
+  {{ end }}
+  {{ $description := .Scratch.Get "description" }}
+  <li>
+    <a class="icon" href="http://www.facebook.com/sharer.php?u={{ .Permalink }}">
+      <i class="fab fa-facebook {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="https://twitter.com/share?url={{ .Permalink }}&text={{ .Title }}">
+      <i class="fab fa-twitter {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="http://www.linkedin.com/shareArticle?url={{ .Permalink }}&title={{ .Title }}">
+      <i class="fab fa-linkedin {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url={{ .Permalink }}&is_video=false&description={{ .Title }}">
+      <i class="fab fa-pinterest {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="mailto:?subject={{ .Title }}&body=Check out this article: {{ .Permalink }}">
+      <i class="fas fa-envelope {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="https://getpocket.com/save?url={{ .Permalink }}&title={{ .Title }}">
+      <i class="fab fa-get-pocket {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="http://reddit.com/submit?url={{ .Permalink }}&title={{ .Title }}">
+      <i class="fab fa-reddit {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="http://www.stumbleupon.com/submit?url={{ .Permalink }}&title={{ .Title }}">
+      <i class="fab fa-stumbleupon {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="http://digg.com/submit?url={{ .Permalink }}&title={{ .Title }}">
+      <i class="fab fa-digg {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="http://www.tumblr.com/share/link?url={{ .Permalink }}&name={{ .Title }}&description={{ $description }}">
+      <i class="fab fa-tumblr {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+  <li>
+    <a class="icon" href="https://news.ycombinator.com/submitlink?u={{ .Permalink }}&t={{ .Title }}">
+      <i class="fab fa-hacker-news {{ $icon_class_name }}" aria-hidden="true"></i>
+    </a>
+  </li>
+</ul>

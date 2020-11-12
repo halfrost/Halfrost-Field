@@ -1,0 +1,102 @@
+/*!
+ * justifiedGallery - v3.7.0
+ * http://miromannino.github.io/Justified-Gallery/
+ * Copyright (c) 2018 Miro Mannino
+ * Licensed under the MIT license.
+ */
+.justified-gallery {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.justified-gallery > a,
+.justified-gallery > div,
+.justified-gallery > figure {
+  position: absolute;
+  display: inline-block;
+  overflow: hidden;
+  /* background: #888888; To have gray placeholders while the gallery is loading with waitThumbnailsLoad = false */
+  filter: "alpha(opacity=10)";
+  opacity: 0.1;
+  margin: 0;
+  padding: 0;
+}
+.justified-gallery > a > img,
+.justified-gallery > div > img,
+.justified-gallery > figure > img,
+.justified-gallery > a > a > img,
+.justified-gallery > div > a > img,
+.justified-gallery > figure > a > img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  filter: "alpha(opacity=0)";
+  opacity: 0;
+}
+.justified-gallery > a > .caption,
+.justified-gallery > div > .caption,
+.justified-gallery > figure > .caption {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  padding: 5px;
+  background-color: #000000;
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: white;
+  font-size: 12px;
+  font-weight: 300;
+  font-family: sans-serif;
+}
+.justified-gallery > a > .caption.caption-visible,
+.justified-gallery > div > .caption.caption-visible,
+.justified-gallery > figure > .caption.caption-visible {
+  display: initial;
+  filter: "alpha(opacity=70)";
+  opacity: 0.7;
+  -webkit-transition: opacity 500ms ease-in;
+  -moz-transition: opacity 500ms ease-in;
+  -o-transition: opacity 500ms ease-in;
+  transition: opacity 500ms ease-in;
+}
+.justified-gallery > .entry-visible {
+  filter: "alpha(opacity=100)";
+  opacity: 1;
+  background: none;
+}
+.justified-gallery > .entry-visible > img,
+.justified-gallery > .entry-visible > a > img {
+  filter: "alpha(opacity=100)";
+  opacity: 1;
+  -webkit-transition: opacity 500ms ease-in;
+  -moz-transition: opacity 500ms ease-in;
+  -o-transition: opacity 500ms ease-in;
+  transition: opacity 500ms ease-in;
+}
+.justified-gallery > .jg-filtered {
+  display: none;
+}
+.justified-gallery > .spinner {
+  position: absolute;
+  bottom: 0;
+  margin-left: -24px;
+  padding: 10px 0 10px 0;
+  left: 50%;
+  filter: "alpha(opacity=100)";
+  opacity: 1;
+  overflow: initial;
+}
+.justified-gallery > .spinner > span {
+  display: inline-block;
+  filter: "alpha(opacity=0)";
+  opacity: 0;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 4px;
+  background-color: #000;
+  border-radius: 6px;
+}

@@ -1,0 +1,13 @@
+language: minimal
+dist: trusty
+env:
+  - HUGO_VERSION=0.74.2
+install:
+  - curl -LO https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_Linux-64bit.deb
+  - sudo dpkg -i hugo_${HUGO_VERSION}_Linux-64bit.deb
+script:
+  - chmod +x ./deploy.sh
+  - ./deploy.sh
+branches:
+  only:
+    - src
