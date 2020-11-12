@@ -1,0 +1,110 @@
+{{ define "main" }}
+  <section id="about">
+  {{ if isset .Site.Params "description" }}
+    {{ .Site.Params.description }}
+  {{ end }}
+  {{ if isset .Site.Params "social" }}
+      <p>Find me on
+      {{ $length := (len .Site.Params.social) }}
+      {{ range $index, $elem := .Site.Params.social}}
+      {{ if eq $elem.name "email" }}
+        <a class="icon" target="_blank" rel="noopener" href="mailto:{{ $elem.link }}">
+          <i class="fas fa-envelope"></i>
+        </a>
+        {{ else if eq $elem.name "rss" }}
+        <a class="icon" target="_blank" rel="noopener" href="{{ $elem.link }}">
+          <i class="fas fa-rss"></i>
+        </a>
+        {{ else if eq $elem.name "scholar" }}
+        <a class="icon" target="_blank" rel="noopener" href="{{ $elem.link }}">
+          <i class="fas fa-graduation-cap"></i>
+        </a>
+        {{ else }}
+        <a class="icon" target="_blank" rel="noopener" href="{{ $elem.link }}">
+          <i class="fab fa-{{ lower $elem.name }}"></i>
+        </a>
+        {{ end }}
+        {{ if (lt (add $index 2) $length) }}
+          {{- print " , " -}}
+        {{ else if (lt (add $index 1) $length) }}
+          {{- print " and " -}}
+        {{ else }}
+          {{- print "." -}}
+        {{ end }}
+      {{ end }}
+      </p>
+  {{ end }}
+  </section>
+
+  <section id="writing">
+    <!-- TODO: use built in mainSections parameter https://gohugo.io/functions/where/#mainsections -->
+    <span class="h1"><a href="{{ .Site.Params.mainSection | absURL }}">Writings</a></span>
+    {{ if (and (and (isset .Site.Params "tagsoverview") (eq .Site.Params.tagsOverview true)) (gt (len .Site.Taxonomies.tags) 0)) }}
+    <span class="h2">Topics</span>
+    <span class="widget tagcloud">
+      {{ $AllRegularPagesCount := len .Site.RegularPages }}
+      {{ range $elem := .Site.Taxonomies.tags.Alphabetical }}
+      <a style="font-size: {{ (add 0.5 (mul 5 (div (float $elem.Count) $AllRegularPagesCount))) }}rem;" href="{{ $elem.Page.Permalink }}">
+        {{- .Page.Title -}}
+      </a>
+      {{ end }}
+    </span>
+    <span class="h2">Most recent</span>
+    {{ end }}
+
+    {{ $showAllPostsOnHomePage := false }}
+    {{ if (isset .Site.Params "showallpostsonhomepage") }}
+      {{ $showAllPostsOnHomePage = .Site.Params.ShowAllPostsOnHomePage }}
+    {{ end }}
+    {{ $dataFormat := .Site.Params.dateFormat | default "2006-01-02" }}
+    {{ if $showAllPostsOnHomePage }}
+    <ul class="post-list">
+      {{ range (sort .Paginator.Pages "Date" "desc") }}
+        <li class="post-item">
+          <div class="meta"><time datetime="{{ time .Date }}" itemprop="datePublished">{{ .Date.Format $dataFormat }}</time></div>
+          <span><a href="{{ .Permalink }}">{{ if .Title }} {{- .Title -}} {{ else }} {{- print "Untitled" -}}{{ end }}</a></span>
+        </li>
+      {{ end }}
+    </ul>
+
+    {{ partial "pagination.html" . }}
+
+    {{ else }}
+    <ul class="post-list">
+      {{ .Scratch.Set "count" 5 }}
+      {{ if isset .Site.Params "postsonhomepage" }}
+        {{ .Scratch.Set "count" .Site.Params.postsOnHomePage }}
+      {{ end }}
+      {{ range (first (.Scratch.Get "count") (sort .Site.RegularPages "Date" "desc")) }}
+        <li class="post-item">
+          <div class="meta"><time datetime="{{ time .Date }}" itemprop="datePublished">{{ .Date.Format $dataFormat }}</time></div>
+          <span><a href="{{ .Permalink }}">{{ if .Title }} {{- .Title -}} {{ else }} {{- print "Untitled" -}}{{ end }}</a></span>
+        </li>
+      {{ end }}
+    </ul>
+    {{ end }}
+  </section>
+
+  {{ $showProjectsList := false }}
+  {{ if .Site.Data.projects }}
+    {{ $showProjectsList = true }}
+  {{ else if (isset .Site.Params "showProjectsList") }}
+    {{ $showProjectsList = .Site.Params.ShowProjectsList }}
+  {{ end }}
+  {{ if $showProjectsList }}
+    {{ $projectsUrl := "#" }}
+    {{ if isset .Site.Params "projectsUrl" }}
+      {{ $projectsUrl = .Site.Params.projectsUrl }}
+    {{ end }}
+  <section id="projects">
+    <span class="h1"><a href="{{ $projectsUrl }}">Projects</a></span>
+    <ul class="project-list">
+        {{ range .Site.Data.projects.list }}
+        <li class="project-item">
+          <a href="{{ .url }}">{{ .name }}</a>: {{ .desc | markdownify }}
+        </li>
+        {{ end }}
+    </ul>
+  </section>
+  {{ end }}
+{{ end }}
