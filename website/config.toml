@@ -51,7 +51,7 @@ weight = 5
   googleAnalyticsAsync = true # use asynchronous tracking. Synchronous tracking by default
 
   # Home page settings
-  description = ""
+  description = "Explore in every moment of the hard thinking"
   mainSection = "posts" # your main section
   showAllPostsOnHomePage = true # default
   postsOnHomePage = 50 # this option will be ignored if showAllPostsOnHomePage is set to true

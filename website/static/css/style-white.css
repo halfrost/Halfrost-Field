@@ -622,7 +622,8 @@
   }
   #header #nav ul a {
     margin-right: 15px;
-    color: #2bbc8a;
+    /* color: #2bbc8a; */
+    color: #0f8814;
   }
   #header #nav ul a:hover {
     background-image: linear-gradient(transparent, transparent 5px, #2bbc8a 5px, #2bbc8a);
