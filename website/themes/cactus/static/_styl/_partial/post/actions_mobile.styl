@@ -1,0 +1,139 @@
+#footer-post
+  position: fixed
+  right: 0
+  bottom: 0
+  left: 0
+  z-index: 5000000
+  width: 100%
+  border-top: 1px solid $color-border
+  background: $color-footer-mobile-1
+  transition: opacity .2s
+
+  a
+    background: none
+    color: inherit
+    text-decoration: none
+
+  a.icon
+    background: none
+
+    &:hover
+      color: $color-link
+
+  #nav-footer
+    padding-right: 1rem
+    padding-left: 1rem
+    background: $color-footer-mobile-2
+    text-align: center
+
+    a
+      color: $color-accent-1
+      font-size: 1em
+
+    a:hover
+      underline(5px, $color-accent-1)
+
+    ul
+      display: table
+      margin: 0
+      padding: 0
+      width: 100%
+      list-style-type: none
+
+      li
+        display: inline-table
+        padding: 10px
+        width: 20%
+        vertical-align: middle
+
+  #actions-footer
+    overflow: auto
+    margin-top: 1rem
+    margin-bottom: 1rem
+    padding-right: 1rem
+    padding-left: 1rem
+    width: 100%
+    text-align: center
+    white-space: nowrap
+
+    a
+      display: inline-block
+      padding-left: 1rem
+      color: $color-accent-1
+
+  #share-footer
+    padding-right: 1rem
+    padding-left: 1rem
+    background: $color-footer-mobile-2
+    text-align: center
+
+    ul
+      display: table
+      margin: 0
+      padding: 0
+      width: 100%
+      list-style-type: none
+
+      li
+        display: inline-table
+        padding: 10px
+        width: 20%
+        vertical-align: middle
+
+  #toc-footer
+    clear: both
+    padding-top: 1rem
+    padding-bottom: 1rem
+    background: $color-footer-mobile-2
+    text-align: left
+
+    #TableOfContents
+      ul
+        margin: 0
+        padding-left: 20px
+        list-style-type: none
+
+        li
+          line-height: 30px
+
+    a:hover
+      color: $color-link
+
+    // .toc-level-1 > .toc-link
+    //   display: none
+
+    #TableOfContents > ul > li
+      color: $color-text
+      font-size: .8rem
+
+      &:before
+        color: $color-accent-1
+        content: "#"
+        margin-right: 8px;
+
+    #TableOfContents > ul > li > ul > li
+      color: $color-meta
+      font-size: .7rem
+      line-height: 15px
+
+      &:before
+        color: $color-accent-1
+        content: "·";
+        font-weight: bold;
+        margin-right: 3px;
+
+    #TableOfContents > ul > li > ul > li > ul > li
+      display: none
+
+    // .toc-level-5
+    //   display: none
+
+    // .toc-level-6
+    //   display: none
+
+    // .toc-number
+    //   display: none
+
+@media screen and (min-width: 500px)
+  #footer-post-container
+    display: none
