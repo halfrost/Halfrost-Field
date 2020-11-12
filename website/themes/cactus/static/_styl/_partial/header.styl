@@ -1,0 +1,109 @@
+#header
+  margin: 0 auto 2rem
+  width: 100%
+
+  h1, .h1
+    margin-top: 0
+    margin-bottom: 0
+    color: $color-text
+    letter-spacing: .01em
+    font-weight: 700
+    font-style: normal
+    font-size: 1.5rem
+    line-height: 2rem
+
+    antialias()
+
+  a
+    background: none
+    color: inherit
+    text-decoration: none
+
+  #logo
+    display: inline-block
+    float: left
+    margin-right: 20px
+    width: $logo-width
+    height: $logo-height
+    border-radius: 5px
+    background-size: $logo-width $logo-height
+    background-repeat: no-repeat
+    if $logo-grayout
+      filter: grayscale(100%)
+      -webkit-filter: grayscale(100%)
+
+  #nav
+    color: $color-accent-1
+    letter-spacing: .01em
+    font-weight: 200
+    font-style: normal
+    font-size: .8rem
+
+    ul
+      margin: 0
+      padding: 0
+      list-style-type: none
+      line-height: 15px
+
+      a
+        margin-right: 15px
+        color: $color-accent-1
+
+      a:hover
+        underline(5px, $color-accent-1)
+
+      li
+        display: inline-block
+        margin-right: 15px
+        border-right: 1px dotted
+        border-color: $color-accent-1
+        vertical-align: middle
+
+      .icon
+        display: none
+
+      li:last-child
+        margin-right: 0
+        border-right: 0
+
+        a
+          margin-right: 0
+
+if $logo-grayout
+  #header:hover
+    #logo
+      filter: none
+      -webkit-filter: none
+
+@media screen and (max-width: 480px)
+  #header #title
+    display: table
+    margin-right: 5rem
+    min-height: $logo-height
+    h1
+      display: table-cell
+      vertical-align: middle
+
+  #header #nav
+    ul
+      a:hover
+        background: none
+
+      li
+        display: none
+        border-right: 0
+
+      li.icon
+        position: absolute
+        top: 77px
+        right: 1rem
+        display: inline-block
+
+    ul.responsive
+      li
+        display: block
+
+    li:not(:first-child)
+      padding-top: 1rem
+      padding-left: $logo-width + 20px
+      font-size: 1rem

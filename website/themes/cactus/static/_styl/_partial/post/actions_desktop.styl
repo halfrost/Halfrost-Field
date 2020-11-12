@@ -1,0 +1,221 @@
+#header-post
+  position: fixed
+  top: 2rem
+  right: 0
+  display: inline-block
+  float: right
+  z-index: 100
+
+  a
+    background: none
+    color: inherit
+    text-decoration: none
+
+  a.icon
+    background: none
+
+    &:hover
+      color: $color-link
+
+  nav
+    ul
+      display: block;
+      list-style-image: none;
+      list-style-position: outside;
+      list-style-type: none;
+      list-style-type: none;
+      padding-inline-start: 40px;
+      li
+        display: list-item;
+        margin-right: 0px;
+
+  nav > ul
+    margin-block-end: 1em;
+    margin-block-start: 1em;
+
+  ul
+    display: inline-block
+    margin: 0
+    padding: 0
+    list-style-type: none
+
+    li
+      display: inline-block
+      margin-right: 15px
+      vertical-align: middle
+
+    li:last-child
+      margin-right: 0
+
+  #menu-icon
+    float: right
+    margin-right: 2rem
+    margin-left: 15px
+
+    &:hover
+      color: $color-accent-1
+
+  #menu-icon-tablet
+    float: right
+    margin-right: 2rem
+    margin-left: 15px
+
+    &:hover
+      color: $color-accent-1
+
+  #top-icon-tablet
+    position: fixed
+    right: 2rem
+    bottom: 2rem
+    margin-right: 2rem
+    margin-left: 15px
+
+    &:hover
+      color: $color-accent-1
+
+  .active
+    color: $color-accent-1
+
+  #menu
+    visibility: hidden
+    margin-right: 2rem
+
+  #nav
+    color: $color-accent-1
+    letter-spacing: .01em
+    font-weight: 200
+    font-style: normal
+    font-size: .8rem
+
+    ul
+      line-height: 15px
+
+      a
+        margin-right: 15px
+        color: $color-accent-1
+
+      a:hover
+        underline(5px, $color-accent-1)
+
+      li
+        border-right: 1px dotted $color-accent-1
+
+      li:last-child
+        margin-right: 0
+        border-right: 0
+
+        a
+          margin-right: 0
+
+  #actions
+    float: right
+    margin-top: 2rem
+    margin-right: 2rem
+    width: 100%
+    text-align: right
+
+    ul
+      display: block
+
+    .info
+      display: block
+      font-style: italic
+
+  #share
+    clear: both
+    padding-top: 1rem
+    padding-right: 2rem
+    text-align: right
+
+    li
+      display: block
+      margin: 0
+
+  #toc
+    float: right
+    clear: both
+    overflow: auto
+    margin-top: 1rem
+    padding-right: 2rem
+    max-width: 20em
+    max-height: calc(95vh - 7rem)
+    text-align: right
+
+    a:hover
+      color: $color-link
+
+    // .toc-level-1 > .toc-link
+    //   display: none
+
+    nav > ul > li
+      color: $color-text
+      font-size: .8rem
+
+      &:before
+        color: $color-accent-1
+        content: "#"
+        margin-right: 8px
+
+    nav > ul > li > ul > li
+      color: $color-meta
+      font-size: .7rem
+
+      &:before
+        color: $color-accent-1
+        content: "·"
+        font-weight: bold
+        margin-right: 3px
+
+    nav > ul > li > ul > li > ul > li
+      color: darken($color-meta, 20%)
+      font-size: .4rem
+
+    .toc-level-5
+      display: none
+
+    .toc-level-6
+      display: none
+
+    .toc-number
+      display: none
+
+// smartphone + phapblet
+@media screen and (max-width: 500px)
+  #header-post
+    display: none
+
+@media screen and (max-width: 900px)
+  #header-post
+    #menu-icon
+      display: none
+
+    #actions
+      display: none
+
+@media screen and (max-width: 1199px)
+  #header-post
+    #toc
+      display: none
+
+@media screen and (min-width: 900px)
+  #header-post
+    #menu-icon-tablet
+      display: none !important
+
+    #top-icon-tablet
+      display: none !important
+
+@media screen and (min-width: 1199px)
+  #header-post
+    #actions
+      width: auto
+
+      ul
+        display: inline-block
+        float: right
+
+      .info
+        display: inline
+        float: left
+        margin-right: 2rem
+        font-style: italic

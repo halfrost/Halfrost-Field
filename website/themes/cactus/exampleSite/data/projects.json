@@ -1,0 +1,14 @@
+{
+  "list": [
+    {
+      "name":"Hugo",
+      "url":"https://gohugo.io/",
+      "desc":"The world’s fastest framework for building websites."
+    },
+    {
+      "name":"Hugo Themes",
+      "url":"https://github.com/gohugoio/hugoThemes",
+      "desc":"A curated directory of Hugo themes"
+    }
+  ]
+}

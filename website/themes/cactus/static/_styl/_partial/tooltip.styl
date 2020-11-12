@@ -1,0 +1,78 @@
+// ref: https://github.com/primer/primer/blob/master/modules/primer-tooltips/lib/tooltips.scss
+.tooltipped
+  position: relative
+  
+// This is the tooltip bubble
+.tooltipped::after
+  position: absolute
+  z-index: 1000000
+  display: none
+  padding: .2em .5em
+  -webkit-font-smoothing: subpixel-antialiased
+  color: $color-background
+  font-display: swap // @stylint ignore
+  font-weight: 400
+  font-size: $font-size * 0.8
+  font-family: $font-family-body
+  line-height: $line-height
+  text-rendering: geometricPrecision
+  text-align: center
+  word-wrap: break-word
+  white-space: pre
+  content: attr(aria-label)
+  background: $color-text
+  border-radius: 3px
+  opacity: 0
+  
+// This is the tooltip arrow
+.tooltipped::before
+  position: absolute
+  z-index: 1000001
+  display: none
+  width: 0
+  height: 0
+  color: $color-text
+  pointer-events: none
+  content: ''
+  border: 6px solid transparent
+  opacity: 0
+  
+// delay animation for tooltip
+@keyframes tooltip-appear
+  from
+    opacity: 0
+  to
+    opacity: 1
+    
+// This will indicate when we'll activate the tooltip
+.tooltipped:hover,
+.tooltipped:active,
+.tooltipped:focus
+  &::before,
+  &::after
+    display: inline-block
+    text-decoration: none
+    animation-name: tooltip-appear
+    animation-duration: 0.1s
+    animation-fill-mode: forwards
+    animation-timing-function: ease-in
+    
+// Tooltipped south
+.tooltipped-s,
+.tooltipped-sw
+  &::after
+    top: 100%
+    right: 50%
+    margin-top: 6px
+  &::before
+    top: auto
+    right: 50%
+    bottom: -7px
+    margin-right: -6px
+    border-bottom-color: $color-text
+.tooltipped-sw::after
+  margin-right: -16px
+  
+// Move the tooltip body to the center of the object.
+.tooltipped-s::after
+  transform: translateX(50%)

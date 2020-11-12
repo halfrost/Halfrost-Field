@@ -1,0 +1,60 @@
+#footer
+  position: absolute
+  bottom: 0
+  margin-bottom: 10px
+  width: 100%
+  color: $color-meta
+  vertical-align: top
+  text-align: center
+  font-size: 11px
+
+  ul
+    margin: 0
+    padding: 0
+    list-style: none
+
+  li
+    display: inline-block
+    margin-right: 15px
+    border-right: 1px solid
+    border-color: $color-border
+    vertical-align: middle
+
+    a
+      margin-right: 15px
+
+  li:last-child
+    margin-right: 0
+    border-right: 0
+
+    a
+      margin-right: 0
+
+  a
+    color: $color-meta
+    text-decoration: underline
+    background-image: none
+
+  a:hover
+    color: lighten($color-meta, 20%)
+
+  .footer-left
+    height: 20px
+    vertical-align: middle
+    line-height: 20px
+
+@media (min-width: 39rem)
+  #footer
+    display: flex
+    flex-flow: row wrap
+    justify-content: space-between
+    align-items: center
+    align-content: center
+    margin-bottom: 20px
+
+    .footer-left
+      align-self: flex-start
+      margin-right: 20px
+
+    .footer-right
+      align-self: flex-end
