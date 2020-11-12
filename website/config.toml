@@ -1,0 +1,82 @@
+baseURL = "https://new.halfrost.com"
+languageCode = "en-us"
+title = "prometheus"
+theme = "cactus"
+copyright = "halfrost" # cactus will use title if copyright is not set
+disqusShortname = "halfrost" # Used when comments is enabled. Cactus will use site title if not set
+googleAnalytics = "UA-82753806-1"
+
+
+# summaryLength = 2
+
+# Main menu which appears below site header.
+[[menu.main]]
+name = "Home"
+url = "/"
+weight = 1
+
+[[menu.main]]
+name = "Books"
+url = "https://books.halfrost.com/"
+weight = 2
+
+[[menu.main]]
+name = "Github"
+url = "https://github.com/halfrost/"
+weight = 3
+
+[[menu.main]]
+name = "About"
+url = "https://halfrost.me/"
+weight = 4
+
+[[menu.main]]
+name = "RSS"
+url = "/index.xml"
+weight = 5
+
+
+
+[markup]
+  [markup.tableOfContents]
+    endLevel = 4
+    ordered = false
+    startLevel = 2
+
+[params]
+
+  colortheme = "white" # dark, light, white, or classic
+  rss = true # generate rss feed. default value is false
+  mathjax = true
+  googleAnalyticsAsync = true # use asynchronous tracking. Synchronous tracking by default
+
+  # Home page settings
+  description = ""
+  mainSection = "posts" # your main section
+  showAllPostsOnHomePage = true # default
+  postsOnHomePage = 50 # this option will be ignored if showAllPostsOnHomePage is set to true
+  tagsOverview = false # show tags overview by default.
+  showProjectsList = false # show projects list by default (if projects data file exists).
+  projectsUrl = "https://github.com/gohugoio" # title link for projects list
+
+  # https://gohugo.io/functions/format/#hugo-date-and-time-templating-reference
+  dateFormat = "2006-01-02" # default
+
+  # Post page settings
+  show_updated = false # default
+
+  [params.comments]
+    enabled = false # default
+    engine = "disqus" # more supported engines will be added.
+
+  # the value of name should be an valid font awesome icon name (brands type)
+  # https://fontawesome.com/icons?d=gallery&s=brands
+  #[[params.social]]
+  #  name = "github"
+  #  link = "https://github.com/gohugoio"
+  #[[params.social]]
+  #  name = "linkedin"
+  #  link = "https://www.linkedin.com/company/github/"
+  #[[params.social]]
+  #  name = "email"
+  #  link = "example@example.com"  # no need for "mailto:" in the head
