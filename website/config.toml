@@ -49,6 +49,7 @@ weight = 5
   rss = true # generate rss feed. default value is false
   mathjax = true
   googleAnalyticsAsync = true # use asynchronous tracking. Synchronous tracking by default
+  BookServiceWorker = true
 
   # Home page settings
   description = "Explore in every moment of the hard thinking"
