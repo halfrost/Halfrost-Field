@@ -7,7 +7,7 @@ draft = false
 image = "https://img.halfrost.com//Blog/ArticleTitleImage/6/2b/675dce5cd300cb54f1e177e399cef.jpg"
 slug = "wwdc2016_ios10_notification_new_features"
 tags = ["iOS", "iOS 10", "Notification", "WWDC2016"]
-title = "WWDC2016 Session 笔记 - iOS 10  推送 Notification 新特性"
+title = "WWDC 2016 Session 笔记 - iOS 10 推送 Notification 新特性"
 
 +++
 
