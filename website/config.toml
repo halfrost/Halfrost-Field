@@ -22,7 +22,7 @@ weight = 2
 
 [[menu.main]]
 name = "Github"
-url = "https://github.com/halfrost/"
+url = "https://github.com/halfrost/Halfrost-Field"
 weight = 3
 
 [[menu.main]]
