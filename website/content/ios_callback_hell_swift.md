@@ -7,7 +7,7 @@ draft = false
 image = "https://img.halfrost.com/Blog/ArticleTitleImage/13_0_.png"
 slug = "ios_callback_hell_swift"
 tags = ["iOS", "Callback hell", "回调地狱", "Swift"]
-title = "iOS如何优雅的处理“回调地狱 Callback hell ”(二) —— 使用 Swift"
+title = "iOS 如何优雅的处理“回调地狱 Callback hell ”(二) —— 使用 Swift"
 
 +++
 

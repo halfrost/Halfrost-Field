@@ -7,7 +7,7 @@ draft = false
 image = "https://img.halfrost.com/Blog/ArticleTitleImage/14_0_.png"
 slug = "wwdc2016_xcode8autolayout_features"
 tags = ["iOS", "Xcode 8", "AutoLayout", "AutoResizing Masks", "WWDC2016"]
-title = "WWDC2016 Session 笔记 - Xcode 8 Auto Layout 新特性"
+title = "WWDC 2016 Session 笔记 - Xcode 8 Auto Layout 新特性"
 
 +++
 

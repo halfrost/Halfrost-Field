@@ -7,7 +7,7 @@ draft = false
 image = "https://img.halfrost.com//Blog/ArticleTitleImage/d/e9/a0b6bbf9c0c3e1b834296315624d6.jpg"
 slug = "wwdc2016_ios10_uicollectionview_new_features"
 tags = ["iOS", "iOS 10", "UICollectionView", "WWDC 2016"]
-title = "WWDC2016 Session 笔记 - iOS 10  UICollectionView 新特性"
+title = "WWDC 2016 Session 笔记 - iOS 10 UICollectionView 新特性"
 
 +++
 
