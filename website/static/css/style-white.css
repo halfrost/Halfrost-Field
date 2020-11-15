@@ -343,7 +343,7 @@
   }
   body h3 {
     color: #383838;
-    text-decoration: underline;
+    /* text-decoration: underline; */
     font-weight: bold;
     font-size: 0.9rem;
   }
@@ -491,22 +491,35 @@
     -ms-hyphens: manual;
     -webkit-hyphens: manual;
   }
+  
   .content a {
     color: #383838;
     text-decoration: none;
-    // background-image: linear-gradient(transparent, transparent 5px, #383838 5px, #383838);
+    border-bottom: 3px solid #CBF8DF;
+    box-shadow: inset 0 -4px 0 #CBF8DF;
+    background-position: bottom;
+    background-size: 100% 6px;
+    background-repeat: repeat-x;
+  }
+  .content #archive a {
+    color: #383838;
+    text-decoration: none;
+    border-bottom: none;
+    box-shadow: none;
     background-position: bottom;
     background-size: 100% 6px;
     background-repeat: repeat-x;
   }
   .content a:hover {
-    background-image: linear-gradient(transparent, transparent 4px, #d480aa 4px, #d480aa);
+    background: #CBF8DF;
+    /* background-image: linear-gradient(transparent, transparent 4px, #d480aa 4px, #d480aa); */
   }
   .content a.icon {
     background: none;
   }
   .content a.icon:hover {
-    color: #d480aa;
+    /* color: #d480aa; */
+    color: #CBF8DF;
   }
   .content h1 a,
   .content .h1 a,
@@ -630,6 +643,8 @@
     margin-right: 15px;
     /* color: #2bbc8a; */
     color: #0f8814;
+    border-bottom: none;
+    box-shadow: none;
   }
   #header #nav ul a:hover {
     background-image: linear-gradient(transparent, transparent 5px, #2bbc8a 5px, #2bbc8a);
@@ -702,6 +717,8 @@
     background: none;
     color: inherit;
     text-decoration: none;
+    border-bottom: none;
+    box-shadow: none;
   }
   #header-post a.icon {
     background: none;
@@ -1217,6 +1234,8 @@
     background-position: bottom;
     background-size: 100% 6px;
     background-repeat: repeat-x;
+    border-bottom: none;
+    box-shadow: none;
   }
   .article-tag .tag-link:before {
     content: "#";
@@ -1226,6 +1245,8 @@
     background-position: bottom;
     background-size: 100% 6px;
     background-repeat: repeat-x;
+    border-bottom: none;
+    box-shadow: none;
   }
   @media (min-width: 480px) {
     .article-tag,
@@ -1299,7 +1320,7 @@
   }
   #footer a {
     color: #666;
-    text-decoration: underline;
+    /* text-decoration: underline; */
     background-image: none;
   }
   #footer a:hover {

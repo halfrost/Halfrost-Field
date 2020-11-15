@@ -343,7 +343,7 @@ body .h2 {
 }
 body h3 {
   color: rgba(86,124,119,0.8);
-  text-decoration: underline;
+  /* text-decoration: underline; */
   font-weight: bold;
   font-size: 0.9rem;
 }
@@ -491,16 +491,28 @@ body {
   -ms-hyphens: manual;
   -webkit-hyphens: manual;
 }
+
 .content a {
   color: #22272a;
   text-decoration: none;
-  // background-image: linear-gradient(transparent, transparent 5px, #22272a 5px, #22272a);
+  border-bottom: 3px solid #cc2a41;
+  box-shadow: inset 0 -4px 0 #cc2a41;
+  background-position: bottom;
+  background-size: 100% 6px;
+  background-repeat: repeat-x;
+}
+.content #archive a {
+  color: #22272a;
+  text-decoration: none;
+  border-bottom: none;
+  box-shadow: none;
   background-position: bottom;
   background-size: 100% 6px;
   background-repeat: repeat-x;
 }
 .content a:hover {
-  background-image: linear-gradient(transparent, transparent 4px, rgba(86,124,119,0.4) 4px, rgba(86,124,119,0.4));
+  background: rgba(86,124,119,0.4);
+  /* background-image: linear-gradient(transparent, transparent 4px, rgba(86,124,119,0.4) 4px, rgba(86,124,119,0.4)); */
 }
 .content a.icon {
   background: none;
@@ -629,6 +641,8 @@ body {
 #header #nav ul a {
   margin-right: 15px;
   color: #cc2a41;
+  border-bottom: none;
+  box-shadow: none;
 }
 #header #nav ul a:hover {
   background-image: linear-gradient(transparent, transparent 5px, #cc2a41 5px, #cc2a41);
@@ -701,6 +715,8 @@ body {
   background: none;
   color: inherit;
   text-decoration: none;
+  border-bottom: none;
+  box-shadow: none;
 }
 #header-post a.icon {
   background: none;
@@ -1200,6 +1216,8 @@ article .content .caption {
   background-position: bottom;
   background-size: 100% 6px;
   background-repeat: repeat-x;
+  border-bottom: none;
+  box-shadow: none;
 }
 .article-tag .tag-link:before {
   content: "#";
@@ -1209,6 +1227,8 @@ article .content .caption {
   background-position: bottom;
   background-size: 100% 6px;
   background-repeat: repeat-x;
+  border-bottom: none;
+  box-shadow: none;
 }
 @media (min-width: 480px) {
   .article-tag,
@@ -1282,7 +1302,7 @@ article .content .caption {
 }
 #footer a {
   color: #666;
-  text-decoration: underline;
+  /* text-decoration: underline; */
   background-image: none;
 }
 #footer a:hover {
