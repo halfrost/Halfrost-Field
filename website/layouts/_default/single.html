@@ -77,7 +77,10 @@
 
 <link rel="stylesheet" href={{ "/lib/font-awesome/css/all.min.css" | relURL }}>
 <script src={{ "/lib/jquery/jquery.min.js" | relURL }}></script>
-<script src={{ "/js/main.js" | relURL }}></script>
+<!-- <script src={{ "/js/main.js" | relURL }}></script> -->
+
+{{- $mainJS := resources.Get "main.js" | resources.Minify | resources.Fingerprint }}
+<script src="{{ $mainJS.RelPermalink }}"></script>
 
 <script async src={{ "/prism.js" | relURL }}></script>
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
