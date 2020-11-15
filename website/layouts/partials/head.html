@@ -14,7 +14,10 @@
     {{ .Scratch.Set "colortheme" .Site.Params.Colortheme }}
   {{ end }}
   {{ $colortheme := .Scratch.Get "colortheme" }}
-  <link rel="stylesheet" href="{{ $colortheme | printf "css/style-%s.css" | absURL }}">
+  {{ $themename  := printf "css/style-%s.css" $colortheme }}
+  {{- $styles := resources.Get $themename | resources.Minify}}
+  <!-- <link rel="stylesheet" href="{{ $colortheme | printf "css/style-%s.css" | absURL }}"> -->
+  <link rel="stylesheet" href="{{ $styles.RelPermalink }}">
 
   {{- $manifest := resources.Get "manifest.json" | resources.ExecuteAsTemplate "manifest.json" . }}
   <link rel="manifest" href="{{ $manifest.RelPermalink }}">
@@ -28,10 +31,22 @@
   <link href="{{ "images/apple-touch-icon-512x512.png" | relURL }}" rel="apple-touch-icon" sizes="512x512" />
   <link href="{{ "images/apple-touch-icon-1024x1024.png" | relURL }}" rel="apple-touch-icon" sizes="1024x1024" />
 
-  {{- if .Site.Params.BookServiceWorker }}
-  {{- $swJS := resources.Get "sw-register.js" | resources.ExecuteAsTemplate "sw.js" . | resources.Minify | resources.Fingerprint }}
-  <script defer src="{{ $swJS.RelPermalink }}" integrity="{{ $swJS.Data.Integrity }}"></script>
-  {{ end -}}
+  {{- $swJS := resources.Get "serviceworker-v1.js" | resources.Minify | resources.Fingerprint }}
+  <script async>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register("{{ $swJS.RelPermalink }}").then(function() {
+            if (navigator.serviceWorker.controller) {
+              console.log('Assets cached by the controlling service worker.');
+            } else {
+              console.log('Please reload this page to allow the service worker to handle network operations.');
+            }
+        }).catch(function(error) {
+            console.log('ERROR: ' + error);
+          });
+    } else {
+        console.log('Service workers are not supported in the current browser.');
+    }
+  </script>
 
   {{ `
     <!--[if lt IE 9]>
