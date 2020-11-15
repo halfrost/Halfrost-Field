@@ -421,7 +421,7 @@
     text-align: left;
     font-size: 12px;
     overflow: auto;
-    display: block;
+    display: table;
   }
   body th {
     padding: 8px;
@@ -555,9 +555,15 @@
       flex: 1 0 65%;
     }
   }
-  .max-width {
+  
+  .base-max-width {
+    max-width: 50rem;
+  }
+
+  .single-max-width {
     max-width: 60rem;
   }
+
   @media (max-width: 480px) {
     .px3 {
       padding-right: 1rem;
@@ -1066,7 +1072,7 @@
   .post-list .post-item .meta {
     display: block;
     margin-right: 16px;
-    min-width: 100px;
+    min-width: 50px;
     color: #666;
     font-size: 14px;
   }
@@ -1242,7 +1248,7 @@
   #archive .post-list .post-item .meta {
     display: block;
     margin-right: 16px;
-    min-width: 100px;
+    min-width: 50px;
     color: #666;
     font-size: 14px;
   }
