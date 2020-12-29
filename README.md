@@ -143,6 +143,9 @@ Latest：[目录](https://github.com/halfrost/Halfrost-Field/blob/master/content
 
 [![Stargazers over time](https://starchart.cc/halfrost/Halfrost-Field.svg)](https://starchart.cc/halfrost/Halfrost-Field)
 
+## 🌈 公众号
+
+![](./contents/images/wechat-qr-code.png)
 
 ## ©️ 转载
 
