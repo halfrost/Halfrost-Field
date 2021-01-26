@@ -57,14 +57,19 @@ func Array : 0xc4200bec30 , [100 200]
 ```go
 
 func main() {
-	arrayA := []int{100, 200}
-	testArrayPoint(&arrayA)   // 1.传数组指针
+	arrayA := [2]int{100, 200}
+	testArrayPoint1(&arrayA) // 1.传数组指针
 	arrayB := arrayA[:]
-	testArrayPoint(&arrayB)   // 2.传切片
+	testArrayPoint2(&arrayB) // 2.传切片
 	fmt.Printf("arrayA : %p , %v\n", &arrayA, arrayA)
 }
 
-func testArrayPoint(x *[]int) {
+func testArrayPoint1(x *[2]int) {
+	fmt.Printf("func Array : %p , %v\n", x, *x)
+	(*x)[1] += 100
+}
+
+func testArrayPoint2(x *[]int) {
 	fmt.Printf("func Array : %p , %v\n", x, *x)
 	(*x)[1] += 100
 }
@@ -161,7 +166,7 @@ BenchmarkSlice-4          300000              4055 ns/op            8192 B/op   
 
 
 
-切片（slice）是对数组一个连续片段的引用，所以切片是一个引用类型（因此更类似于 C/C++ 中的数组类型，或者 Python 中的 list 类型）。这个片段可以是整个数组，或者是由起始和终止索引标识的一些项的子集。需要注意的是，终止索引标识的项不包括在切片内。切片提供了一个与指向数组的动态窗口。
+切片（slice）是对数组一个连续片段的引用，所以切片是一个引用类型（因此更类似于 C++ 中的 Vector 类型，或者 Python 中的 list 类型）。这个片段可以是整个数组，或者是由起始和终止索引标识的一些项的子集。需要注意的是，终止索引标识的项不包括在切片内。切片提供了一个与指向数组的动态窗口。
 
 给定项的切片索引可能比相关数组的相同元素的索引小。和数组不同的是，切片的长度可以在运行时修改，最小为 0 最大为相关数组的长度：切片是一个长度可变的数组。
 
