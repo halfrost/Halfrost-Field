@@ -472,43 +472,189 @@ func (this *LFUCache) Put(key int, value int) {
 
 ## 王者
 
-在面试者回答出黄金级的问题了以后，面试官可能会继续追问一个更高级的问题。“如何实现一个高并发且线程安全的 LRU 呢？”。遇到这个问题，上文讨论的代码模板就失效了。要想做到高并发，需要考虑 2 点，第一点内存分配与回收一定要快，第二点执行操作耗时最少。详细的，由于要做到高并发，瞬间的 TPS 可能会很大，所以要最快的分配内存，开辟新的内存空间。垃圾回收也不能慢，否则内存会暴涨。针对 LRU / LFU 这个问题，执行的操作是 get 和 set，耗时需要最少。耗时高了，系统吞吐率会受到严重影响，TPS 上不去了。
+在面试者回答出黄金级的问题了以后，面试官可能会继续追问一个更高级的问题。“如何实现一个高并发且线程安全的 LRU 呢？”。遇到这个问题，上文讨论的代码模板就失效了。由于要做到高并发，瞬间的 TPS 可能会很大，针对 LRU / LFU 这个问题，要求执行 Get/Set 的操作耗时要最少。耗时高了，系统吞吐率会受到严重影响，TPS 上不去了。再者，在高并发的场景中，一定会保证线程安全。这里就需要用到锁。最简单的选用读写锁。以下举例以 LRUCache 为例。LFUCache 原理类似。（以下代码先给出改造新增的部分，最后再给出完整版）
+
+```go
+type LRUCache struct {
+    sync.RWMutex
+}
+
+func (c *LRUCache) Get(key int) int {
+	c.RLock()
+	defer c.RUnlock()
+	
+	……
+}
+
+func (c *LRUCache) Put(key int, value int) {
+	c.Lock()
+  	defer c.Unlock()
+  	
+	……
+}
+
+```
+
+上述代码虽然能保证线程安全，但是并发量并不高。因为在 Put 操作中，写锁会阻碍读锁，这里会锁住。接下来的优化思路很清晰，拆分大锁，让写锁尽可能的少阻碍读锁。一句话就是将锁颗粒化。
+
+
+```go
+
+type LRUCache struct {
+    sync.RWMutex
+    shards map[int]*LRUCacheShard
+}
+
+type LRUCacheShard struct {
+  	Cap  int
+	Keys map[int]*list.Element
+	List *list.List
+	sync.RWMutex
+}
+
+func (c *LRUCache) Get(key int) int {
+	shard, ok := c.GetShard(key, false)
+	if ok == false {
+		return -1
+	}
+	shard.RLock()
+	defer shard.RUnlock()
+	
+	……
+}
+
+func (c *LRUCache) Put(key int, value int) {
+  	shard, _ := c.GetShard(key, true)
+	shard.Lock()
+	defer shard.Unlock()
+	
+	……
+}
+
+func (c *LRUCache) GetShard(key int, create bool) (shard *LRUCacheShard, ok bool) {
+	hasher := sha1.New()
+	hasher.Write([]byte(key))
+	shardKey := fmt.Sprintf("%x", hasher.Sum(nil))[0:2]
+
+	c.lock.RLock()
+	shard, ok = c.shards[shardKey]
+	c.lock.RUnlock()
+
+	if ok || !create {
+		return
+	}
+
+	//only time we need to write lock
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	//check again in case the group was created in this short time
+	shard, ok = c.shards[shardKey]
+	if ok {
+		return
+	}
+
+	shard = &LRUCacheShard{
+		Keys: make(map[int]*list.Element),
+		List: list.New(),
+	}
+	c.shards[shardKey] = shard
+	ok = true
+	return
+}
+
+```
+
+通过上述的改造，利用哈希把原来的 LRUCache 分为了 256 个分片(2^16)。并且写锁锁住只发生在分片不存在的时候。一旦分片被创建了，之后都是读锁。这里依旧是小瓶颈，继续优化，消除掉这里的写锁。优化代码很简单，在创建的时候创建所有分片。
+
+```go
+
+func New(capacity int) LRUCache {
+	shards := make(map[int]*LRUCacheShard, 256)
+	for i := 0; i < 256; i++ {
+		shards[fmt.Sprintf("%02x", i)] = &LRUCacheShard{
+			Cap:  capacity,
+			Keys: make(map[int]*list.Element),
+			List: list.New(),
+		}
+	}
+	return LRUCache{
+		shards: shards,
+	}
+}
+
+func (c *LRUCache) Get(key int) int {
+	shard := c.GetShard(key)
+	shard.RLock()
+	defer shard.RUnlock()
+	
+	……
+}
+
+func (c *LRUCache) Put(key int, value int) {
+  	shard := c.GetShard(key)
+	shard.Lock()
+	defer shard.Unlock()
+	
+	……
+}
+
+func (c *LRUCache) GetShard(key int) (shard *LRUCacheShard) {
+  hasher := sha1.New()
+  hasher.Write([]byte(key))
+  shardKey :=  fmt.Sprintf("%x", hasher.Sum(nil))[0:2]
+  return c.shards[shardKey]
+}
+
+```
+
+到这里，大的临界区已经被拆分成细颗粒度了。在细粒度的锁内部，还包含双链表结点的操作，对结点的操作涉及到锁竞争。成熟的缓存系统如 memcached，使用的是全局的 LRU 链表锁，而 Redis 是单线程的所以不需要考虑并发的问题。回到 LRU，每个 Get 操作需要读取 key 值对应的 value，需要读锁。与此同时，Get 操作也涉及到移动最近最常使用的结点，需要写锁。Set 操作只涉及写锁。需要注意的一点，Get 和 Set 先后执行顺序非常关键。例如，先 get 一个不存在的 key，返回 nil，再 set 这个 key。如果先 set 这个 key，再 get 这个key，返回的就是不是 nil，而是对应的 value。所以在保证锁安全(不发生死锁)的情况下，还需要保证每个操作时序的正确性。能同时满足这 2 个条件的非带缓冲的 channel 莫属。先来看看消费 channel 通道里面数据的处理逻辑：
+
+
+```go
+func (c *CLRUCache) doMove(el *list.Element) bool {
+	if el.Value.(Pair).cmd == MoveToFront {
+		c.list.MoveToFront(el)
+		return false
+	}
+	newel := c.list.PushFront(el.Value.(Pair))
+	c.bucket(el.Value.(Pair).key).update(el.Value.(Pair).key, newel)
+	return true
+}
+```
+
+还指的一提的是，get 和 set 的写操作有 2 种类型，一种是 MoveToFront，另外一种是当结点不存在的时候，需要先创建一个新的结点，并移动到头部。这个操作即 PushFront。笔者这里在结点中加入了 cmd 标识，默认值是 MoveToFront。
+
+目前为止，下一步的优化思路确定使用带缓冲的 channel 了。用几个呢？答案是用 2 个。除去上面讨论的写入操作，还要管理 remove 操作。由于 LRU 逻辑的特殊性，它保证了移动结点和移除结点一定分开在双链表两端。也就是说在双链表两边同时操作，相互不影响。双链表的临界区范围可以进一步的缩小，可以缩小到结点级。最终方案就定下来了。用 2 个带缓冲的 channel，分别处理移动结点和删除结点，这两个 channel 可以在同一个协程中一起处理，互不影响。
 
 
 
 
 
+> 以下性能测试部分是面试结束后，笔者测试的。面试时写完代码，
 
 
 
+```go
 
+go test -bench BenchmarkGetAndPut1 -run none -benchmem -cpuprofile cpuprofile.out -memprofile memprofile.out -cpu=8goos: darwin
+goarch: amd64
+pkg: github.com/halfrost/LeetCode-Go/template
+BenchmarkGetAndPut1-8            368578              3474 ns/op             530 B/op         14 allocs/op
+PASS
+ok      github.com/halfrost/LeetCode-Go/template        1.022s
 
+```
 
+BenchmarkGetAndPut2 只是简单的全局加锁，会有死锁的情况。可以看到方案一的性能很好，368578 次循环平均出来的结果，平均一次 Get/Set 只需要 3474 ns，那么 TPS 大约是 300K/s，可以满足高并发的需求。
 
+最后看看这个版本下的 CPU 消耗情况，一切符合预期：
 
+![](https://img.halfrost.com/Blog/ArticleImage/146_11_0.png)
 
+内存分配情况，也符合预期：
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![](https://img.halfrost.com/Blog/ArticleImage/146_12_0.png)
 
 
 至此，你已经是王者。
 
-
-回答到此，面试官其实还会紧接着再追问一个问题，这个问题可能才是他想考察你的，前面这些都只是铺垫。由于接下来的这个问题回答起来篇幅比较长，所以笔者打算新起一篇文章来说明。
