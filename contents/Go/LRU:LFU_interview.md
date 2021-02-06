@@ -6,7 +6,7 @@
 
 > 缓存淘汰算法不仅仅只有 LRU / LFU 这两种，还有很多种，**TLRU** (Time aware least recently used)，**PLRU** (Pseudo-LRU)，**SLRU** (Segmented LRU)，**LFRU** (Least frequent recently used)，**LFUDA** (LFU with dynamic aging)，**LIRS** (Low inter-reference recency set)，**ARC** (Adaptive Replacement Cache)，**FIFO** (First In First Out)，**MRU** (Most recently used)，**LIFO** (Last in first out)，**FILO** (First in last out)，**CAR** (Clock with adaptive replacement) 等等。感兴趣的同学可以把这每一种都用代码实现一遍。
 
-## 青铜
+## 倔强青铜
 
 面试官可能就直接拿出 LeetCode 上这 2 道题让你来做的。在笔者拿出标准答案之前，先简单介绍一下 LRU 和 LFU 的概念。
 
@@ -236,7 +236,7 @@ func (this *LFUCache) Put(key int, value int) {
 ![](https://img.halfrost.com/Blog/ArticleImage/146_5.png)
 
 
-## 黄金
+## 荣耀黄金
 
 面试中如果给出了上面青铜的答案，可能会被追问，“还有没有其他解法？” 虽然目前青铜的答案已经是最优解了，但是面试官还想考察多解。
 
@@ -468,11 +468,11 @@ func (this *LFUCache) Put(key int, value int) {
 
 ![](https://img.halfrost.com/Blog/ArticleImage/146_7.png)
 
-提交以后，LRU 和 LFU 都打败了 100%。上述代码都封装好了，[完整代码](https://github.com/halfrost/LeetCode-Go/tree/master/template)在 LeetCode-Go 中，讲解也更新到了 《LeetCode Cookbook》第三章的[第三节 LRUCache](https://books.halfrost.com/leetcode/ChapterThree/LRUCache/)和[第四节 LFUCache](https://books.halfrost.com/leetcode/ChapterThree/LFUCache/)中。LRU 的最优解是 map + 双向链表，LFU 的最优解是 2 个 map + 多个双向链表。其实热身刚刚结束，接下来才是本文的重点。
+提交以后，LRU 和 LFU 都打败了 100%。上述代码都封装好了，[完整代码](https://github.com/halfrost/LeetCode-Go/tree/master/template)在 LeetCode-Go 中，讲解也更新到了 《LeetCode Cookbook》第三章的[第三节 LRUCache](https://books.halfrost.com/leetcode/ChapterThree/LRUCache/)和[第四节 LFUCache](https://books.halfrost.com/leetcode/ChapterThree/LFUCache/)中。LRU 的最优解是 map + 双向链表，LFU 的最优解是 2 个 map + 多个双向链表。其实热身刚刚结束，接下来才是本文的**重点**。
 
-## 王者
+## 最强王者
 
-在面试者回答出黄金级的问题了以后，面试官可能会继续追问一个更高级的问题。“如何实现一个高并发且线程安全的 LRU 呢？”。遇到这个问题，上文讨论的代码模板就失效了。由于要做到高并发，瞬间的 TPS 可能会很大，针对 LRU / LFU 这个问题，要求执行 Get/Set 的操作耗时要最少。耗时高了，系统吞吐率会受到严重影响，TPS 上不去了。再者，在高并发的场景中，一定会保证线程安全。这里就需要用到锁。最简单的选用读写锁。以下举例以 LRUCache 为例。LFUCache 原理类似。（以下代码先给出改造新增的部分，最后再给出完整版）
+在面试者回答出黄金级的问题了以后，面试官可能会继续追问一个更高级的问题。“如何实现一个高并发且线程安全的 LRU 呢？”。遇到这个问题，上文讨论的代码模板就失效了。要想做到高并发，需要考虑 2 点，第一点内存分配与回收 GC 一定要快，最好是 Zero GC 开销，第二点执行操作耗时最少。详细的，由于要做到高并发，瞬间的 TPS 可能会很大，所以要最快的分配内存，开辟新的内存空间。垃圾回收也不能慢，否则内存会暴涨。针对 LRU / LFU 这个问题，执行的操作是 get 和 set，耗时需要最少。耗时高了，系统吞吐率会受到严重影响，TPS 上不去了。再者，在高并发的场景中，一定会保证线程安全。这里就需要用到锁。最简单的选用读写锁。以下举例以 LRUCache 为例。LFUCache 原理类似。（以下代码先给出改造新增的部分，最后再给出完整版）
 
 ```go
 type LRUCache struct {
@@ -656,5 +656,85 @@ BenchmarkGetAndPut2 只是简单的全局加锁，会有死锁的情况。可以
 ![](https://img.halfrost.com/Blog/ArticleImage/146_12_0.png)
 
 
-至此，你已经是王者。
+至此，你已经是王者了。
 
+
+## 荣耀王者
+
+这里是附加题部分。面试官问到这里就和 LRU/LFU 直接关系不大了。笔者之所以在这篇文章最后提一笔，是想给读者扩展思维。面试官会针对你给出的高并发版的 LRU 继续问，“你觉得你写的这个版本缺点在哪里？和真正的 Cache 比，还有哪些欠缺？”
+
+在上一节“最强王者”中，粗略的实现了一个高并发的 LRU。但是这个方案还不是最完美的。当高并发高到一个临界值的时候，即 Get 请求的速度达到 Go 内存回收速度的几百倍，几万倍的时候。bucket 分片被清空，试图访问该分片中的 key 的 goroutine 开始分配内存，而先前的内存仍未完全释放，从而导致内存使用量激增和 OOM 崩溃。所以这种方法的性能不能随内核数量很好地扩展。
+
+另外这种粗略的方式是以缓存数目作为 Cap 的，没有考虑每个 value 的大小。以缓存数目作为基准，是没法限制住内存大小的。如果高负载的业务，设置大的 Cap，极端的讲，每个 value 都非常大，几十个 MB，整体内存消耗可能上百 GB。如果是低负载的业务，设置很小的 Cap，极端情况，每个 value 特别小。总内存大小可能在 1KB。这样看，内存上限和下限浮动太大了，无法折中限制。
+
+欠缺的分为 2 部分，一部分是功能性，一部分是性能。功能性方面欠缺 TTL，持久化。TTL 是过期时间，到时间需要删除 key。持久化是将缓存中的数据保存至文件中，或者启动的时候从文件中读取。
+
+性能方面欠缺的是高效的 hash 算法，高命中率，内存限制，可伸缩性。
+
+高效的 hash 算法指的是类似 AES Hash，针对 CPU 是否支持 AES 指令集进行了判断，当 CPU 支持 AES 指令集的时候，它会选用 AES Hash 算法。一些高效的 hash 算法用汇编语言实现的。
+
+高命中率方面，可以参考 [BP-Wrapper: A System Framework Making Any
+Replacement Algorithms (Almost) Lock Contention Free](https://dgraph.io/blog/refs/bp_wrapper.pdf) 这篇论文，在这篇论文里面提出了 2 种方式：prefetching 和 batching。简单说一下 batching 的方式。在等待临界区之前，先填满 ring buffer。如该论文所述，借用 ring buffer 这种方式，几乎没有开销，从而大大降低了竞争。实现 ring buffer 可以考虑使用 sync.Pool 而不是其他的数据结构（切片，带区互斥锁等），原因是性能优势主要是由于线程本地存储的内部使用，而其他的数据结构没有这相关的 API。
+
+内存限制。无限大的缓存实际上是不可能的。高速缓存必须有大小限制。如何制定一套高效的淘汰的策略就变的很关键。LRU 这个淘汰策略好么？针对不同的使用场景，LRU 并不是最好的，有些场景下 LFU 更加适合。这里有一篇论文 [TinyLFU: A Highly Efficient Cache Admission Policy](https://dgraph.io/blog/refs/TinyLFU%20-%20A%20Highly%20Efficient%20Cache%20Admission%20Policy.pdf)，这篇论文中讨论了一种高效缓存准入策略。TinyLFU 是一种与淘汰无关的准入策略，目的是在以很少的内存开销来提高命中率。主要思想是仅在新的 key 的估计值高于正要被逐出的 key 的估计值时才允许进入 Cache。当缓存达到容量时，每个新的 key 都应替换缓存中存在的一个或多个密钥。并且，传入 key 的估值应该比被淘汰出去的 key 估值高。否则新的 key 禁止进入缓存中。这样做也为了保证高命中率。
+
+在将新 key 放入 TinyLFU 中之前，还可以使用 bloom 过滤器首先检查该密钥是否之前已被查看过。仅当 key 在布隆过滤器中已经存在时，才将其插入 TinyLFU。这是为了避免长时间不被看到的长尾键污染 TinyLFU。
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_23.png)
+
+
+关于到底选择 LRU 还是 LFU 还是 LRU + LFU ，这个话题比较大，展开讨论又可以写好几篇新文章了。感兴趣的读者可以看看这篇论文，[Adaptive Software Cache Management](https://dgraph.io/blog/refs/Adaptive%20Software%20Cache%20Management.pdf) ，从标题上看，自适应的软件缓存管理，就能看出它在探讨了这个问题。论文的基本思想是在主缓存段之前放置一个 LRU “窗口”，并使用爬山技术自适应地调整窗口大小以最大化命中率。[A high performance caching library for Java 8 — Caffeine](https://github.com/ben-manes/caffeine) 已经取得了很好的效果。
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_22.png)
+
+
+可伸缩性方面，选择合适的缓存大小，可以避免 [False Sharing](https://dzone.com/articles/false-sharing)，在多核系统中，其中不同的原子计数器（每个8字节）位于同一高速缓存行（通常为64字节）中。对这些计数器之一进行的任何更新都会导致其他计数器被标记为无效。这将强制为拥有该高速缓存的所有其他核心重新加载高速缓存，从而在高速缓存行上创建写争用。为了实现可伸缩性，应该确保每个原子计数器完全占用完整的缓存行。因此，每个内核都在不同的缓存行上工作。 
+
+
+最后看看 Go 实现的几个开源 Cache 库。关于这些 Cache 的源码分析，本篇文章就不展开了。(有时间可能会单独再开一篇文章详解)。感兴趣的读者可以自己查阅源码。
+
+[bigcache](https://github.com/allegro/bigcache)，BigCache 根据 key 的哈希将数据分为 shards。每个分片都包含一个映射和一个 ring buffer。每当设置新元素时，它都会将该元素追加到相应分片的 ring buffer 中，并且缓冲区中的偏移量将存储在 map 中。如果同一元素被 Set 多次，则缓冲区中的先前条目将标记为无效。如果缓冲区太小，则将其扩展直到达到最大容量。每个 map 中的 key 都是一个 uint32 hash，其值是一个 uint32 指针，指向该值与元数据信息一起存储的缓冲区中的偏移量。如果存在哈希冲突，则 BigCache 会忽略前一个键并将当前键存储到映射中。预先分配较少，较大的缓冲区并使用 map[uint32]uint32 是避免承担 GC 扫描成本的好方法。
+
+[freecache](https://github.com/coocood/freecache)，FreeCache 通过减少指针数量避免了 GC 开销。 无论其中存储了多少条目，都只有 512 个指针。通过 key 的哈希值将数据集分割为 256 个段。将新 key 添加到高速缓存时，将使用 key 哈希值的低八位来标识段 ID。每个段只有两个指针，一个是存储 key 和 value 的 ring buffer，另一个是用于查找条目的索引 slice。数据附加到 ring buffer 中，偏移量存储到排序 slice 中。如果 ring buffer 没有足够的空间，则使用修改后的 LRU 策略从 ring buffer 的开头开始，在该段中淘汰 key。如果条目的最后访问时间小于段的平均访问时间，则从 ring buffer 中删除该条目。要在 Get 的高速缓存中查找条目，请在相应插槽 slot 中的排序数组中执行二进制搜索。此外还有一个加速的优化，使用 key 的哈希的 LSB 9-16 选择一个插槽 slot。将数据划分为多个插槽 slot 有助于减少在缓存中查找键时的搜索空间。每个段都有自己的锁，因此它支持高并发访问。
+
+[groupCache](https://github.com/golang/groupcache)，groupcache 是​​一个分布式的缓存和缓存填充库，在许多情况下可以替代 memcached。在许多情况下甚至可以用来替代内存缓存节点池。groupcache 实现原理和本文在王者中实现的方式是一摸一样的。
+
+
+[fastcache](https://github.com/VictoriaMetrics/fastcache)，fastcache 并没有缓存过期的概念。仅在高速缓存大小溢出时才从高速缓存中淘汰 key 值。key 的截止期限可以存储在该值内，以实现缓存过期。fastcache 缓存由许多 buckets 组成，每个 buckets 都有自己的锁。这有助于扩展多核 CPU 的性能，因为多个 CPU 可以同时访问不同的 buckets。每个 buckets 均由一个 hash（key）->（key，value）的映射和 64KB 大小的字节 slice（块）组成，这些字节 slice 存储已编码的（key，value）。每个 buckets 仅包含 chunksCount 个指针。例如，64GB 缓存将包含大约 1M 指针，而大小相似的 map[string][]byte 将包含 1B指针，用于小的 key 和 value。这样做可以节约巨大的 GC 开销。与每个 bucket 中的单个 chunk 相比，64KB 大小的 chunk 块减少了内存碎片和总内存使用量。如果可能，将大 chunk 块分配在堆外。这样做可以减少了总内存使用量，因为 GC 无需要 GOGC 调整即可以更频繁地收集未使用的内存。
+
+[ristretto](https://github.com/dgraph-io/ristretto)，ristretto 拥有非常优秀的缓存命中率。淘汰策略采用简单的 LFU，性能与 LRU 相当，并且在搜索和数据库跟踪上具有更好的性能。存入策略采用 TinyLFU 策略，它几乎没有内存开销（每个计数器 12 位）。淘汰策略根据代价值判断，任何代价值大的 key 都可以淘汰多个代价值较小的 key（代价值可以是自定义的衡量标准）。
+
+以下是这几个库的性能曲线图：
+
+在一小时内对 CODASYL 数据库的引用：
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_15.svg)
+
+在商业站点上运行的数据库服务器，该服务器在商业数据库之上运行 ERP 应用程序：
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_16.svg)
+
+循环访问模式：
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_17.svg)
+
+大型商业搜索引擎响应各种 Web 搜索请求而启动的磁盘读取访问：
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_18.svg)
+
+吞吐量：
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_19.svg)
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_20.svg)
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_21.svg)
+
+## 推荐阅读
+
+[BP-Wrapper: A System Framework Making Any
+Replacement Algorithms (Almost) Lock Contention Free](https://dgraph.io/blog/refs/bp_wrapper.pdf)  
+[Adaptive Software Cache Management](https://dgraph.io/blog/refs/Adaptive%20Software%20Cache%20Management.pdf)  
+[TinyLFU: A Highly Efficient Cache Admission Policy](https://dgraph.io/blog/refs/TinyLFU%20-%20A%20Highly%20Efficient%20Cache%20Admission%20Policy.pdf)
+[LIRS: An Efficient Low Inter-reference Recency Set Replacement Policy to Improve Buffer Cache Performance](http://web.cse.ohio-state.edu/hpcs/WWW/HTML/publications/papers/TR-02-6.pdf)
+[ARC: A Self-Tuning, Low Overhead Replacement Cache](https://www.usenix.org/event/fast03/tech/full_papers/megiddo/megiddo.pdf)
