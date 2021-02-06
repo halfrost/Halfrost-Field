@@ -497,6 +497,10 @@ func (c *LRUCache) Put(key int, value int) {
 
 上述代码虽然能保证线程安全，但是并发量并不高。因为在 Put 操作中，写锁会阻碍读锁，这里会锁住。接下来的优化思路很清晰，拆分大锁，让写锁尽可能的少阻碍读锁。一句话就是将锁颗粒化。
 
+![](https://img.halfrost.com/Blog/ArticleImage/146_27.png)
+
+如上图，将一个大的临界区拆分成一个个小的临界区。代码如下：
+
 
 ```go
 
@@ -564,12 +568,12 @@ func (c *LRUCache) GetShard(key int, create bool) (shard *LRUCacheShard, ok bool
 
 ```
 
-通过上述的改造，利用哈希把原来的 LRUCache 分为了 256 个分片(2^16)。并且写锁锁住只发生在分片不存在的时候。一旦分片被创建了，之后都是读锁。这里依旧是小瓶颈，继续优化，消除掉这里的写锁。优化代码很简单，在创建的时候创建所有分片。
+通过上述的改造，利用哈希把原来的 LRUCache 分为了 256 个分片(2^8)。并且写锁锁住只发生在分片不存在的时候。一旦分片被创建了，之后都是读锁。这里依旧是小瓶颈，继续优化，消除掉这里的写锁。优化代码很简单，在创建的时候创建所有分片。
 
 ```go
 
 func New(capacity int) LRUCache {
-	shards := make(map[int]*LRUCacheShard, 256)
+	shards := make(map[string]*LRUCacheShard, 256)
 	for i := 0; i < 256; i++ {
 		shards[fmt.Sprintf("%02x", i)] = &LRUCacheShard{
 			Cap:  capacity,
@@ -622,32 +626,73 @@ func (c *CLRUCache) doMove(el *list.Element) bool {
 }
 ```
 
-还指的一提的是，get 和 set 的写操作有 2 种类型，一种是 MoveToFront，另外一种是当结点不存在的时候，需要先创建一个新的结点，并移动到头部。这个操作即 PushFront。笔者这里在结点中加入了 cmd 标识，默认值是 MoveToFront。
+还值得一提的是，get 和 set 的写操作有 2 种类型，一种是 MoveToFront，另外一种是当结点不存在的时候，需要先创建一个新的结点，并移动到头部。这个操作即 PushFront。笔者这里在结点中加入了 cmd 标识，默认值是 MoveToFront。
+
+![](https://img.halfrost.com/Blog/ArticleImage/146_26.png)
+
+
 
 目前为止，下一步的优化思路确定使用带缓冲的 channel 了。用几个呢？答案是用 2 个。除去上面讨论的写入操作，还要管理 remove 操作。由于 LRU 逻辑的特殊性，它保证了移动结点和移除结点一定分开在双链表两端。也就是说在双链表两边同时操作，相互不影响。双链表的临界区范围可以进一步的缩小，可以缩小到结点级。最终方案就定下来了。用 2 个带缓冲的 channel，分别处理移动结点和删除结点，这两个 channel 可以在同一个协程中一起处理，互不影响。
 
+```go
+func (c *CLRUCache) worker() {
+	defer close(c.control)
+	for {
+		select {
+		case el, ok := <-c.movePairs:
+			if ok == false {
+				goto clean
+			}
+			if c.doMove(el) && c.list.Len() > c.cap {
+				el := c.list.Back()
+				c.list.Remove(el)
+				c.bucket(el.Value.(Pair).key).delete(el.Value.(Pair).key)
+			}
+		case el := <-c.deletePairs:
+			c.list.Remove(el)
+		case control := <-c.control:
+			switch msg := control.(type) {
+			case clear:
+				for _, bucket := range c.buckets {
+					bucket.clear()
+				}
+				c.list = list.New()
+				msg.done <- struct{}{}
+			}
+		}
+	}
+clean:
+	for {
+		select {
+		case el := <-c.deletePairs:
+			c.list.Remove(el)
+		default:
+			close(c.deletePairs)
+			return
+		}
+	}
+}
+```
 
+最终完整的代码放在[这里](https://github.com/halfrost/LeetCode-Go/blob/master/template/CLRUCache.go)了。最后简单的跑一下 Benchmark 看看性能如何。
 
-
-
-> 以下性能测试部分是面试结束后，笔者测试的。面试时写完代码，
+> 以下性能测试部分是面试结束后，笔者测试的。面试时写完代码，并没有当场 Benchmark。
 
 
 
 ```go
-
 go test -bench BenchmarkGetAndPut1 -run none -benchmem -cpuprofile cpuprofile.out -memprofile memprofile.out -cpu=8goos: darwin
 goarch: amd64
 pkg: github.com/halfrost/LeetCode-Go/template
-BenchmarkGetAndPut1-8            368578              3474 ns/op             530 B/op         14 allocs/op
+BenchmarkGetAndPut1-8            368578              2474 ns/op             530 B/op         14 allocs/op
 PASS
 ok      github.com/halfrost/LeetCode-Go/template        1.022s
 
 ```
 
-BenchmarkGetAndPut2 只是简单的全局加锁，会有死锁的情况。可以看到方案一的性能很好，368578 次循环平均出来的结果，平均一次 Get/Set 只需要 3474 ns，那么 TPS 大约是 300K/s，可以满足高并发的需求。
+BenchmarkGetAndPut2 只是简单的全局加锁，会有死锁的情况。可以看到方案一的性能还行，368578 次循环平均出来的结果，平均一次 Get/Set 需要 2474 ns，那么 TPS 大约是 300K/s，可以满足一般高并发的需求。
 
-最后看看这个版本下的 CPU 消耗情况，一切符合预期：
+最后看看这个版本下的 CPU 消耗情况，符合预期：
 
 ![](https://img.halfrost.com/Blog/ArticleImage/146_11_0.png)
 
@@ -661,7 +706,7 @@ BenchmarkGetAndPut2 只是简单的全局加锁，会有死锁的情况。可以
 
 ## 荣耀王者
 
-这里是附加题部分。面试官问到这里就和 LRU/LFU 直接关系不大了。笔者之所以在这篇文章最后提一笔，是想给读者扩展思维。面试官会针对你给出的高并发版的 LRU 继续问，“你觉得你写的这个版本缺点在哪里？和真正的 Cache 比，还有哪些欠缺？”
+这里是附加题部分。面试官问到这里就和 LRU/LFU 直接关系不大了，更多的考察的是如何设计一个高并发的 Cache。笔者之所以在这篇文章最后提一笔，是想给读者扩展思维。面试官会针对你给出的高并发版的 LRU 继续问，“你觉得你写的这个版本缺点在哪里？和真正的 Cache 比，还有哪些欠缺？”
 
 在上一节“最强王者”中，粗略的实现了一个高并发的 LRU。但是这个方案还不是最完美的。当高并发高到一个临界值的时候，即 Get 请求的速度达到 Go 内存回收速度的几百倍，几万倍的时候。bucket 分片被清空，试图访问该分片中的 key 的 goroutine 开始分配内存，而先前的内存仍未完全释放，从而导致内存使用量激增和 OOM 崩溃。所以这种方法的性能不能随内核数量很好地扩展。
 
@@ -678,6 +723,9 @@ Replacement Algorithms (Almost) Lock Contention Free](https://dgraph.io/blog/ref
 
 内存限制。无限大的缓存实际上是不可能的。高速缓存必须有大小限制。如何制定一套高效的淘汰的策略就变的很关键。LRU 这个淘汰策略好么？针对不同的使用场景，LRU 并不是最好的，有些场景下 LFU 更加适合。这里有一篇论文 [TinyLFU: A Highly Efficient Cache Admission Policy](https://dgraph.io/blog/refs/TinyLFU%20-%20A%20Highly%20Efficient%20Cache%20Admission%20Policy.pdf)，这篇论文中讨论了一种高效缓存准入策略。TinyLFU 是一种与淘汰无关的准入策略，目的是在以很少的内存开销来提高命中率。主要思想是仅在新的 key 的估计值高于正要被逐出的 key 的估计值时才允许进入 Cache。当缓存达到容量时，每个新的 key 都应替换缓存中存在的一个或多个密钥。并且，传入 key 的估值应该比被淘汰出去的 key 估值高。否则新的 key 禁止进入缓存中。这样做也为了保证高命中率。
 
+![](https://img.halfrost.com/Blog/ArticleImage/146_25_0.png)
+
+
 在将新 key 放入 TinyLFU 中之前，还可以使用 bloom 过滤器首先检查该密钥是否之前已被查看过。仅当 key 在布隆过滤器中已经存在时，才将其插入 TinyLFU。这是为了避免长时间不被看到的长尾键污染 TinyLFU。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/146_23.png)
@@ -691,13 +739,17 @@ Replacement Algorithms (Almost) Lock Contention Free](https://dgraph.io/blog/ref
 可伸缩性方面，选择合适的缓存大小，可以避免 [False Sharing](https://dzone.com/articles/false-sharing)，在多核系统中，其中不同的原子计数器（每个8字节）位于同一高速缓存行（通常为64字节）中。对这些计数器之一进行的任何更新都会导致其他计数器被标记为无效。这将强制为拥有该高速缓存的所有其他核心重新加载高速缓存，从而在高速缓存行上创建写争用。为了实现可伸缩性，应该确保每个原子计数器完全占用完整的缓存行。因此，每个内核都在不同的缓存行上工作。 
 
 
+![](https://img.halfrost.com/Blog/ArticleImage/146_24.png)
+
+
+
 最后看看 Go 实现的几个开源 Cache 库。关于这些 Cache 的源码分析，本篇文章就不展开了。(有时间可能会单独再开一篇文章详解)。感兴趣的读者可以自己查阅源码。
 
 [bigcache](https://github.com/allegro/bigcache)，BigCache 根据 key 的哈希将数据分为 shards。每个分片都包含一个映射和一个 ring buffer。每当设置新元素时，它都会将该元素追加到相应分片的 ring buffer 中，并且缓冲区中的偏移量将存储在 map 中。如果同一元素被 Set 多次，则缓冲区中的先前条目将标记为无效。如果缓冲区太小，则将其扩展直到达到最大容量。每个 map 中的 key 都是一个 uint32 hash，其值是一个 uint32 指针，指向该值与元数据信息一起存储的缓冲区中的偏移量。如果存在哈希冲突，则 BigCache 会忽略前一个键并将当前键存储到映射中。预先分配较少，较大的缓冲区并使用 map[uint32]uint32 是避免承担 GC 扫描成本的好方法。
 
 [freecache](https://github.com/coocood/freecache)，FreeCache 通过减少指针数量避免了 GC 开销。 无论其中存储了多少条目，都只有 512 个指针。通过 key 的哈希值将数据集分割为 256 个段。将新 key 添加到高速缓存时，将使用 key 哈希值的低八位来标识段 ID。每个段只有两个指针，一个是存储 key 和 value 的 ring buffer，另一个是用于查找条目的索引 slice。数据附加到 ring buffer 中，偏移量存储到排序 slice 中。如果 ring buffer 没有足够的空间，则使用修改后的 LRU 策略从 ring buffer 的开头开始，在该段中淘汰 key。如果条目的最后访问时间小于段的平均访问时间，则从 ring buffer 中删除该条目。要在 Get 的高速缓存中查找条目，请在相应插槽 slot 中的排序数组中执行二进制搜索。此外还有一个加速的优化，使用 key 的哈希的 LSB 9-16 选择一个插槽 slot。将数据划分为多个插槽 slot 有助于减少在缓存中查找键时的搜索空间。每个段都有自己的锁，因此它支持高并发访问。
 
-[groupCache](https://github.com/golang/groupcache)，groupcache 是​​一个分布式的缓存和缓存填充库，在许多情况下可以替代 memcached。在许多情况下甚至可以用来替代内存缓存节点池。groupcache 实现原理和本文在王者中实现的方式是一摸一样的。
+[groupCache](https://github.com/golang/groupcache)，groupcache 是​​一个分布式的缓存和缓存填充库，在许多情况下可以替代 memcached。在许多情况下甚至可以用来替代内存缓存节点池。groupcache 实现原理和本文在上一章节中实现的方式是一摸一样的。
 
 
 [fastcache](https://github.com/VictoriaMetrics/fastcache)，fastcache 并没有缓存过期的概念。仅在高速缓存大小溢出时才从高速缓存中淘汰 key 值。key 的截止期限可以存储在该值内，以实现缓存过期。fastcache 缓存由许多 buckets 组成，每个 buckets 都有自己的锁。这有助于扩展多核 CPU 的性能，因为多个 CPU 可以同时访问不同的 buckets。每个 buckets 均由一个 hash（key）->（key，value）的映射和 64KB 大小的字节 slice（块）组成，这些字节 slice 存储已编码的（key，value）。每个 buckets 仅包含 chunksCount 个指针。例如，64GB 缓存将包含大约 1M 指针，而大小相似的 map[string][]byte 将包含 1B指针，用于小的 key 和 value。这样做可以节约巨大的 GC 开销。与每个 bucket 中的单个 chunk 相比，64KB 大小的 chunk 块减少了内存碎片和总内存使用量。如果可能，将大 chunk 块分配在堆外。这样做可以减少了总内存使用量，因为 GC 无需要 GOGC 调整即可以更频繁地收集未使用的内存。
