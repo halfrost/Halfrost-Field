@@ -187,7 +187,185 @@ https://qcrao91.gitbook.io/go/interface/jie-kou-de-gou-zao-guo-cheng-shi-zen-yan
 
 
 
-## 类型转换
+## 二. 类型转换
+
+举个具体的例子来说明 interface 是如何进行类型转换的。先来看指针类型转换。
+
+
+### 1. 指针类型
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var s Person = &Student{name: "halfrost"}
+	s.sayHello("everyone")
+}
+
+type Person interface {
+	sayHello(name string) string
+	sayGoodbye(name string) string
+}
+
+type Student struct {
+	name string
+}
+
+func (s *Student) sayHello(name string) string {
+	return fmt.Sprintf("%v: Hello %v, nice to meet you.\n", s.name, name)
+}
+
+func (s *Student) sayGoodbye(name string) string {
+	return fmt.Sprintf("%v: Hi %v, see you next time.\n", s.name, name)
+}
+
+```
+
+利用 go build 和 go tool 命令将上述代码变成汇编代码：
+
+```go
+$ go tool compile -S -N -l main.go >main.s1 2>&1
+```
+
+main 方法中有 3 个操作，重点关注后 2 个涉及到 interface 的操作：
+
+1. 初始化 Student 对象  
+2. 将 Student 对象转换成 interface  
+3. 调用 interface 的方法  
+
+> Plan9 汇编常见寄存器含义：  
+> BP: 栈基，栈帧（函数的栈叫栈帧）的开始位置。  
+> SP: 栈顶，栈帧的结束位置。  
+> PC: 就是IP寄存器，存放CPU下一个执行指令的位置地址。  
+> TLS: 虚拟寄存器。表示的是 thread-local storage，Golang 中存放了当前正在执行的g的结构体。  
+
+
+先来看 Student 初始化的汇编代码：
+
+```go
+0x0021 00033 (main.go:6)	LEAQ	type."".Student(SB), AX      // 将 type."".Student 地址放入 AX 中
+0x0028 00040 (main.go:6)	MOVQ	AX, (SP)                     // 将 AX 中的值存储在 SP 中
+0x002c 00044 (main.go:6)	PCDATA	$1, $0
+0x002c 00044 (main.go:6)	CALL	runtime.newobject(SB)        // 调用 runtime.newobject() 方法，生成 Student 对象存入 SB 中
+0x0031 00049 (main.go:6)	MOVQ	8(SP), DI                    // 将生成的 Student 对象放入 DI 中
+0x0036 00054 (main.go:6)	MOVQ	DI, ""..autotmp_2+40(SP)     // 编译器认为 Student 是临时变量，所以将 DI 放在栈上
+0x003b 00059 (main.go:6)	MOVQ	$8, 8(DI)                    // (DI.Name).Len = 8
+0x0043 00067 (main.go:6)	PCDATA	$0, $-2
+0x0043 00067 (main.go:6)	CMPL	runtime.writeBarrier(SB), $0
+0x004a 00074 (main.go:6)	JEQ	78
+0x004c 00076 (main.go:6)	JMP	172
+0x004e 00078 (main.go:6)	LEAQ	go.string."halfrost"(SB), AX  // 将 "halfrost" 字符串的地址放入 AX 中
+0x0055 00085 (main.go:6)	MOVQ	AX, (DI)                      // (DI.Name).Data = &"halfrost"
+0x0058 00088 (main.go:6)	JMP	90
+0x005a 00090 (main.go:6)	PCDATA	$0, $-1
+```
+
+先将 *\_type 放在 (0)SP 栈顶。然后调用 runtime.newobject() 生成 Student 对象。(0)SP 栈顶的值即是 newobject() 方法的入参。
+
+```go
+func newobject(typ *_type) unsafe.Pointer {
+	return mallocgc(typ.size, typ, true)
+}
+```
+
+PCDATA 用于生成 PC 表格，PCDATA 的指令用法为：PCDATA tableid, tableoffset。PCDATA有个两个参数，第一个参数为表格的类型，第二个是表格的地址。runtime.writeBarrier() 是 GC 相关的方法，感兴趣的可以研究它的源码。以下是 Student 对象临时对象 GC 的一些汇编代码逻辑，由于有 JMP 命令，代码是分开的，笔者在这里将它们汇集在一起。
+
+```go
+0x0043 00067 (main.go:6)    PCDATA  $0, $-2
+0x0043 00067 (main.go:6)    CMPL    runtime.writeBarrier(SB), $0
+0x004a 00074 (main.go:6)    JEQ 78
+0x004c 00076 (main.go:6)    JMP 172
+......
+0x00ac 00172 (main.go:6)	PCDATA	$0, $-2
+0x00ac 00172 (main.go:6)	LEAQ	go.string."halfrost"(SB), AX
+0x00b3 00179 (main.go:6)	CALL	runtime.gcWriteBarrier(SB)
+0x00b8 00184 (main.go:6)	JMP	90
+0x00ba 00186 (main.go:6)	NOP
+```
+
+78 对应的十六进制是 0x004e，172 对应的十六进制是 0x00ac。先对比 runtime.writeBarrier(SB) 和 \$0 存的是否一致，如果相同则 JMP 到 0x004e 行，如果不同则 JMP 到 0x00ac 行。0x004e 行和 0x00ac 行代码完全相同，都是将字符串 "halfrost" 的地址放入 AX 中，不过 0x00ac 行执行完会紧接着调用 runtime.gcWriteBarrier(SB)。执行完成以后再回到 0x005a 行。
+
+第一步结束以后，内存中存了 3 个值。临时变量 .autotmp\_2 放在 +40(SP) 的地址处，它也就是临时 Student 对象。
+
+![](https://img.halfrost.com/Blog/ArticleImage/147_2_.png)
+
+
+接下来是第二步，将 Student 对象转换成 interface。
+
+```go
+0x005a 00090 (main.go:6)	MOVQ	""..autotmp_2+40(SP), AX
+0x005f 00095 (main.go:6)	MOVQ	AX, ""..autotmp_1+48(SP)
+0x0064 00100 (main.go:6)	LEAQ	go.itab.*"".Student,"".Person(SB), CX
+0x006b 00107 (main.go:6)	MOVQ	CX, "".s+56(SP)
+0x0070 00112 (main.go:6)	MOVQ	AX, "".s+64(SP)
+```
+
+经过上面几行汇编代码，成功的构造出了 itab 结构体。在汇编代码中可以找到 itab 的内存布局：
+
+```go
+go.itab.*"".Student,"".Person SRODATA dupok size=40
+	0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 0c 31 79 12 00 00 00 00 00 00 00 00 00 00 00 00  .1y.............
+	0x0020 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=1 type."".Person+0
+	rel 8+8 t=1 type.*"".Student+0
+	rel 24+8 t=1 "".(*Student).sayGoodbye+0
+	rel 32+8 t=1 "".(*Student).sayHello+0
+```
+
+itab 结构体的首字节里面存的是 inter *interfacetype，此处即 Person interface。第二个字节中存的是 \*\_type，这里是第一步生成的，放在 (0)SP 地址处的地址。第四个字节中存的是 fun [1]uintptr，对应 sayGoodbye 方法的首地址。第五个字节中存的也是 fun [1]uintptr，对应 sayHello 方法的首地址。回顾上一章节里面的 itab 数据结构：
+
+```go
+type itab struct {
+    inter *interfacetype // 8 字节
+    _type *_type         // 8 字节
+    hash  uint32 		 // 4 字节，填充使得内存对齐
+    _     [4]byte        // 4 字节
+    fun   [1]uintptr     // 8 字节
+}
+```
+现在就很明确了为什么 fun 只需要存一个函数指针。每个函数指针都是 8 个字节，如果 interface 里面包含多个函数，只需要 fun 往后顺序偏移多个字节即可。第二步结束以后，内存中存储了以下这些值：
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/147_3_0.png)
+
+在第二步中新建了一个临时变量 .autotmp\_1 放在 +48(SP) 地址处。并且利用第一步中生成的 Student 临时变量构造出了 itab 数据结构。值得说明的是，虽然汇编代码并没有显示调用函数生成 iface，但是此时已经生成了 iface。
+
+```go
+type iface struct {
+    tab  *itab
+    data unsafe.Pointer
+}
+```
+
+如上图，+(56)SP 处存的是 *itab，+(64)SP 处存的是 unsafe.Pointer，这里的指针和 +(8)SP 的指针是完全一致的。接下来就是最后一步，调用 interface 的方法。
+
+```go
+0x0075 00117 (main.go:7)	MOVQ	"".s+56(SP), AX
+0x007a 00122 (main.go:7)	TESTB	AL, (AX)
+0x007c 00124 (main.go:7)	MOVQ	32(AX), AX
+0x0080 00128 (main.go:7)	MOVQ	"".s+64(SP), CX
+0x0085 00133 (main.go:7)	MOVQ	CX, (SP)
+0x0089 00137 (main.go:7)	LEAQ	go.string."everyone"(SB), CX
+0x0090 00144 (main.go:7)	MOVQ	CX, 8(SP)
+0x0095 00149 (main.go:7)	MOVQ	$8, 16(SP)
+0x009e 00158 (main.go:7)	NOP
+0x00a0 00160 (main.go:7)	CALL	AX
+```
+
+先取出调用方法的真正对象，放入 (0)SP 中，再依次将方法中的入参按照顺序放在 (8)SP 之后。然后调用函数指针对应的方法。从汇编代码中可以看到，AX 直接从取出了 *itab 指针存的内存地址，然后偏移到了 +32 的位置，这里是要调用的方法 sayHello 的内存地址。最后从栈顶依次取出需要的参数，即算完成 iterface 方法调用。方法调用前一刻，内存中的状态如下，主要关注 AX 的地址以及栈顶的所有参数信息。
+
+![](https://img.halfrost.com/Blog/ArticleImage/147_4_.png)
+
+栈顶依次存放的是方法的调用者，参数。调用格式可以表示为 func(reciver, param1)。
+
+
+### 2. 指针类型
+
+
+
 
 要注意隐藏类型转换，自定义的 error 类型会因为隐藏的类型转换变为非 nil。
 
