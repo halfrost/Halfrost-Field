@@ -44,7 +44,7 @@ func main() {
 
 在上一篇 Go interface 中，可以了解到普通对象在内存中的存在形式，一个变量值得我们关注的无非是两部分，一个是类型，一个是它存的值。变量的类型决定了底层 tpye 是什么，支持哪些方法集。值无非就是读和写。去内存里面哪里读，把 0101 写到内存的哪里，都是由类型决定的。这一点在解析不同 Json 数据结构的时候深有体会，如果数据类型用错了，解析出来得到的变量的值是乱码。Go 提供反射的功能，是为了支持在运行时动态访问变量的类型和值。
 
-在运行时想要动态访问类型的值，必然应用程序存储了所有用到的类型信息。"reflect" 库提供了一套供开发者使用的访问接口。Go 中反射的基础是接口和类型，Go 很巧妙的借助了对象到接口的转换时使用的数据结构，先将对象传递给内部的空接口，即将类型转换成空接口 eface。然后反射再基于这个 eface 来访问和操作实例对象的值和类型。
+在运行时想要动态访问类型的值，必然应用程序存储了所有用到的类型信息。"reflect" 库提供了一套供开发者使用的访问接口。Go 中反射的基础是接口和类型，Go 很巧妙的借助了对象到接口的转换时使用的数据结构，先将对象传递给内部的空接口，即将类型转换成空接口 emptyInterface(数据结构同 eface 一致)。然后反射再基于这个 emptyInterface 来访问和操作实例对象的值和类型。
 
 那么笔者就从数据结构开始梳理 Go 是如何实现反射的。在 reflect 包中，有一个描述类型公共信息的通用数据结构 rtype。从源码的注释上看，它和 interface 里面的 \_type 是同一个数据结构。它们俩只是因为包隔离，加上为了避免循环引用，所以在这边又复制了一遍。
 
@@ -86,35 +86,7 @@ type chantype struct {
 }
 ```
 
-所有基础类型都不再赘述，详情可见上一篇《深入研究 Go interface 底层实现》。在 reflect 包中有一个重要的方法 TypeOf()，利用这个方法可以获得一个 Type 的 interface。通过 Type interface 可以获取对象的类型信息。
-
-```go
-// TypeOf returns the reflection Type that represents the dynamic type of i.
-// If i is a nil interface value, TypeOf returns nil.
-func TypeOf(i interface{}) Type {
-	eface := *(*emptyInterface)(unsafe.Pointer(&i))
-	return toType(eface.typ)
-}
-
-// toType converts from a *rtype to a Type that can be returned
-// to the client of package reflect. In gc, the only concern is that
-// a nil *rtype must be replaced by a nil Type, but in gccgo this
-// function takes care of ensuring that multiple *rtype for the same
-// type are coalesced into a single Type.
-func toType(t *rtype) Type {
-	if t == nil {
-		return nil
-	}
-	return t
-}
-```
-
-上述方法实现非常简单，就是将形参转换成 Type interface。这里设计成返回 interface 而不是返回 rtype 类型的数据结构是有讲究的。一是设计者不希望调用者拿到 rtype 滥用。毕竟类型信息这些都是只读的，在运行时被任意篡改太不安全了。二是设计者将调用者的需求的所有需求用 interface 这一层屏蔽了，Type interface 下层可以对应很多种类型，利用这个接口统一抽象成一层。
-
-值得说明的一点是 TypeOf() 入参，入参类型是 i interface{}，可以是 2 种类型，一种是 interface 变量，另外一种是具体的类型变量。如果 i 是具体的类型变量，TypeOf() 返回的具体类型信息；如果 i 是 interface 变量，并且绑定了具体类型对象实例，返回的是 i 绑定具体类型的动态类型信息；如果 i 没有绑定任何具体的类型对象实例，返回的是接口自身的静态类型信息。
-
-
-下面来看看 Type interface 究竟涵盖了哪些有用的方法：
+所有基础类型都不再赘述，详情可见上一篇《深入研究 Go interface 底层实现》。下面来看看 Type interface 究竟涵盖了哪些有用的方法：
 
 
 ### 1. reflect.Type 通用方法
@@ -312,7 +284,7 @@ type Value struct {
 	//	- flagIndir:    val保存指向数据的指针
 	//	- flagAddr:     v.CanAddr 为 true (表示 flagIndir)
 	//	- flagMethod:   v 是方法值。
-        // 接下来的 5 个 bits 给出 Value 的 Kind 种类，除了方法 values 以外，它会重复 typ.Kind（）。其余 23 位以上给出方法 values 的方法编号。如果 flag.kind（）!= Func，代码可以假定 flagMethod 没有设置。如果 ifaceIndir(typ)，代码可以假定设置了 flagIndir。
+    // 接下来的 5 个 bits 给出 Value 的 Kind 种类，除了方法 values 以外，它会重复 typ.Kind（）。其余 23 位以上给出方法 values 的方法编号。如果 flag.kind（）!= Func，代码可以假定 flagMethod 没有设置。如果 ifaceIndir(typ)，代码可以假定设置了 flagIndir。
 	flag
 }
 ```
@@ -323,35 +295,526 @@ type Value struct {
 
 ## 二. 反射的内部实现
 
+这一章以 reflect.TypeOf() 和 reflect.ValueOf() 这两个基本的方法为例，看看底层源码究竟是怎么实现的。源码面前一切皆无秘密。
+
+### 1. reflect.TypeOf() 底层实现
+
+
+在 reflect 包中有一个重要的方法 TypeOf()，利用这个方法可以获得一个 Type 的 interface。通过 Type interface 可以获取对象的类型信息。
+
+```go
+// TypeOf() 方法返回的 i 这个动态类型的 Type。如果 i 是一个 nil interface value, TypeOf 返回 nil.
+func TypeOf(i interface{}) Type {
+	eface := *(*emptyInterface)(unsafe.Pointer(&i))
+	return toType(eface.typ)
+}
+
+func toType(t *rtype) Type {
+	if t == nil {
+		return nil
+	}
+	return t
+}
+```
+
+上述方法实现非常简单，就是将形参转换成 Type interface。TypeOf() 方法第一行有一个强制类型转换，把 unsafe.Pointer 转换成了 emptyInterface。emptyInterface 数据结构如下：
+
+
+```go
+// emptyInterface is the header for an interface{} value.
+type emptyInterface struct {
+	typ  *rtype
+	word unsafe.Pointer
+}
+```
+
+从上面数据结构可以看出，emptyInterface 其实就是 reflect 版的 eface，数据结构完全一致，所以此处强制类型转换没有问题。关于 eface 更详细的讲解见上一篇 interface 底层分析的文章。另外 TypeOf() 方法设计成返回 interface 而不是返回 rtype 类型的数据结构是有讲究的。一是设计者不希望调用者拿到 rtype 滥用。毕竟类型信息这些都是只读的，在运行时被任意篡改太不安全了。二是设计者将调用者的需求的所有需求用 interface 这一层屏蔽了，Type interface 下层可以对应很多种类型，利用这个接口统一抽象成一层。
+
+值得说明的一点是 TypeOf() 入参，入参类型是 i interface{}，可以是 2 种类型，一种是 interface 变量，另外一种是具体的类型变量。如果 i 是具体的类型变量，TypeOf() 返回的具体类型信息；如果 i 是 interface 变量，并且绑定了具体类型对象实例，返回的是 i 绑定具体类型的动态类型信息；如果 i 没有绑定任何具体的类型对象实例，返回的是接口自身的静态类型信息。例如下面这段代码：
+
+
+```go
+import (
+	"fmt"
+	"reflect"
+)
+
+func main() {
+	ifa := new(Person)
+	var ifb Person = Student{name: "halfrost"}
+    // 未绑定具体变量的接口类型 
+	fmt.Println(reflect.TypeOf(ifa).Elem().Name())
+	fmt.Println(reflect.TypeOf(ifa).Elem().Kind().String())
+    // 绑定具体变量的接口类型 
+	fmt.Println(reflect.TypeOf(ifb).Name())
+	fmt.Println(reflect.TypeOf(ifb).Kind().String())
+}
+```
+
+在第一组输出中，reflect.TypeOf() 入参未绑定具体变量的接口类型，所以返回的是接口类型本身 Person。对应的 Kind 是 interface。在第二组输出中，reflect.TypeOf() 入参绑定了具体变量的接口类型，所以返回的是绑定的具体类型 Student。对应的 Kind 是 struct。
+
+```go
+Person
+interface
+
+Student
+struct
+```
+
+toType() 方法中只是单独判断了一次是否为 nil。因为在 gc 中，唯一关心的是 nil 的 \*rtype 必须转换成 nil Type。但是在 gccgo 中，这个函数需要确保同一类型的多个 \*rtype 合并成单个 Type。
+
+
+### 2. reflect.ValueOf() 底层实现
+
+ValueOf() 方法返回一个新的 Value，根据 interface i 这个入参的具体值进行初始化。ValueOf(nil) 返回零值。
+
+```go
+func ValueOf(i interface{}) Value {
+	if i == nil {
+		return Value{}
+	}
+	escapes(i)
+	return unpackEface(i)
+}
+```
+
+ValueOf() 的所有逻辑只在 escapes() 和 unpackEface() 这两个方法上。先来看 escapes() 的实现。这个方法目前注释还是 TODO 的状态，从名字上我们可以知道，它是为了防止变量逃逸，把 Value 的内容存到栈上。目前所有的内容还是存在堆中。放在堆中也有好处，具体好处可以见 chanrecv/mapassign 中，这里不细致展开。escapes() 源码实现如下：
+
+```go
+func escapes(x interface{}) {
+	if dummy.b {
+		dummy.x = x
+	}
+}
+
+var dummy struct {
+	b bool
+	x interface{}
+}
+```
+
+dummy 变量就是一个虚拟标注，标记入参 x 逃逸了。这样标记是为了防止反射代码写的过于高级，以至于编译器跟不上了。ValueOf() 的主要逻辑在 unpackEface() 方法中：
+
+
+```go
+func ifaceIndir(t *rtype) bool {
+	return t.kind&kindDirectIface == 0
+}
+
+func unpackEface(i interface{}) Value {
+	e := (*emptyInterface)(unsafe.Pointer(&i))
+	// NOTE: don't read e.word until we know whether it is really a pointer or not.
+	t := e.typ
+	if t == nil {
+		return Value{}
+	}
+	f := flag(t.Kind())
+	if ifaceIndir(t) {
+		f |= flagIndir
+	}
+	return Value{t, e.word, f}
+}
+```
+
+ifaceIndir() 这个方法只是利用位运算取出特征标记位，表示 t 是否间接存储在 一个 interface value 中。unpackEface() 从名字上能看出它的目的，将 emptyInterface 转换成 Value。实现分为 3 步，先将入参 interface 强转成 emptyInterface，然后判断 emptyInterface.typ 是否为空，如果不为空才能读取 emptyInterface.word。最后拼装 Value 数据结构中的三个字段，\*rtype，unsafe.Pointer，flag。
 
 
 ## 三. 反射三定律
 
-著名的 《The laws of Reflection》 这篇文章里面归纳了反射的三定律。
+著名的 [《The laws of Reflection》](https://blog.golang.org/laws-of-reflection) 这篇文章里面归纳了反射的三定律。
 
-### 1. 从接口值中得到反射对象
-
-### 2. 从反射对象中获得接口值
-
-### 3. 要修改反射对象，其值必须可以修改
+### 1. 反射可以从接口值中得到反射对象
 
 
+![](https://img.halfrost.com/Blog/ArticleImage/148_1.png)
 
+
+- 通过实例获取 Value 对象，使用 reflect.ValueOf() 函数。
+
+```go
+// ValueOf returns a new Value initialized to the concrete value
+// stored in the interface i. ValueOf(nil) returns the zero Value.
+func ValueOf(i interface{}) Value {
+	if i == nil {
+		return Value{}
+	}
+	// TODO: Maybe allow contents of a Value to live on the stack.
+	// For now we make the contents always escape to the heap. It
+	// makes life easier in a few places (see chanrecv/mapassign
+	// comment below).
+	escapes(i)
+
+	return unpackEface(i)
+}
+```
+
+- 通过实例获取反射对象 Type，使用 reflect.TypeOf() 函数。
+
+
+```go
+// TypeOf returns the reflection Type that represents the dynamic type of i.
+// If i is a nil interface value, TypeOf returns nil.
+func TypeOf(i interface{}) Type {
+	eface := *(*emptyInterface)(unsafe.Pointer(&i))
+	return toType(eface.typ)
+}
+```
+
+### 2. 反射可以从反射对象中获得接口值
+
+从 reflect.Value 数据结构可知，它包含了类型和值的信息，所以将 Value 转换成实例对象很容易。
+
+![](https://img.halfrost.com/Blog/ArticleImage/148_2.png)
+
+
+- 将 Value 转换成空的 interface，内部存放具体类型实例。使用 interface() 函数。
+
+```go
+// Interface returns v's current value as an interface{}.
+// It is equivalent to:
+//	var i interface{} = (v's underlying value)
+// It panics if the Value was obtained by accessing
+// unexported struct fields.
+func (v Value) Interface() (i interface{}) {
+	return valueInterface(v, true)
+}
+```
+
+- Value 也包含很多成员方法，可以将 Value 转换成简单类型实例，注意如果类型不匹配会 panic。
+
+```go
+// Int returns v's underlying value, as an int64.
+// It panics if v's Kind is not Int, Int8, Int16, Int32, or Int64.
+func (v Value) Int() int64 {
+	k := v.kind()
+	p := v.ptr
+	switch k {
+	case Int:
+		return int64(*(*int)(p))
+	case Int8:
+		return int64(*(*int8)(p))
+	case Int16:
+		return int64(*(*int16)(p))
+	case Int32:
+		return int64(*(*int32)(p))
+	case Int64:
+		return *(*int64)(p)
+	}
+	panic(&ValueError{"reflect.Value.Int", v.kind()})
+}
+
+// Uint returns v's underlying value, as a uint64.
+// It panics if v's Kind is not Uint, Uintptr, Uint8, Uint16, Uint32, or Uint64.
+func (v Value) Uint() uint64 {
+	k := v.kind()
+	p := v.ptr
+	switch k {
+	case Uint:
+		return uint64(*(*uint)(p))
+	case Uint8:
+		return uint64(*(*uint8)(p))
+	case Uint16:
+		return uint64(*(*uint16)(p))
+	case Uint32:
+		return uint64(*(*uint32)(p))
+	case Uint64:
+		return *(*uint64)(p)
+	case Uintptr:
+		return uint64(*(*uintptr)(p))
+	}
+	panic(&ValueError{"reflect.Value.Uint", v.kind()})
+}
+
+// Bool returns v's underlying value.
+// It panics if v's kind is not Bool.
+func (v Value) Bool() bool {
+	v.mustBe(Bool)
+	return *(*bool)(v.ptr)
+}
+
+// Float returns v's underlying value, as a float64.
+// It panics if v's Kind is not Float32 or Float64
+func (v Value) Float() float64 {
+	k := v.kind()
+	switch k {
+	case Float32:
+		return float64(*(*float32)(v.ptr))
+	case Float64:
+		return *(*float64)(v.ptr)
+	}
+	panic(&ValueError{"reflect.Value.Float", v.kind()})
+}
+```
+
+### 3. 若要修改反射对象，其值必须可以修改
+
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/148_3.png)
+
+- 指针类型 Type 转成值类型 Type。指针类型必须是 \*Array、\*Slice、\*Pointer、\*Map、\*Chan 类型，否则会发生 panic。Type 返回的是内部元素的 Type。
+
+```go
+// Elem returns element type of array a.
+func (a *Array) Elem() Type { return a.elem }
+
+// Elem returns the element type of slice s.
+func (s *Slice) Elem() Type { return s.elem }
+
+// Elem returns the element type for the given pointer p.
+func (p *Pointer) Elem() Type { return p.base }
+
+// Elem returns the element type of map m.
+func (m *Map) Elem() Type { return m.elem }
+
+// Elem returns the element type of channel c.
+func (c *Chan) Elem() Type { return c.elem }
+```
+
+- 值类型 Type 转成指针类型 Type。PtrTo 返回的是指向 t 的指针类型 Type。
+
+```go
+// PtrTo returns the pointer type with element t.
+// For example, if t represents type Foo, PtrTo(t) represents *Foo.
+func PtrTo(t Type) Type {
+	return t.(*rtype).ptrTo()
+}
+```
+
+针对反射三定律的这个第三条，还需要特殊说明的是：Value 值的可修改性是什么意思。举例：
+
+```go
+func main() {
+	var x float64 = 3.4
+	v := reflect.ValueOf(x)
+	v.SetFloat(7.1) // Error: will panic.
+}
+```
+
+如上面这段代码，运行以后会崩溃，崩溃信息是 `panic: reflect: reflect.Value.SetFloat using unaddressable value`，为什么这里 SetFloat() 会 panic 呢？这里给的提示信息是使用了不可寻址的 Value。在上述代码中，调用 reflect.ValueOf 传进去的是一个值类型的变量，获得的 Value 其实是完全的值拷贝，这个 Value 是不能被修改的。如果传进去是一个指针，获得的 Value 是一个指针副本，但是这个指针指向的地址的对象是可以改变的。将上述代码改成这样：
+
+```go
+func main() {
+	var x float64 = 3.4
+	p := reflect.ValueOf(&x)
+	fmt.Println("type of p:", p.Type())
+	fmt.Println("settability of p:", p.CanSet())
+
+	v := p.Elem()
+	v.SetFloat(7.1)
+	fmt.Println(v.Interface()) // 7.1
+	fmt.Println(x)             // 7.1
+}
+```
+
+在调用 reflect.ValueOf() 方法的时候传入一个指针，这样就不会崩溃了。输出符合逻辑：
+
+```go
+type of p: *float64
+settability of p: false
+7.1
+7.1
+```
+
+
+### 4. Type 和 Value 相互转换
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/148_4.png)
+
+- 由于 Type 中只有类型信息，所以无法直接通过 Type 获取实例对象的 Value，但是可以通过 New() 这个方法得到一个指向 type 类型的指针，值是零值。MakeMap() 方法和 New() 方法类似，只不过是创建了一个 Map。
+
+```go
+// New returns a Value representing a pointer to a new zero value
+// for the specified type. That is, the returned Value's Type is PtrTo(typ).
+func New(typ Type) Value {
+	if typ == nil {
+		panic("reflect: New(nil)")
+	}
+	t := typ.(*rtype)
+	ptr := unsafe_New(t)
+	fl := flag(Ptr)
+	return Value{t.ptrTo(), ptr, fl}
+}
+
+// MakeMap creates a new map with the specified type.
+func MakeMap(typ Type) Value {
+	return MakeMapWithSize(typ, 0)
+}
+```
+
+- 需要特殊说明的一个方法是 Zero()，这个方法返回指定类型的零值。这个零值与 Value 结构的 zero value 不同，它根本不代表任何值。例如，Zero(TypeOf(42)) 返回带有 Kind Int 且值为 0 的值。返回的值既不可寻址，也不可改变。
+
+```go
+// Zero returns a Value representing the zero value for the specified type.
+// The result is different from the zero value of the Value struct,
+// which represents no value at all.
+// For example, Zero(TypeOf(42)) returns a Value with Kind Int and value 0.
+// The returned value is neither addressable nor settable.
+func Zero(typ Type) Value {
+	if typ == nil {
+		panic("reflect: Zero(nil)")
+	}
+	t := typ.(*rtype)
+	fl := flag(t.Kind())
+	if ifaceIndir(t) {
+		var p unsafe.Pointer
+		if t.size <= maxZero {
+			p = unsafe.Pointer(&zeroVal[0])
+		} else {
+			p = unsafe_New(t)
+		}
+		return Value{t, p, fl | flagIndir}
+	}
+	return Value{t, nil, fl}
+}
+```
+
+- 由于反射对象 Value 中本来就存有 Tpye 的信息，所以 Value 向 Type 转换比较简单。
+
+```go
+// Type returns v's type.
+func (v Value) Type() Type {
+	f := v.flag
+	if f == 0 {
+		panic(&ValueError{"reflect.Value.Type", Invalid})
+	}
+	if f&flagMethod == 0 {
+		// Easy case
+		return v.typ
+	}
+
+	// Method value.
+	// v.typ describes the receiver, not the method type.
+	i := int(v.flag) >> flagMethodShift
+	if v.typ.Kind() == Interface {
+		// Method on interface.
+		tt := (*interfaceType)(unsafe.Pointer(v.typ))
+		if uint(i) >= uint(len(tt.methods)) {
+			panic("reflect: internal error: invalid method index")
+		}
+		m := &tt.methods[i]
+		return v.typ.typeOff(m.typ)
+	}
+	// Method on concrete type.
+	ms := v.typ.exportedMethods()
+	if uint(i) >= uint(len(ms)) {
+		panic("reflect: internal error: invalid method index")
+	}
+	m := ms[i]
+	return v.typ.typeOff(m.mtyp)
+}
+```
+
+### 5. Value 指针转换成值
+
+![](https://img.halfrost.com/Blog/ArticleImage/148_5_.png)
+
+
+- 把指针的 Value 转换成值 Value 有 2 个方法 Indirect() 和 Elem()。
+
+```go
+// Indirect returns the value that v points to.
+// If v is a nil pointer, Indirect returns a zero Value.
+// If v is not a pointer, Indirect returns v.
+func Indirect(v Value) Value {
+	if v.Kind() != Ptr {
+		return v
+	}
+	return v.Elem()
+}
+
+// Elem returns the value that the interface v contains
+// or that the pointer v points to.
+// It panics if v's Kind is not Interface or Ptr.
+// It returns the zero Value if v is nil.
+func (v Value) Elem() Value {
+	k := v.kind()
+	switch k {
+	case Interface:
+		var eface interface{}
+		if v.typ.NumMethod() == 0 {
+			eface = *(*interface{})(v.ptr)
+		} else {
+			eface = (interface{})(*(*interface {
+				M()
+			})(v.ptr))
+		}
+		x := unpackEface(eface)
+		if x.flag != 0 {
+			x.flag |= v.flag.ro()
+		}
+		return x
+	case Ptr:
+		ptr := v.ptr
+		if v.flag&flagIndir != 0 {
+			ptr = *(*unsafe.Pointer)(ptr)
+		}
+		// The returned value's address is v's value.
+		if ptr == nil {
+			return Value{}
+		}
+		tt := (*ptrType)(unsafe.Pointer(v.typ))
+		typ := tt.elem
+		fl := v.flag&flagRO | flagIndir | flagAddr
+		fl |= flag(typ.Kind())
+		return Value{typ, ptr, fl}
+	}
+	panic(&ValueError{"reflectlite.Value.Elem", v.kind()})
+}
+```
+
+从源码实现中可以看到，入参是指针或者是 interface 会影响输出的结果。
+
+- 将值 Value 转换成指针的 Value 只有 Addr() 这一个方法。
+
+```go
+// Addr returns a pointer value representing the address of v.
+// It panics if CanAddr() returns false.
+// Addr is typically used to obtain a pointer to a struct field
+// or slice element in order to call a method that requires a
+// pointer receiver.
+func (v Value) Addr() Value {
+	if v.flag&flagAddr == 0 {
+		panic("reflect.Value.Addr of unaddressable value")
+	}
+	// Preserve flagRO instead of using v.flag.ro() so that
+	// v.Addr().Elem() is equivalent to v (#32772)
+	fl := v.flag & flagRO
+	return Value{v.typ.ptrTo(), v.ptr, fl | flag(Ptr)}
+}
+```
+
+### 6. 总结
+
+![](https://img.halfrost.com/Blog/ArticleImage/148_6_0.png)
+
+
+这一章通过反射三定律引出了反射对象，Type、Vale 三者的关系。笔者将其之间的关系扩展成了上图。在上图中除了 Tpye 和 interface 是单向的，其余的转换都是双向的。可能有读者有疑问，Type 真的就不能转换成 interface 了么？这里谈的是通过一个方法单次是无法转换的。在上篇 interface 文章中，我们知道 interface 包含类型和值两部分，Type 只有类型部分，确实值的部分，所以和 interface 是不能互转的。那如果就是想通过 Type 得到 interface 怎么办呢？仔细看上图，可以先通过 New() 方法得到 Value，再调用 interface() 方法得到 interface。借助 interface 和 Value 互转的性质，可以得到由 Type 生成 interface 的目的。
 
 ## 四. 优缺点与最佳实践
 
-优点：  
-支持反射的语言提供了一些在早期高级语言中难以实现的运行时特性。
+最后聊聊在 Go 中使用反射的优缺点和最佳实践。
+
+### 1. 优点  
 
 - 可以在一定程度上避免硬编码，提供灵活性和通用性。
 - 可以作为一个第一类对象发现并修改源代码的结构（如代码块、类、方法、协议等）。
-- 可以在运行时像对待源代码语句一样动态解析字符串中可执行的代码（类似JavaScript的eval()函数），进而可将跟class或function匹配的字符串转换成class或function的调用或引用。
+- 可以在运行时像对待源代码语句一样动态解析字符串中可执行的代码（类似 JavaScript 的 eval() 函数），进而可将跟 class 或 function 匹配的字符串转换成 class 或 function 的调用或引用。
 - 可以创建一个新的语言字节码解释器来给编程结构一个新的意义或用途。
 
-劣势：
+### 2. 缺点
 
 - 此技术的学习成本高。面向反射的编程需要较多的高级知识，包括框架、关系映射和对象交互，以实现更通用的代码执行。  
 - 同样因为反射的概念和语法都比较抽象，过多地滥用反射技术会使得代码难以被其他人读懂，不利于合作与交流。
-- 由于将部分信息检查工作从编译期推迟到了运行期，此举在提高了代码灵活性的同时，牺牲了一点点运行效率。
+- 由于将部分信息检查工作从编译期推迟到了运行期，调用方法和引用对象并非直接的地址引用，而是通过 reflect 包提供的一个抽象层间接访问。此举在提高了代码灵活性的同时，牺牲了一点点运行效率。在项目性能要求较高的地方，一定要慎重考虑使用反射。
+- 由于逃避了编译器的严格检查，所以一些不正确的修改会导致程序 panic。
 
-通过深入学习反射的特性和技巧，它的劣势可以尽量避免，但这需要许多时间和经验的积累。
+通过深入学习反射的特性和技巧，缺点可以尽量避免，但这需要非常多的时间和经验的积累。
+
+### 3. 最佳实践
+
+- 在库和框架内部适当使用反射特性，将复杂的逻辑封装在内部，复杂留给自己，暴露给使用者的接口都是简单的。
+- 除去库和框架以外的业务逻辑代码没有必要使用反射。缺点在上面已经说过，这里不再赘述。
+- 如果上述 2 条依旧没有覆盖到的场景，不到万不得已，不把反射作为第一解决方法。
+
