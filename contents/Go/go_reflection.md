@@ -40,7 +40,7 @@ func main() {
 反射看似代码更加复杂，但是能实现的功能更加灵活了。究竟什么时候用反射？最佳实践是什么？这篇文章好好讨论一下。
 
 
-## 一. 基本数据结构
+## 一. 基本数据结构和方法
 
 在上一篇 Go interface 中，可以了解到普通对象在内存中的存在形式，一个变量值得我们关注的无非是两部分，一个是类型，一个是它存的值。变量的类型决定了底层 tpye 是什么，支持哪些方法集。值无非就是读和写。去内存里面哪里读，把 0101 写到内存的哪里，都是由类型决定的。这一点在解析不同 Json 数据结构的时候深有体会，如果数据类型用错了，解析出来得到的变量的值是乱码。Go 提供反射的功能，是为了支持在运行时动态访问变量的类型和值。
 
@@ -117,7 +117,7 @@ func toType(t *rtype) Type {
 下面来看看 Type interface 究竟涵盖了哪些有用的方法：
 
 
-### 1. 通用方法
+### 1. reflect.Type 通用方法
 
 以下这些方法是通用方法，可以适用于任何类型。
 
@@ -189,7 +189,7 @@ type Type interface {
 }
 ```
 
-### 2. 专有方法
+### 2. reflect.Type 专有方法
 
 以下这些方法是某些类型专有的方法，如果类型不匹配会发生 panic。在不确定类型之前最好先调用 Kind() 方法确定具体类型再调用类型的专有方法。
 
@@ -290,60 +290,36 @@ type Type interface {
 }
 ```
 
+### 3. reflect.Value 数据结构
 
+在 reflect 包中，并非所有的方法都适用于所有类型的值。具体的限制在方法说明注释里面有写。在调用特定种类的方法之前，最好使用 Kind 方法找出 Value 的种类。和 reflect.Type 一样，调用类型不匹配的方法会导致 panic。需要特殊说明的是 zero Value，zero Value 代表没有值。它的 IsValid() 方法返回 false，Kind() 方法返回 Invalid，String() 方法返回 “<invalid Value>”，而剩下的所有其他方法均会 panic。大多数函数和方法从不返回 invalid value。如果确实返回了 invalid value，则其文档会明确说明特殊条件。
+	
+一个 Value 可以由多个 goroutine 并发使用，前提是底层的 Go 值可以同时用于等效的直接操作。 要比较两个 Value，请比较 Interface 相关方法的结果。 在两个 Value 上使用 ==，并不会比较它们表示的底层的值。	
 
+reflect 包里的 Value 很简单，数据结构如下：
 
 ```go
-// Value is the reflection interface to a Go value.
-//
-// Not all methods apply to all kinds of values. Restrictions,
-// if any, are noted in the documentation for each method.
-// Use the Kind method to find out the kind of value before
-// calling kind-specific methods. Calling a method
-// inappropriate to the kind of type causes a run time panic.
-//
-// The zero Value represents no value.
-// Its IsValid method returns false, its Kind method returns Invalid,
-// its String method returns "<invalid Value>", and all other methods panic.
-// Most functions and methods never return an invalid value.
-// If one does, its documentation states the conditions explicitly.
-//
-// A Value can be used concurrently by multiple goroutines provided that
-// the underlying Go value can be used concurrently for the equivalent
-// direct operations.
-//
-// To compare two Values, compare the results of the Interface method.
-// Using == on two Values does not compare the underlying values
-// they represent.
 type Value struct {
-	// typ holds the type of the value represented by a Value.
+	// typ 包含由值表示的值的类型。
 	typ *rtype
 
-	// Pointer-valued data or, if flagIndir is set, pointer to data.
-	// Valid when either flagIndir is set or typ.pointers() is true.
+	// 指向值的指针，如果设置了 flagIndir，则是指向数据的指针。只有当设置了 flagIndir 或 typ.pointers（）为 true 时有效。
 	ptr unsafe.Pointer
 
-	// flag holds metadata about the value.
-	// The lowest bits are flag bits:
-	//	- flagStickyRO: obtained via unexported not embedded field, so read-only
-	//	- flagEmbedRO: obtained via unexported embedded field, so read-only
-	//	- flagIndir: val holds a pointer to the data
-	//	- flagAddr: v.CanAddr is true (implies flagIndir)
-	//	- flagMethod: v is a method value.
-	// The next five bits give the Kind of the value.
-	// This repeats typ.Kind() except for method values.
-	// The remaining 23+ bits give a method number for method values.
-	// If flag.kind() != Func, code can assume that flagMethod is unset.
-	// If ifaceIndir(typ), code can assume that flagIndir is set.
+	// flag 保存有关该值的元数据。最低位是标志位：
+	//	- flagStickyRO: 通过未导出的未嵌入字段获取，因此为只读
+	//	- flagEmbedRO:  通过未导出的嵌入式字段获取，因此为只读
+	//	- flagIndir:    val保存指向数据的指针
+	//	- flagAddr:     v.CanAddr 为 true (表示 flagIndir)
+	//	- flagMethod:   v 是方法值。
+        // 接下来的 5 个 bits 给出 Value 的 Kind 种类，除了方法 values 以外，它会重复 typ.Kind（）。其余 23 位以上给出方法 values 的方法编号。如果 flag.kind（）!= Func，代码可以假定 flagMethod 没有设置。如果 ifaceIndir(typ)，代码可以假定设置了 flagIndir。
 	flag
-
-	// A method value represents a curried method invocation
-	// like r.Read for some receiver r. The typ+val+flag bits describe
-	// the receiver r, but the flag's Kind bits say Func (methods are
-	// functions), and the top bits of the flag give the method number
-	// in r's type's method table.
 }
 ```
+
+一个方法的 Value 表示一个相关方法的调用，就像一些方法接收者 r 调用 r.Read。typ + val + flag bits 位描述了接收者r，但是 Kind 标记位表示 Func（方法是函数），并且该标志的高位给出 r 的类型的方法集中的方法编号。
+
+
 
 ## 二. 反射的内部实现
 
