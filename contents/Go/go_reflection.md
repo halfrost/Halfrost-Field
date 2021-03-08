@@ -1,4 +1,4 @@
-![](https://img.halfrost.com/Blog/ArticleImage/148_0.png)
+![](https://img.halfrost.com/Blog/ArticleImage/148_0_.png)
 
 # Go reflection 三定律与最佳实践
 
