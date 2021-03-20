@@ -118,7 +118,7 @@ Go 语言除了 CSP 并发原语以外，还支持通过内存访问同步。syn
 > 为了尊重 mutex，sync 包实现了 mutex，但是我们希望 Go 语言的编程风格将会激励人们尝试更高等级的技巧。尤其是考虑构建你的程序，以便一次只有一个 goroutine 负责某个特定的数据。
 > 
 
-**不要通过共享内存进行通信。建议，通过通信来共享内存。**这是 Go 语言并发的哲学座右铭。相对于使用 sync.Mutex 这样的并发原语。虽然大多数锁的问题可以通过 channel 或者传统的锁两种方式之一解决，但是 Go 语言核心团队更加推荐使用 CSP 的方式。
+**不要通过共享内存进行通信。建议，通过通信来共享内存。（Do not communicate by sharing memory; instead, share memory by communicating）**这是 Go 语言并发的哲学座右铭。相对于使用 sync.Mutex 这样的并发原语。虽然大多数锁的问题可以通过 channel 或者传统的锁两种方式之一解决，但是 Go 语言核心团队更加推荐使用 CSP 的方式。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/149_4.png)
 
@@ -160,6 +160,65 @@ sum 这个结构体不想将内部的变量暴露在结构体之外，所以使�
 
 
 ## 二. 基本数据结构
+
+channel 的底层源码和相关实现在 src/runtime/chan.go 中。
+
+```go
+type hchan struct {
+	qcount   uint           // 队列中所有数据总数
+	dataqsiz uint           // 环形队列的 size
+	buf      unsafe.Pointer // 指向 dataqsiz 长度的数组
+	elemsize uint16
+	closed   uint32
+	elemtype *_type         // 元素类型
+	sendx    uint           // 已发送的元素在环形队列中的位置
+	recvx    uint           // 已接收的元素在环形队列中的位置
+	recvq    waitq          // 接收者的等待队列
+	sendq    waitq          // 发送者的等待队列
+
+	lock mutex
+}
+```
+
+lock 锁保护 hchan 中的所有字段，以及此通道上被阻塞的 sudogs 中的多个字段。持有 lock 的时候，禁止更改另一个 G 的状态（特别是不要使 G 状态变成ready），因为这会因为堆栈 shrinking 而发生死锁。
+
+recvq 和 sendq 是等待队列，waitq 是一个双向链表：
+
+```go
+type waitq struct {
+	first *sudog
+	last  *sudog
+}
+```
+
+channel 最核心的数据结构是 sudog。sudog 代表了一个在等待队列中的 g。sudog 是 Go 中非常重要的数据结构，因为 g 与同步对象关系是多对多的。一个 g 可以出现在许多等待队列上，因此一个 g 可能有很多sudog。并且多个 g 可能正在等待同一个同步对象，因此一个对象可能有许多 sudog。sudog 是从特殊池中分配出来的。使用 acquireSudog 和 releaseSudog 分配和释放它们。
+
+
+```go
+type sudog struct {
+
+	g *g
+
+	next *sudog
+	prev *sudog
+	elem unsafe.Pointer // 指向数据 (可能指向栈)
+
+	acquiretime int64
+	releasetime int64
+	ticket      uint32
+
+	isSelect bool
+	success bool
+
+	parent   *sudog     // semaRoot 二叉树
+	waitlink *sudog     // g.waiting 列表或者 semaRoot
+	waittail *sudog     // semaRoot
+	c        *hchan     // channel
+}
+```
+
+sudog 中所有字段都受 hchan.lock 保护。acquiretime、releasetime、ticket 这三个字段永远不会被同时访问。对 channel 来说，waitlink 只由 g 使用。对 semaphores 来说，只有在持有 semaRoot 锁的时候才能访问这三个字段。isSelect 表示 g 是否被选择，g.selectDone 必须进行 CAS 才能在被唤醒的竞争中胜出。success 表示 channel c 上的通信是否成功。如果 goroutine 在 channel c 上传了一个值而被唤醒，则为 true；如果因为 c 关闭而被唤醒，则为 false。
+
 
 ## 三. 创建 Channel
 
