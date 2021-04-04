@@ -168,7 +168,7 @@ type hchan struct {
 	qcount   uint           // 队列中所有数据总数
 	dataqsiz uint           // 环形队列的 size
 	buf      unsafe.Pointer // 指向 dataqsiz 长度的数组
-	elemsize uint16
+	elemsize uint16         // 元素大小
 	closed   uint32
 	elemtype *_type         // 元素类型
 	sendx    uint           // 已发送的元素在环形队列中的位置
@@ -181,6 +181,9 @@ type hchan struct {
 ```
 
 lock 锁保护 hchan 中的所有字段，以及此通道上被阻塞的 sudogs 中的多个字段。持有 lock 的时候，禁止更改另一个 G 的状态（特别是不要使 G 状态变成ready），因为这会因为堆栈 shrinking 而发生死锁。
+
+
+![](https://img.halfrost.com/Blog/ArticleImage/149_5_.png)
 
 recvq 和 sendq 是等待队列，waitq 是一个双向链表：
 
@@ -222,8 +225,535 @@ sudog 中所有字段都受 hchan.lock 保护。acquiretime、releasetime、tick
 
 ## 三. 创建 Channel
 
+创建 channel 常见代码：
+
+```go
+ch := make(chan int)
+```
+
+编译器编译上述代码，在检查 ir 节点时，根据节点 op 不同类型，进行不同的检查，如下源码：
+
+```go
+func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
+	switch n.Op() {
+	default:
+		ir.Dump("walk", n)
+		base.Fatalf("walkExpr: switch 1 unknown op %+v", n.Op())
+		panic("unreachable")
+
+	case ir.OMAKECHAN:
+		n := n.(*ir.MakeExpr)
+		return walkMakeChan(n, init)
+
+	......
+}
+```
+
+编译器会检查每一种类型，walkExpr1() 的实现就是一个 switch-case，函数末尾没有 return，因为每一个 case 都会 return 或者返回 panic。这样做是为了与存在类型断言的情况中返回的内容做区分。walk 具体处理 OMAKECHAN 类型节点的逻辑如下：
+
+
+```go
+func walkMakeChan(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
+	size := n.Len
+	fnname := "makechan64"
+	argtype := types.Types[types.TINT64]
+
+	if size.Type().IsKind(types.TIDEAL) || size.Type().Size() <= types.Types[types.TUINT].Size() {
+		fnname = "makechan"
+		argtype = types.Types[types.TINT]
+	}
+
+	return mkcall1(chanfn(fnname, 1, n.Type()), n.Type(), init, reflectdata.TypePtr(n.Type()), typecheck.Conv(size, argtype))
+}
+```
+
+上述代码默认调用 makechan64() 函数。类型检查时如果 TIDEAL 大小在 int 范围内。将 TUINT 或 TUINTPTR 转换为 TINT 时出现大小溢出的情况，将在运行时在 makechan 中进行检查。如果在 make 函数中传入的 channel size 大小在 int 范围内，推荐使用 makechan()。因为 makechan() 在 32 位的平台上更快，用的内存更少。
+
+
+makechan64() 和 makechan() 函数方法原型如下：
+
+```go
+func makechan64(chanType *byte, size int64) (hchan chan any)
+func makechan(chanType *byte, size int) (hchan chan any)
+```
+
+makechan64() 方法只是判断一下传入的入参 size 是否还在 int 范围之内：
+
+
+```go
+func makechan64(t *chantype, size int64) *hchan {
+	if int64(int(size)) != size {
+		panic(plainError("makechan: size out of range"))
+	}
+
+	return makechan(t, int(size))
+}
+```
+
+创建 channel 的主要实现在 makechan() 函数中：
+
+```go
+func makechan(t *chantype, size int) *hchan {
+	elem := t.elem
+
+	// 编译器检查数据项大小不能超过 64KB
+	if elem.size >= 1<<16 {
+		throw("makechan: invalid channel element type")
+	}
+	// 检查对齐是否正确
+	if hchanSize%maxAlign != 0 || elem.align > maxAlign {
+		throw("makechan: bad alignment")
+	}
+    // 缓冲区大小检查，判断是否溢出
+	mem, overflow := math.MulUintptr(elem.size, uintptr(size))
+	if overflow || mem > maxAlloc-hchanSize || size < 0 {
+		panic(plainError("makechan: size out of range"))
+	}
+
+	var c *hchan
+	switch {
+	case mem == 0:
+		// 队列或者元素大小为 zero 时
+		c = (*hchan)(mallocgc(hchanSize, nil, true))
+		// Race 竞争检查利用这个地址来进行同步操作
+		c.buf = c.raceaddr()
+	case elem.ptrdata == 0:
+		// 元素不包含指针时。一次分配 hchan 和 buf 的内存。
+		c = (*hchan)(mallocgc(hchanSize+mem, nil, true))
+		c.buf = add(unsafe.Pointer(c), hchanSize)
+	default:
+		// 元素包含指针时
+		c = new(hchan)
+		c.buf = mallocgc(mem, elem, true)
+	}
+
+    // 设置属性
+	c.elemsize = uint16(elem.size)
+	c.elemtype = elem
+	c.dataqsiz = uint(size)
+	lockInit(&c.lock, lockRankHchan)
+
+	if debugChan {
+		print("makechan: chan=", c, "; elemsize=", elem.size, "; dataqsiz=", size, "\n")
+	}
+	return c
+}
+```
+
+上面这段 makechan() 代码主要目的是生成 *hchan 对象。重点关注 switch-case 中的 3 种情况：
+
+- 当队列或者元素大小为 0 时，调用 mallocgc() 在堆上为 channel 开辟一段大小为 hchanSize 的内存空间。
+- 当元素类型不是指针类型时，调用 mallocgc() 在堆上开辟为 channel 和底层 buf 缓冲区数组开辟一段大小为 hchanSize + mem 连续的内存空间。
+- 默认情况元素类型中有指针类型，调用 mallocgc() 在堆上分别为 channel 和 buf 缓冲区分配内存。
+
+完成第一步的内存分配之后，再就是 hchan 数据结构其他字段的初始化和 lock 的初始化。值得说明的一点是，当存储在 buf 中的元素不包含指针时，Hchan 中也不包含 GC 关心的指针。buf 指向一段相同元素类型的内存，elemtype 固定不变。SudoG 是从它们自己的线程中引用的，因此垃圾回收的时候无法回收它们。受到垃圾回收器的限制，指针类型的缓冲 buf 需要单独分配内存。官方在这里加了一个 TODO，垃圾回收的时候这段代码逻辑需要重新考虑。
+
+> 就是因为 channel 的创建全部调用的 mallocgc()，在堆上开辟的内存空间，channel 本身会被 GC 自动回收。有了这一性质，所以才有了下文关闭 channel 中优雅关闭的方法。
+
 
 ## 四. 发送数据
+
+向 channel 中发送数据常见代码：
+
+```go
+ch <- 1
+```
+
+编译器编译上述代码，在检查 ir 节点时，根据节点 op 不同类型，进行不同的检查，如下源码：
+
+```go
+func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
+	switch n.Op() {
+	default:
+		ir.Dump("walk", n)
+		base.Fatalf("walkExpr: switch 1 unknown op %+v", n.Op())
+		panic("unreachable")
+
+	case ir.OSEND:
+		n := n.(*ir.SendStmt)
+		return walkSend(n, init)
+
+	......
+}
+```
+
+walkExpr1() 函数在创建 channel 提到了，这里不再赘述。操作类型是 OSEND，对应调用 walkSend() 函数：
+
+```go
+func walkSend(n *ir.SendStmt, init *ir.Nodes) ir.Node {
+	n1 := n.Value
+	n1 = typecheck.AssignConv(n1, n.Chan.Type().Elem(), "chan send")
+	n1 = walkExpr(n1, init)
+	n1 = typecheck.NodAddr(n1)
+	return mkcall1(chanfn("chansend1", 2, n.Chan.Type()), nil, init, n.Chan, n1)
+}
+
+// entry point for c <- x from compiled code
+//go:nosplit
+func chansend1(c *hchan, elem unsafe.Pointer) {
+	chansend(c, elem, true, getcallerpc())
+}
+```
+
+walkSend() 函数中主要逻辑调用了 chansend1()，而 chansend1() 只是 chansend() 的“外壳”。所以 channel 发送数据的核心实现在 chansend() 中。根据 channel 的阻塞和唤醒，又可以分为 2 部分逻辑代码。接下来笔者讲 chansend() 代码拆成 4 部分详细分析。
+
+### 1. 异常检查
+
+
+```go
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+    // 判断 channel 是否为 nil
+	if c == nil {
+		if !block {
+			return false
+		}
+		gopark(nil, nil, waitReasonChanSendNilChan, traceEvGoStop, 2)
+		throw("unreachable")
+	}
+
+	if debugChan {
+		print("chansend: chan=", c, "\n")
+	}
+
+	if raceenabled {
+		racereadpc(c.raceaddr(), callerpc, funcPC(chansend))
+	}
+
+	// 简易快速的检查
+	if !block && c.closed == 0 && full(c) {
+		return false
+	}
+......
+}
+```
+
+chansend() 一上来对 channel 进行检查，如果被 GC 回收了会变为 nil。朝一个为 nil 的 channel 发送数据会发生阻塞。gopark 会引发以 waitReasonChanSendNilChan 为原因的休眠，并抛出 unreachable 的 fatal error。当 channel 不为 nil，再开始检查在没有获取锁的情况下会导致发送失败的非阻塞操作。
+
+当 channel 不为 nil，并且 channel 没有 close 时，还需要检查此时 channel 是否做好发送的准备，即判断 full(c)
+
+```go
+func full(c *hchan) bool {
+	if c.dataqsiz == 0 {
+		// 假设指针读取是近似原子性的
+		return c.recvq.first == nil
+	}
+	// 假设读取 uint 是近似原子性的
+	return c.qcount == c.dataqsiz
+}
+``` 
+
+full() 方法作用是判断在 channel 上发送是否会阻塞（即通道已满）。它读取单个字节大小的可变状态(recvq.first 和 qcount)，尽管答案可能在一瞬间是 true，但在调用函数收到返回值时，正确的结果可能发生了更改。值得注意的是 dataqsiz 字段，它在创建完 channel 以后是不可变的，因此它可以安全的在任意时刻读取。
+
+
+回到 chansend() 异常检查中。一个已经 close 的 channel 是不可能从“准备发送”的状态变为“未准备好发送”的状态。所以在检查完 channel 是否 close 以后，就算 channel close 了，也不影响此处检查的结果。可能有读者疑惑，“能不能把检查顺序倒一倒？先检查是否 full()，再检查是否 close？”。这样倒过来确实能保证检查 full() 的时候，channel 没有 close。但是这种做法也没有实质性的改变。channel 依旧可以在检查完 close 以后再关闭。其实我们依赖的是 chanrecv() 和 closechan() 这两个方法在锁释放后，它们更新这个线程 c.close 和 full() 的结果视图。
+
+
+### 2. 同步发送
+
+channel 异常状态检查以后，接下来的代码是发送的逻辑。
+
+
+```go
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+......
+
+	lock(&c.lock)
+
+	if c.closed != 0 {
+		unlock(&c.lock)
+		panic(plainError("send on closed channel"))
+	}
+
+	if sg := c.recvq.dequeue(); sg != nil {
+		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
+		return true
+	}
+
+......
+
+}
+```
+
+在发送之前，先上锁，保证线程安全。并再一次检查 channel 是否关闭。如果关闭则抛出 panic。加锁成功并且 channel 未关闭，开始发送。如果有正在阻塞等待的接收方，通过 dequeue() 取出头部第一个非空的 sudog，调用 send() 函数：
+
+```go
+func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
+	if sg.elem != nil {
+		sendDirect(c.elemtype, sg, ep)
+		sg.elem = nil
+	}
+	gp := sg.g
+	unlockf()
+	gp.param = unsafe.Pointer(sg)
+	sg.success = true
+	if sg.releasetime != 0 {
+		sg.releasetime = cputicks()
+	}
+	goready(gp, skip+1)
+}
+```
+
+send() 函数主要完成了 2 件事：
+
+- 1. 调用 sendDirect() 函数将数据拷贝到了接收变量的内存地址上
+- 2. 调用 goready() 将等待接收的阻塞 goroutine 的状态从 Gwaiting 或者 Gscanwaiting 改变成 Grunnable。下一轮调度时会唤醒这个接收的 goroutine。
+
+![](https://img.halfrost.com/Blog/ArticleImage/149_6_0.png)
+
+这里重点说说 goready() 的实现。理解了它的源码，就能明白为什么往 channel 中发送数据并非立即可以从接收方获取到。
+
+```go
+func goready(gp *g, traceskip int) {
+	systemstack(func() {
+		ready(gp, traceskip, true)
+	})
+}
+
+func ready(gp *g, traceskip int, next bool) {
+......
+
+	casgstatus(gp, _Gwaiting, _Grunnable)
+	runqput(_g_.m.p.ptr(), gp, next)
+	wakep()
+	releasem(mp)
+}
+```
+
+在 runqput() 函数的作用是把 g 绑定到本地可运行的队列中。此处 next 传入的是 true，将 g 插入到 runnext 插槽中，等待下次调度便立即运行。因为这一点导致了虽然 goroutine 保证了线程安全，但是在读取数据方面比数组慢了几百纳秒。
+
+
+|Read|Channel |Slice|
+|:-----:|:-----:|:-----:|:-----:|
+| Time | x * 100 * nanosecond|0|
+| Thread safe | Yes| No|
+
+所以在写测试用例的某些时候，需要考虑到这个微弱的延迟，可以适当加 sleep()。再比如刷 LeetCode 题目的时候，并非无脑使用 goroutine 就能带来 runtime 的提升，例如 [509. Fibonacci Number](https://leetcode.com/problems/fibonacci-number/)，感兴趣的同学可以用 goroutine 来写一写这道题，笔者这里实现了[goroutine 解法](https://books.halfrost.com/leetcode/ChapterFour/0500~0599/0509.Fibonacci-Number/)，性能方面完全不如数组的解法。
+
+
+### 3. 异步发送
+
+如果初始化 channel 时创建的带缓冲区的异步 Channel，当接收者队列为空时，这是会进入到异步发送逻辑：
+
+```go
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+......
+
+	if c.qcount < c.dataqsiz {
+		qp := chanbuf(c, c.sendx)
+		if raceenabled {
+			racenotify(c, c.sendx, nil)
+		}
+		typedmemmove(c.elemtype, qp, ep)
+		c.sendx++
+		if c.sendx == c.dataqsiz {
+			c.sendx = 0
+		}
+		c.qcount++
+		unlock(&c.lock)
+		return true
+	}
+	
+......
+}
+```
+
+如果 qcount 还没有满，则调用 chanbuf() 获取 sendx 索引的元素指针值。调用 typedmemmove() 方法将发送的值拷贝到缓冲区 buf 中。拷贝完成，需要维护 sendx 索引下标值和 qcount 个数。这里将 buf 缓冲区设计成环形的，索引值如果到了队尾，下一个位置重新回到队头。
+
+![](https://img.halfrost.com/Blog/ArticleImage/149_7_.png)
+
+至此，两种直接发送的逻辑分析完了，接下来是发送时 channel 阻塞的情况。
+
+
+### 4. 阻塞发送
+
+当 channel 处于打开状态，但是没有接收者，并且没有 buf 缓冲队列或者 buf 队列已满，这时 channel 会进入阻塞发送。
+
+```go
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+......
+
+	if !block {
+		unlock(&c.lock)
+		return false
+	}
+	
+	gp := getg()
+	mysg := acquireSudog()
+	mysg.releasetime = 0
+	if t0 != 0 {
+		mysg.releasetime = -1
+	}
+	mysg.elem = ep
+	mysg.waitlink = nil
+	mysg.g = gp
+	mysg.isSelect = false
+	mysg.c = c
+	gp.waiting = mysg
+	gp.param = nil
+	c.sendq.enqueue(mysg)
+	atomic.Store8(&gp.parkingOnChan, 1)
+	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceEvGoBlockSend, 2)
+	KeepAlive(ep)
+......
+}
+```
+
+- 调用 getg() 方法获取当前 goroutine 的指针，用于绑定给一个 sudog。
+- 调用 acquireSudog() 方法获取一个 sudog，可能是新建的 sudog，也有可能是从缓存中获取的。设置好 sudog 要发送的数据和状态。比如发送的 Channel、是否在 select 中和待发送数据的内存地址等等。
+- 调用 c.sendq.enqueue 方法将配置好的 sudog 加入待发送的等待队列。
+- 设置原子信号。当栈要 shrink 收缩时，这个标记代表当前 goroutine 还 parking 停在某个 channel 中。在 g 状态变更与设置 activeStackChans 状态这两个时间点之间的时间窗口进行栈 shrink 收缩是不安全的，所以需要设置这个原子信号。
+- 调用 gopark 方法挂起当前 goroutine，状态为 waitReasonChanSend，阻塞等待 channel。
+- 最后，KeepAlive() 确保发送的值保持活动状态，直到接收者将其复制出来。 sudog 具有指向堆栈对象的指针，但 sudog 不能被当做堆栈跟踪器的 root。发送的数值是分配在堆上，这样可以避免被 GC 回收。
+
+![](https://img.halfrost.com/Blog/ArticleImage/149_8_.png)
+
+
+这里提一下 sudog 的二级缓存复用体系。在 acquireSudog() 方法中：
+
+```go
+func acquireSudog() *sudog {
+	mp := acquirem()
+	pp := mp.p.ptr()
+	// 如果本地缓存为空
+	if len(pp.sudogcache) == 0 {
+		lock(&sched.sudoglock)
+		// 首先尝试将全局中央缓存存一部分到本地
+		for len(pp.sudogcache) < cap(pp.sudogcache)/2 && sched.sudogcache != nil {
+			s := sched.sudogcache
+			sched.sudogcache = s.next
+			s.next = nil
+			pp.sudogcache = append(pp.sudogcache, s)
+		}
+		unlock(&sched.sudoglock)
+		// 如果全局中央缓存是空的，则 allocate 一个新的
+		if len(pp.sudogcache) == 0 {
+			pp.sudogcache = append(pp.sudogcache, new(sudog))
+		}
+	}
+	// 从尾部提取，并调整本地缓存
+	n := len(pp.sudogcache)
+	s := pp.sudogcache[n-1]
+	pp.sudogcache[n-1] = nil
+	pp.sudogcache = pp.sudogcache[:n-1]
+	if s.elem != nil {
+		throw("acquireSudog: found s.elem != nil in cache")
+	}
+	releasem(mp)
+	return s
+}
+```
+
+上述代码涉及到 2 个新的重要的结构体，由于这 2 个结构体特别复杂，暂时此处只展示和 acquireSudog() 有关的部分：
+
+```go
+type p struct {
+......
+	sudogcache []*sudog
+	sudogbuf   [128]*sudog
+......
+}
+
+type schedt struct {
+......
+	sudoglock  mutex
+	sudogcache *sudog
+......
+}
+```
+
+sched.sudogcache 是全局中央缓存，可以认为它是“一级缓存”，它会在 GC 垃圾回收执行 clearpools 被清理。p.sudogcache 可以认为它是“二级缓存”，是本地缓存不会被 GC 清理掉。
+
+chansend 最后的代码逻辑是当 goroutine 唤醒以后，解除阻塞的状态：
+
+```go
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+......
+
+	if mysg != gp.waiting {
+		throw("G waiting list is corrupted")
+	}
+	gp.waiting = nil
+	gp.activeStackChans = false
+	closed := !mysg.success
+	gp.param = nil
+	if mysg.releasetime > 0 {
+		blockevent(mysg.releasetime-t0, 2)
+	}
+	mysg.c = nil
+	releaseSudog(mysg)
+	if closed {
+		if c.closed == 0 {
+			throw("chansend: spurious wakeup")
+		}
+		panic(plainError("send on closed channel"))
+	}
+	return true
+}
+```
+
+sudog 算是对 g 的一种封装，里面包含了 g，要发送的数据以及相关的状态。goroutine 被唤醒后会完成 channel 的阻塞数据发送。发送完最后进行基本的参数检查，解除 channel 的绑定并释放 sudog。
+
+```go
+func releaseSudog(s *sudog) {
+	if s.elem != nil {
+		throw("runtime: sudog with non-nil elem")
+	}
+	if s.isSelect {
+		throw("runtime: sudog with non-false isSelect")
+	}
+	if s.next != nil {
+		throw("runtime: sudog with non-nil next")
+	}
+	if s.prev != nil {
+		throw("runtime: sudog with non-nil prev")
+	}
+	if s.waitlink != nil {
+		throw("runtime: sudog with non-nil waitlink")
+	}
+	if s.c != nil {
+		throw("runtime: sudog with non-nil c")
+	}
+	gp := getg()
+	if gp.param != nil {
+		throw("runtime: releaseSudog with non-nil gp.param")
+	}
+	// 防止 rescheduling 到了其他的 P
+	mp := acquirem() 
+	pp := mp.p.ptr()
+	// 如果本地缓存已满
+	if len(pp.sudogcache) == cap(pp.sudogcache) {
+		// 转移一半本地缓存到全局中央缓存中
+		var first, last *sudog
+		for len(pp.sudogcache) > cap(pp.sudogcache)/2 {
+			n := len(pp.sudogcache)
+			p := pp.sudogcache[n-1]
+			pp.sudogcache[n-1] = nil
+			pp.sudogcache = pp.sudogcache[:n-1]
+			if first == nil {
+				first = p
+			} else {
+				last.next = p
+			}
+			last = p
+		}
+		lock(&sched.sudoglock)
+		// 将提取的链表挂载到全局中央缓存中
+		last.next = sched.sudogcache
+		sched.sudogcache = first
+		unlock(&sched.sudoglock)
+	}
+	pp.sudogcache = append(pp.sudogcache, s)
+	releasem(mp)
+}
+```
+
+releaseSudog() 虽然释放了 sudog 的内存，但是它会被 p.sudogcache 这个“二级缓存”缓存起来。
+
+chansend() 函数最后返回 true 表示成功向 Channel 发送了数据。
+
+### 5. 小结
+
+关于 channel 发送的源码实现已经分析完了，针对 channel 各个状态做一个小结。
 
 ||Channel status|result|
 |:-----:|:-----:|:-----:|:-----:|
@@ -233,9 +763,28 @@ sudog 中所有字段都受 hchan.lock 保护。acquiretime、releasetime、tick
 | Write | 关闭|**panic**|
 | Write | 只读|Compile Error|
 
+channel 发送过程中包含 2 次有关 goroutine 调度过程：
+
+- 1. 当接收队列中存在 sudog 可以直接发送数据时，执行 `goready()`将 g 插入 runnext 插槽中，状态从 Gwaiting 或者 Gscanwaiting 改变成 Grunnable，等待下次调度便立即运行。
+- 2. 当 channel 阻塞时，执行 `gopark()` 将 g 阻塞，让出 cpu 的使用权。
+
+需要强调的是，通道并不提供跨 goroutine 的数据访问保护机制。如果通过通道传输数据的一份副本，那么每个 goroutine 都持有一份副本，各自对自己的副本做修改是安全的。当传输的是指向数据的指针时，如果读和写是由不同的 goroutine 完成的，那么每个 goroutine 依旧需要额外的同步操作。
+
 
 ## 五. 接收数据
 
+
+### 1. 异常检查
+
+### 2. 同步接收
+
+### 3. 异步接收
+
+### 4. 阻塞接收
+
+### 5. 小结
+
+关于 channel 接收的源码实现已经分析完了，针对 channel 各个状态做一个小结。
 
 ||Channel status|result|
 |:-----:|:-----:|:-----:|:-----:|
@@ -248,6 +797,15 @@ sudog 中所有字段都受 hchan.lock 保护。acquiretime、releasetime、tick
 
 
 ## 六. 关闭 Channel
+
+
+### 1. 异常检查
+
+### 2. 释放所有 readers 和 writers
+
+### 3. 协程调度
+
+### 4. 优雅关闭
 
 
 “Channel 有几种优雅的关闭方法？” 这种问题常常出现在面试题中，究其原因是因为 Channel 创建容易，但是关闭“不易”：
