@@ -942,7 +942,7 @@ Weapon 有 2 个字段，一个是 name，一个是 damage。name 是 string，�
 <img src='https://img.halfrost.com/Blog/ArticleImage/87_18_.png'>
 </p>
 
-最后一步需要修正 sword 对象头部的 offset，修改成距离 vtable 的 offset。由于当前 vtable 在低地址，所以 sword 对象在它的右边，offset 为正数，offset = vtable size = 8 字节。对应代码实现见第 10 步。
+最后一步需要修正 sword 对象头部的 offset，修改成距离 vtable 的 offset。由于当前 vtable 在低地址，所以 sword 对象在它的右边，offset 为正数，offset = vtable size = 8 字节。对应代码实现见第 9 步。
 
 
 如果之前在 vtables 中找到了一样的 vtable，那么就在对象的头部的 offset 改成距离 vtable 的 offset 即可，对应代码第 12 步。
