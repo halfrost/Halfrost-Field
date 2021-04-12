@@ -98,7 +98,7 @@ ROOM = occupancy:integer; occupancy .--- 0;
 
 在确定性程序中，如果环境恒定，结果将是相同的。 由于并发基于非确定性，因此环境不会影响程序。给定所选的路径，程序则可以运行几次并收到不同的结果。为了确保并发程序的准确性，程序员必须能够在整体水平上考虑其程序的执行。
 
-但是，尽管 Hoare 引入了正式的方法，但仍然缺少任何验证正确程序的证明方法。CSP 只能发现已知问题，而不能发现未知问题。虽然基于 CSP 的商业应用程序（例如ConAn）可以检测到错误的存在，但无法检测到错误的存在。尽管 CSP 为我们提供了编写可以避免常见并发错误的程序的工具，但是正确程序的证明仍然是 CSP 中尚未解决的领域。
+但是，尽管 Hoare 引入了正式的方法，但仍然缺少任何验证正确程序的证明方法。CSP 只能发现已知问题，而不能发现未知问题。虽然基于 CSP 的商业应用程序（例如ConAn）可以检测到错误的存在，但是不能检测没有错误的情况，(无法验证正确性)。尽管 CSP 为我们提供了编写可以避免常见并发错误的程序的工具，但是正确程序的证明仍然是 CSP 中尚未解决的领域。
 
 
 ### 4. 未来
@@ -118,7 +118,7 @@ Go 语言除了 CSP 并发原语以外，还支持通过内存访问同步。syn
 > 为了尊重 mutex，sync 包实现了 mutex，但是我们希望 Go 语言的编程风格将会激励人们尝试更高等级的技巧。尤其是考虑构建你的程序，以便一次只有一个 goroutine 负责某个特定的数据。
 > 
 
-**不要通过共享内存进行通信。建议，通过通信来共享内存。（Do not communicate by sharing memory; instead, share memory by communicating）**这是 Go 语言并发的哲学座右铭。相对于使用 sync.Mutex 这样的并发原语。虽然大多数锁的问题可以通过 channel 或者传统的锁两种方式之一解决，但是 Go 语言核心团队更加推荐使用 CSP 的方式。
+**不要通过共享内存进行通信**。**建议**，**通过通信来共享内存**。（**Do not communicate by sharing memory; instead, share memory by communicating**）这是 Go 语言并发的哲学座右铭。相对于使用 sync.Mutex 这样的并发原语。虽然大多数锁的问题可以通过 channel 或者传统的锁两种方式之一解决，但是 Go 语言核心团队更加推荐使用 CSP 的方式。
 
 ![](https://img.halfrost.com/Blog/ArticleImage/149_4.png)
 
@@ -524,10 +524,11 @@ func ready(gp *g, traceskip int, next bool) {
 在 runqput() 函数的作用是把 g 绑定到本地可运行的队列中。此处 next 传入的是 true，将 g 插入到 runnext 插槽中，等待下次调度便立即运行。因为这一点导致了虽然 goroutine 保证了线程安全，但是在读取数据方面比数组慢了几百纳秒。
 
 
-|Read|Channel |Slice|  
-|:-----:|:-----:|:-----:|:-----:|  
-| Time | x * 100 * nanosecond|0|  
-| Thread safe | Yes| No|  
+| Read | Channel | Slice |
+| :-----:| :-----: | :-----: |
+| Time | x * 100 * nanosecond|0|
+| Thread safe | Yes| No|
+
 
 所以在写测试用例的某些时候，需要考虑到这个微弱的延迟，可以适当加 sleep()。再比如刷 LeetCode 题目的时候，并非无脑使用 goroutine 就能带来 runtime 的提升，例如 [509. Fibonacci Number](https://leetcode.com/problems/fibonacci-number/)，感兴趣的同学可以用 goroutine 来写一写这道题，笔者这里实现了[goroutine 解法](https://books.halfrost.com/leetcode/ChapterFour/0500~0599/0509.Fibonacci-Number/)，性能方面完全不如数组的解法。
 
@@ -757,13 +758,15 @@ chansend() 函数最后返回 true 表示成功向 Channel 发送了数据。
 
 关于 channel 发送的源码实现已经分析完了，针对 channel 各个状态做一个小结。
 
-||Channel status|Result|  
-|:-----:|:-----:|:-----:|:-----:|  
-| Write | nil|阻塞|  
-| Write |打开但填满|阻塞|  
-| Write | 打开但未满|成功写入值|  
-| Write | 关闭|**panic**|  
-| Write | 只读|Compile Error|  
+| | Channel Status | Result |
+| :-----:| :-----: | :-----: |
+| Write | nil|阻塞|
+| Write |打开但填满|阻塞|
+| Write | 打开但未满|成功写入值|
+| Write | 关闭|**panic**|
+| Write | 只读|Compile Error|
+  
+  
 
 channel 发送过程中包含 2 次有关 goroutine 调度过程：
 
@@ -1162,7 +1165,7 @@ goroutine 被唤醒后会完成 channel 的阻塞数据接收。接收完最后�
 关于 channel 接收的源码实现已经分析完了，针对 channel 各个状态做一个小结。
 
 | | Channel status | Result |  
-| :-----: | :-----: | :-----: | :-----: |  
+| :-----: | :-----: | :-----: |
 | Read | nil|阻塞|  
 | Read | 打开且非空|读取到值|  
 | Read | 打开但为空|阻塞|  
@@ -1177,7 +1180,7 @@ tmp, ok := <-ch
 ```
 
 | Channel status | Selected | Received |  
-| :-----: | :-----: | :-----: | :-----: |  
+| :-----: | :-----: | :-----: |
 | nil | false| false |  
 | 打开且非空 | true | true |  
 | 打开但为空 | false| false |  
@@ -1297,6 +1300,9 @@ func closechan(c *hchan) {
 再回收发送者 writers。回收步骤和回收接收者是完全一致的，将发送者的等待队列 sendq 中的 sudog 放入待清除队列 glist 中。注意这里可能会产生 panic。在第四章发送数据中分析过，往一个 close 的 channel 中发送数据，会产生 panic，这里不再赘述。
 
 
+![](https://img.halfrost.com/Blog/ArticleImage/149_13.png)
+
+
 ### 3. 协程调度
 
 最后一步更改 goroutine 的状态。
@@ -1325,13 +1331,15 @@ func closechan(c *hchan) {
 - 如果一个 Channel 已经关闭，重复关闭 Channel 会导致 panic。“不易”之二，不能无脑关闭。
 - 往一个 close 的 Channel 内写数据，也会导致 panic。“不易”之三，写数据之前也需要关注是否 close 的状态。
 
-| | Channel Status | Result |  
-| :-----: | :-----: | :-----: | :-----: |  
-| close | nil | **panic** |  
-| close | 打开且非空 | 关闭 Channel；读取成功，直到 Channel 耗尽数据，然后读取产生值的默认值 |  
-| close | 打开但为空 | 关闭 Channel；读到生产者的默认值 |  
-| close | 关闭 | **panic** |  
-| close | 只读 | Compile Error |  
+
+| | Channel Status | Result |
+| :-----:| :-----: | :-----: |
+| close | nil | **panic** |
+| close | 打开且非空 | 关闭 Channel；读取成功，直到 Channel 耗尽数据，然后读取产生值的默认值 |
+| close | 打开但为空 | 关闭 Channel；读到生产者的默认值 |
+| close | 关闭 | **panic** |
+| close | 只读 | Compile Error |
+ 
 
 那究竟什么时候关闭 Channel 呢？由上面三个“不易”，可以浓缩为 2 点：
 
