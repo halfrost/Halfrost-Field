@@ -865,7 +865,7 @@ TLS 1.2 要求 EncryptedPreMasterSecret 和长度字节一起正确地编码。�
 
 ### (2) 静态 DH 公钥算出预备主密钥
 
-如果这个值没有被包含在 Clietn 的证书中，这个结构体传递了 Client 的 Diffie-Hellman 公钥(Yc)。Yc 所用的编码由 PublicValueEncoding 罗列。这个结构是 Client 密钥交换消息的一个变量，它本身并非一个消息。
+如果这个值没有被包含在 Client 的证书中，这个结构体传递了 Client 的 Diffie-Hellman 公钥(Yc)。Yc 所用的编码由 PublicValueEncoding 罗列。这个结构是 Client 密钥交换消息的一个变量，它本身并非一个消息。
 
 这个消息的结构是：
 
