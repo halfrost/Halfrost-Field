@@ -339,7 +339,7 @@ eval 函数带来的问题总结如下：
 
 我们都知道 JavaScript 是脚本语言，它只有 runtime，没有编译型语言的 buildTime，那它是如何被各大浏览器运行起来的呢？
 
-JavaScript 代码是被各个浏览器引擎编译和运行起来的。**JavaScript 引擎的代码解析和执行过程的目标就是在最短时间内编译出最优化的代码。**JavaScript 引擎还需要负责管理内存，负责垃圾回收，与宿主语言的交互等。流行的引擎有以下几种：  
+JavaScript 代码是被各个浏览器引擎编译和运行起来的。**JavaScript 引擎的代码解析和执行过程的目标就是在最短时间内编译出最优化的代码。** JavaScript 引擎还需要负责管理内存，负责垃圾回收，与宿主语言的交互等。流行的引擎有以下几种：  
 苹果公司的 JavaScriptCore （JSC） 引擎，Mozilla 公司的 SpiderMonkey，微软 Internet Explorer 的 Chakra (JScript引擎)，Microsoft Edge 的 Chakra (JavaScript引擎) ，谷歌 Chrome 的 V8。
 
 
@@ -516,7 +516,7 @@ myFunc('ab');       // 2
 
 
 
-由于外层作用域链，使得 myFunC 可以访问到外层的 myFloat 。
+由于外层作用域链，使得 myFunc 可以访问到外层的 myFloat 。
 
 这就是 Javascript 语言特有的"作用域链"结构（chain scope），子对象会一级一级地向上寻找所有父对象的变量。所以，父对象的所有变量，对子对象都是可见的，反之则不成立。
 
