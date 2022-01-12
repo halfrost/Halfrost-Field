@@ -127,7 +127,7 @@
 | 2018 |  |[【星霜荏苒】 - 如何看待软件开发 ？](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2018.md)|
 | 2019 |  |[【星霜荏苒】 - 不甘当学渣，努力作学霸，最终是学民](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2019.md)|
 | 2020 |  |[【星霜荏苒】 - 下一个五年计划起航 ！](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2020.md)|
-
+| 2021 |  |[后疫情时代下美国留学 CS Master 申请纪实](https://github.com/halfrost/Halfrost-Field/blob/master/contents/TimeElapse/2021.md)<br>-----------------------------------------------------------------------------------------<br>|
 
 
 ## ❗️ 勘误
