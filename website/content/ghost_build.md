@@ -500,7 +500,7 @@ $ pm2 startup centos pm2 save
 
 ```vim
 
-$ npm install -g cnpm --registry= https://registry.npm.taobao.org
+$ npm install -g cnpm --registry= https://registry.npmmirror.com
 $ cnpm install pm2 -g 
 $ NODE_ENV=production pm2 start index.js --name "ghost" 
 $ pm2 startup centos 
