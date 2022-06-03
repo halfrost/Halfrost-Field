@@ -670,7 +670,7 @@ func Zero(typ Type) Value {
 }
 ```
 
-- 由于反射对象 Value 中本来就存有 Tpye 的信息，所以 Value 向 Type 转换比较简单。
+- 由于反射对象 Value 中本来就存有 Type 的信息，所以 Value 向 Type 转换比较简单。
 
 ```go
 // Type returns v's type.
