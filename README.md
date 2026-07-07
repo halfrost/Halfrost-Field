@@ -110,7 +110,7 @@ People often say that reading the source code of open-source frameworks can sign
 
 Thanks for the Star!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=halfrost/Halfrost-Field&type=Date)](https://star-history.com/#halfrost/Halfrost-Field&Date)
+[![Star History Chart](contents/images/star-history.svg)](https://star-history.com/#halfrost/Halfrost-Field&Date)
 
 ## 🌈 WeChat Official Account
 
