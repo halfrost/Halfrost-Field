@@ -1,41 +1,19 @@
 baseURL = "https://new.halfrost.com"
-languageCode = "en-us"
 title = "prometheus"
 theme = "cactus"
 copyright = "halfrost" # cactus will use title if copyright is not set
 disqusShortname = "halfrost" # Used when comments is enabled. Cactus will use site title if not set
 googleAnalytics = "UA-82753806-1"
 
+# ---- Bilingual (i18n) ----
+# English is the default and served at the site root; Chinese is served under /zh/.
+# Each language keeps its own content tree (mirror layout):
+#   content.en/  -> English   (default, root)
+#   content/     -> 中文       (/zh/)
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
 
 # summaryLength = 2
-
-# Main menu which appears below site header.
-[[menu.main]]
-name = "Home"
-url = "/"
-weight = 1
-
-[[menu.main]]
-name = "Books"
-url = "https://books.halfrost.com/"
-weight = 2
-
-[[menu.main]]
-name = "Github"
-url = "https://github.com/halfrost/Halfrost-Field"
-weight = 3
-
-[[menu.main]]
-name = "About"
-url = "https://halfrost.me/"
-weight = 4
-
-[[menu.main]]
-name = "RSS"
-url = "/index.xml"
-weight = 5
-
-
 
 [markup]
   [markup.tableOfContents]
@@ -52,7 +30,6 @@ weight = 5
   BookServiceWorker = true
 
   # Home page settings
-  description = "Explore in every moment of the hard thinking"
   mainSection = "posts" # your main section
   showAllPostsOnHomePage = true # default
   postsOnHomePage = 50 # this option will be ignored if showAllPostsOnHomePage is set to true
@@ -62,8 +39,6 @@ weight = 5
 
   # https://gohugo.io/functions/format/#hugo-date-and-time-templating-reference
   dateFormat = "Jan 02" # default
-  # dateFormat = "01-02" # default
-  # dateFormat = "2006-01-02" # default
 
   # Post page settings
   show_updated = false # default
@@ -72,14 +47,61 @@ weight = 5
     enabled = false # default
     engine = "disqus" # more supported engines will be added.
 
-  # the value of name should be an valid font awesome icon name (brands type)
-  # https://fontawesome.com/icons?d=gallery&s=brands
-  #[[params.social]]
-  #  name = "github"
-  #  link = "https://github.com/gohugoio"
-  #[[params.social]]
-  #  name = "linkedin"
-  #  link = "https://www.linkedin.com/company/github/"
-  #[[params.social]]
-  #  name = "email"
-  #  link = "example@example.com"  # no need for "mailto:" in the head
+# ---- Languages ----
+[languages]
+
+  [languages.en]
+    languageName = "English"
+    languageCode = "en-us"
+    contentDir = "content.en"
+    weight = 1
+    [languages.en.params]
+      description = "Explore in every moment of the hard thinking"
+    [[languages.en.menu.main]]
+      name = "Home"
+      url = "/"
+      weight = 1
+    [[languages.en.menu.main]]
+      name = "Books"
+      url = "https://books.halfrost.com/"
+      weight = 2
+    [[languages.en.menu.main]]
+      name = "Github"
+      url = "https://github.com/halfrost/Halfrost-Field"
+      weight = 3
+    [[languages.en.menu.main]]
+      name = "About"
+      url = "https://halfrost.me/"
+      weight = 4
+    [[languages.en.menu.main]]
+      name = "RSS"
+      url = "/index.xml"
+      weight = 5
+
+  [languages.zh]
+    languageName = "中文"
+    languageCode = "zh-CN"
+    contentDir = "content"
+    weight = 2
+    [languages.zh.params]
+      description = "在每一次深度思考中探索"
+    [[languages.zh.menu.main]]
+      name = "首页"
+      url = "/zh/"
+      weight = 1
+    [[languages.zh.menu.main]]
+      name = "书籍"
+      url = "https://books.halfrost.com/"
+      weight = 2
+    [[languages.zh.menu.main]]
+      name = "Github"
+      url = "https://github.com/halfrost/Halfrost-Field"
+      weight = 3
+    [[languages.zh.menu.main]]
+      name = "关于"
+      url = "https://halfrost.me/"
+      weight = 4
+    [[languages.zh.menu.main]]
+      name = "RSS"
+      url = "/zh/index.xml"
+      weight = 5
