@@ -144,7 +144,7 @@
 
 感谢Star！
 
-[![Star History Chart](https://api.star-history.com/svg?repos=halfrost/Halfrost-Field&type=Date)](https://star-history.com/#halfrost/Halfrost-Field&Date)
+[![Star History Chart](contents/images/star-history.svg)](https://star-history.com/#halfrost/Halfrost-Field&Date)
 
 ## 🌈 公众号
 
