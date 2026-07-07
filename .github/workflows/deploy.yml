@@ -39,3 +39,7 @@ jobs:
         TARGET: "/var/www/new_blog/"                 # 部署到目标文件夹
         ARGS: "-avz --delete"                        # rsync 参数（归档 + 删除服务器多余文件）
         EXCLUDE: "*.pyc"                             # 排除 .pyc 文件
+        # DEPLOY_KEY 是 RSA 密钥，新版 OpenSSH 默认禁用 SHA-1 的 ssh-rsa 签名，
+        # 而服务器只支持 ssh-rsa，导致 “no mutual signature supported / Permission denied”。
+        # 这里在客户端重新允许 ssh-rsa 签名与主机密钥算法。
+        SSH_CMD_ARGS: "-o StrictHostKeyChecking=no, -o PubkeyAcceptedAlgorithms=+ssh-rsa, -o HostKeyAlgorithms=+ssh-rsa"
