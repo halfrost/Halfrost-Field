@@ -1,0 +1,16 @@
+{{/* Language switcher — renders <li> items; include inside a <ul>. */}}
+{{ $p := . }}
+<li class="lang-switch-sep">·</li>
+{{ range .Site.Languages }}
+  {{ $lang := . }}
+  {{ $url := "" }}
+  {{ range $p.AllTranslations }}
+    {{ if eq .Language.Lang $lang.Lang }}{{ $url = .RelPermalink }}{{ end }}
+  {{ end }}
+  {{ if not $url }}{{ $url = cond (eq $lang.Lang "en") "/" (printf "/%s/" $lang.Lang) }}{{ end }}
+  <li class="lang-switch{{ if eq $lang.Lang $p.Language.Lang }} lang-active{{ end }}"><a href="{{ $url }}">{{ $lang.LanguageName }}</a></li>
+{{ end }}
+<style>
+  .lang-switch-sep { opacity: .4; }
+  .lang-switch.lang-active a { font-weight: 700; text-decoration: underline; }
+</style>

@@ -163,7 +163,7 @@ HKLM\SYSTEM\currentcontrolSet\Services\Tcpip\parameters\TcpTimedWaitDelay
 
 该键值的取值范围是30 - 300秒。对于 IPv6 而言，只需要将键值中的 `Tcpip` 替换为`Tcpip6` 即可。
 
-至于为什么要设置 2MSL 等待时间，答案可以看[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TCP:IP.md#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%A2%E6%88%B7%E7%AB%AF%E9%87%8A%E6%94%BE%E6%9C%80%E5%90%8E%E9%9C%80%E8%A6%81-time-wait-%E7%AD%89%E5%BE%85-2msl-%E5%91%A2)
+至于为什么要设置 2MSL 等待时间，答案可以看[这里](https://github.com/halfrost/Halfrost-Field/blob/master/contents/Protocol/TCP_IP.md#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%A2%E6%88%B7%E7%AB%AF%E9%87%8A%E6%94%BE%E6%9C%80%E5%90%8E%E9%9C%80%E8%A6%81-time-wait-%E7%AD%89%E5%BE%85-2msl-%E5%91%A2)
 
 
 ## 六. TCP 重置报文段
