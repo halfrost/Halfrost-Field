@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest   # 使用ubuntu系统镜像运行自动化脚本
 
     steps:  # 自动化步骤
-    - uses: actions/checkout@v2   # 第一步，下载代码仓库
+    - uses: actions/checkout@v4   # 第一步，下载代码仓库
 
     - name: Setup Hugo  # 第二步，安装 hugo
       uses: peaceiris/actions-hugo@v2
@@ -26,13 +26,16 @@ jobs:
       run: |
         cd ./website
         hugo -D --minify
-    - name: Deploy to Server  # 第四步，rsync推文件
-      uses: AEnterprise/rsync-deploy@v1.0  # 使用别人包装好的步骤镜像
-      env:
-        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}   # 引用配置，SSH私钥
-        ARGS: -avz --delete --exclude='*.pyc'   # rsync参数，排除.pyc文件
-        SERVER_PORT: '22'  # SSH端口
-        FOLDER: ./website/public/* #推送的文件夹，路径相对于代码仓库的根目录
-        SERVER_IP: ${{ secrets.SSH_HOST }}  # 引用配置，服务器的host名（IP或者域名domain.com）
-        USERNAME: ${{ secrets.SSH_USERNAME }}  # 引用配置，服务器登录名
-        SERVER_DESTINATION: /var/www/new_blog/   # 部署到目标文件夹
+    - name: Deploy to Server  # 第四步，rsync 推文件
+      # 原 AEnterprise/rsync-deploy@v1.0 的容器基于 EOL 的 debian:9.5，apt 源已 404 无法构建，
+      # 换成活跃维护、基于 Node 的 easingthemes/ssh-deploy（复用相同的三个 secrets）。
+      uses: easingthemes/ssh-deploy@v6.0.3
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}   # 引用配置，SSH 私钥
+        REMOTE_HOST: ${{ secrets.SSH_HOST }}         # 服务器 host（IP 或 domain.com）
+        REMOTE_USER: ${{ secrets.SSH_USERNAME }}     # 服务器登录名
+        REMOTE_PORT: "22"                            # SSH 端口
+        SOURCE: "website/public/"                    # 源目录，末尾 / 表示推送目录内容
+        TARGET: "/var/www/new_blog/"                 # 部署到目标文件夹
+        ARGS: "-avz --delete"                        # rsync 参数（归档 + 删除服务器多余文件）
+        EXCLUDE: "*.pyc"                             # 排除 .pyc 文件
