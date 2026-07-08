@@ -144,7 +144,7 @@
 
 感谢Star！
 
-[![Star History Chart](contents/images/star-history.svg)](https://star-history.com/#halfrost/Halfrost-Field&Date)
+[![Star History Chart](https://api.star-history.com/chart?repos=halfrost/Halfrost-Field&type=date&legend=top-left&sealed_token=poflkPcy1nX3nptOfHoQzOYL4f-bI-dCZh5o6E-wkmUVydhsc1rQRvHPU9LlqmL-cP27ESGzNti66ChhFgBivmQR6K0iv27EjhM--9DGOKhDuhHKYXIF4DCCbqbkW5n38xgMLD0Rwh34HNy6B1fDgXAInG-HeTouhIxD9tC3vL6ANmInQVNMcCDjk2cq)](https://www.star-history.com/?repos=halfrost%2FHalfrost-Field&type=date&legend=top-left)
 
 ## 🌈 公众号
 
