@@ -68,4 +68,14 @@
     {{ template "_internal/google_analytics.html" . }}
   {{ end }}
   {{ end }}
+
+  {{/* ---- Site override: 拉大正文标题与正文（body 14px）的字号差 ---- */}}
+  <style>
+    .post .content h2,
+    .post .content .h2 { font-size: 1.3rem; }
+    .post .content h3 { font-size: 1.12rem; }
+    .post .content h4,
+    .post .content h5,
+    .post .content h6 { font-size: 1rem; }
+  </style>
 </head>
