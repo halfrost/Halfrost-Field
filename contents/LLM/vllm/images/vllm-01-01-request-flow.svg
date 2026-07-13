@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="请求流">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">请求流</tspan></text>
+<rect class="rough" x="370" y="96" width="340" height="45" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="125.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">Prompt / token IDs</tspan></text><rect class="rough" x="370" y="167" width="340" height="45" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="540" y="196.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">InputProcessor</tspan></text><rect class="rough" x="370" y="238" width="340" height="45" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="540" y="267.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">EngineCoreRequest</tspan></text><rect class="rough" x="370" y="309" width="340" height="45" rx="10" fill="#efe9ff" stroke="#30363d" stroke-width="2"/><text x="540" y="338.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">EngineCoreClient</tspan></text><rect class="rough" x="370" y="380" width="340" height="45" rx="10" fill="#f1f3f4" stroke="#30363d" stroke-width="2"/><text x="540" y="409.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">EngineCore.step()</tspan></text><rect class="rough" x="370" y="451" width="340" height="45" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="468.3" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">Scheduler + Worker +</tspan><tspan x="540" dy="24.8">Sampler</tspan></text><rect class="rough" x="370" y="522" width="340" height="45" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="540" y="551.7" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">RequestOutput</tspan></text><path d="M 540 143 L 540.0 158.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 165 L 535.6 154.0 L 544.4 154.0 z" fill="#30363d"/><path d="M 540 214 L 540.0 229.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 236 L 535.6 225.0 L 544.4 225.0 z" fill="#30363d"/><path d="M 540 285 L 540.0 300.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 307 L 535.6 296.0 L 544.4 296.0 z" fill="#30363d"/><path d="M 540 356 L 540.0 371.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 378 L 535.6 367.0 L 544.4 367.0 z" fill="#30363d"/><path d="M 540 427 L 540.0 442.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 449 L 535.6 438.0 L 544.4 438.0 z" fill="#30363d"/><path d="M 540 498 L 540.0 513.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 520 L 535.6 509.0 L 544.4 509.0 z" fill="#30363d"/>
+</svg>
