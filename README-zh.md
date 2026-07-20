@@ -40,6 +40,16 @@
 ## 📖 目录
 
 
+# 🔥 LLM
+
+
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+|vLLM|v1 @ 6cf7b26bd|[vLLM 源码导读：从 `generate()` 到第一个 Token](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/01-from-generate-to-first-token.md)|
+
+
+---------------------------
+
 # 🐳 Go
 
 | Project | Version | Article |

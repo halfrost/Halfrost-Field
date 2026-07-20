@@ -40,6 +40,16 @@ People often say that reading the source code of open-source frameworks can sign
 ## 📖 Table of Contents
 
 
+# 🔥 LLM
+
+
+| Project | Version | Article |
+|:-------:|:-------:|:------|
+|vLLM|v1 @ 6cf7b26bd|[vLLM Source Walkthrough: From `generate()` to the First Token](https://github.com/halfrost/Halfrost-Field/blob/master/contents-en/LLM/vllm/01-from-generate-to-first-token.md)|
+
+
+---------------------------
+
 # 🐳 Go
 
 | Project | Version | Article |
