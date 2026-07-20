@@ -1,6 +1,6 @@
 # vLLM Source Walkthrough: From `generate()` to the First Token
 
-> Series baseline: [`halfrost/vllm@6cf7b26bd`](https://github.com/halfrost/vllm/tree/6cf7b26bd4bff60bf378e1af14044280ac0d214c). This article reads the V1 source at that pinned commit and cross-checks the vLLM engineering blogs and stable design docs. Code excerpts come from that commit; some excerpts elide unrelated lines to keep the focus, every elision is marked with `...`, and lines not marked as pseudocode match the source. Anchors are written `path:Lstart-Lend` and link to the pinned commit on GitHub.
+> Series baseline: [`vllm-project/vllm@6cf7b26bd`](https://github.com/vllm-project/vllm/tree/6cf7b26bd4bff60bf378e1af14044280ac0d214c). This article reads the V1 source at that pinned commit and cross-checks the vLLM engineering blogs and stable design docs. Code excerpts come from that commit; some excerpts elide unrelated lines to keep the focus, every elision is marked with `...`, and lines not marked as pseudocode match the source. Anchors are written `path:Lstart-Lend` and link to the pinned commit on GitHub.
 
 ## Why the Request Path Is the Right First Read
 
@@ -30,7 +30,7 @@ Before any code, fix the vocabulary. The architecture overview describes the eng
 
 Here is the idea that reorganizes everything. The four functions are not a pipeline you traverse once per request. Three of them — schedule, execute, process — are a single *transaction* that the engine runs over and over, once per "step", advancing the in-flight requests by a few tokens each turn, until each one finishes. This is not a metaphor. It is literally the body of one method.
 
-[`vllm/v1/engine/core.py:479-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508) (excerpt; §6 quotes the method in full):
+[`vllm/v1/engine/core.py:479-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508) (excerpt; §6 quotes the method in full):
 
 ```python
     def step(self) -> tuple[dict[int, EngineCoreOutputs], bool]:
@@ -74,7 +74,7 @@ That the same configuration reaches all six processes coherently is not luck —
 
 Here is the connective-tissue payoff, and the reason you can read the request path as if it were single-process: the split does **not** leak into request semantics. `LLMEngine` holds exactly one handle to the engine, and the transport hides behind it.
 
-[`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111):
+[`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111):
 
 ```python
         # EngineCore (gets EngineCoreRequests and gives EngineCoreOutputs)
@@ -101,7 +101,7 @@ Starting at the top of the map (§1): `LLM.generate()` is the first ownership bo
 
 The offline surface is really two files. `vllm/entrypoints/llm.py` owns validation and engine construction; `vllm/entrypoints/offline_utils.py` owns the render → add → drain spine. The `LLM` class itself is a façade assembled from mixins:
 
-[`vllm/entrypoints/llm.py:66`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L66)
+[`vllm/entrypoints/llm.py:66`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L66)
 
 ```python
 class LLM(BeamSearchOfflineMixin, PoolingOfflineMixin, OfflineInferenceMixin):
@@ -111,13 +111,13 @@ class LLM(BeamSearchOfflineMixin, PoolingOfflineMixin, OfflineInferenceMixin):
 
 <p class='figure-caption'>Method ownership in the offline façade: the public `generate` / `chat` / `enqueue` on `LLM` validate, fill defaults, and orchestrate, delegating to the `_render_and_add_requests → _add_request → _run_engine` spine on `OfflineInferenceMixin` over a single `LLMEngine` handle — no scheduling, memory, or execution logic sits above the façade.</p>
 
-The public methods (`generate`, `chat`, `enqueue`) live on `LLM` and do validation, default-filling, and orchestration — `enqueue` really does enqueue, calling `_add_completion_requests()` to push requests into the engine queue and return their IDs ([`llm.py:487-530`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L487-L530)), and `generate`/`chat` delegate into the same render/add/drain path; the add-then-drain machinery itself lives on `OfflineInferenceMixin` in `offline_utils.py`. **Invariant:** the user-facing class contains no scheduling, memory-management, or execution logic — those responsibilities are strictly below the façade, and every path (`generate`, `chat`, pooling) converges on the same `_render_and_add_requests → _add_request → _run_engine` chain.
+The public methods (`generate`, `chat`, `enqueue`) live on `LLM` and do validation, default-filling, and orchestration — `enqueue` really does enqueue, calling `_add_completion_requests()` to push requests into the engine queue and return their IDs ([`llm.py:487-530`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L487-L530)), and `generate`/`chat` delegate into the same render/add/drain path; the add-then-drain machinery itself lives on `OfflineInferenceMixin` in `offline_utils.py`. **Invariant:** the user-facing class contains no scheduling, memory-management, or execution logic — those responsibilities are strictly below the façade, and every path (`generate`, `chat`, pooling) converges on the same `_render_and_add_requests → _add_request → _run_engine` chain.
 
 ### Gate, default, delegate
 
 `generate()` is three moves and a handoff:
 
-[`vllm/entrypoints/llm.py:465-485`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485)
+[`vllm/entrypoints/llm.py:465-485`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485)
 
 ```python
         runner_type = self.model_config.runner_type
@@ -143,7 +143,7 @@ The public methods (`generate`, `chat`, `enqueue`) live on `LLM` and do validati
         )
 ```
 
-Read it in order. First, a **runner-type gate**: the model must have been loaded as a generative runner, so a pooling/embedding model is rejected here, before any request object exists. Second, **default materialization**: if the caller passed `sampling_params=None`, `get_default_sampling_params()` ([`llm.py:415-420`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L415-L420)) pulls the model's own `generation_config` diff (`get_diff_sampling_param()`) or falls back to a bare `SamplingParams()`. Third, **delegation** to `_run_completion` with `output_type=RequestOutput` pinned as an argument.
+Read it in order. First, a **runner-type gate**: the model must have been loaded as a generative runner, so a pooling/embedding model is rejected here, before any request object exists. Second, **default materialization**: if the caller passed `sampling_params=None`, `get_default_sampling_params()` ([`llm.py:415-420`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L415-L420)) pulls the model's own `generation_config` diff (`get_diff_sampling_param()`) or falls back to a bare `SamplingParams()`. Third, **delegation** to `_run_completion` with `output_type=RequestOutput` pinned as an argument.
 
 Two invariants fall out. **Generative-only** is enforced twice — once by the gate above, and again at drain time by an `assert isinstance(output, output_type)` (below), so a stray pooling output would trip the assertion rather than silently escape. **Params are never `None` at delegation**: the render/add path downstream never has to defend against a missing `SamplingParams`. `chat()` is the same shape with the identical gate and default step; it differs only in that it renders through the chat template before joining this shared path — see article 02 for the entrypoint family (CLI, chat, and the OpenAI server) that all share it.
 
@@ -155,7 +155,7 @@ Two invariants fall out. **Generative-only** is enforced twice — once by the g
 
 `_run_completion` is two phases: enqueue everything, then block-drain the engine. Before a single request is admitted, `_add_completion_requests` normalizes the four positional inputs — prompts, params, LoRA, priority — into equal-length sequences. The scalar-broadcast-or-validate rule is the critical part:
 
-[`vllm/entrypoints/offline_utils.py:247-256`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L247-L256)
+[`vllm/entrypoints/offline_utils.py:247-256`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L247-L256)
 
 ```python
         if isinstance(params, Sequence):
@@ -170,11 +170,11 @@ Two invariants fall out. **Generative-only** is enforced twice — once by the g
         return [params] * num_requests
 ```
 
-A single `SamplingParams` is broadcast to every prompt; a per-prompt list whose length does not equal the prompt count raises `ValueError` **before** any request is added. `_lora_request_to_seq` and `_priority_to_seq` follow the same shape. **The rule:** after this block, prompts/params/LoRA/priority are four positionally-aligned sequences of the same length — index `i` always refers to request `i`, so a prompt can never accidentally run under a neighbor's sampling params. (Prompts are then rendered *lazily*: they are passed to the add loop as a generator, so prompt `i+1` renders while the engine can already be working on prompt `i` (in the default multiprocess mode); passing a materialized list triggers a `warning_once`, [`offline_utils.py:504-512`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L504-L512).)
+A single `SamplingParams` is broadcast to every prompt; a per-prompt list whose length does not equal the prompt count raises `ValueError` **before** any request is added. `_lora_request_to_seq` and `_priority_to_seq` follow the same shape. **The rule:** after this block, prompts/params/LoRA/priority are four positionally-aligned sequences of the same length — index `i` always refers to request `i`, so a prompt can never accidentally run under a neighbor's sampling params. (Prompts are then rendered *lazily*: they are passed to the add loop as a generator, so prompt `i+1` renders while the engine can already be working on prompt `i` (in the default multiprocess mode); passing a materialized list triggers a `warning_once`, [`offline_utils.py:504-512`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L504-L512).)
 
 Each aligned tuple reaches `_add_request`, which is where the offline path stamps its two signature decisions:
 
-[`vllm/entrypoints/offline_utils.py:559-563`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563)
+[`vllm/entrypoints/offline_utils.py:559-563`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563)
 
 ```python
         if isinstance(params, SamplingParams):
@@ -186,7 +186,7 @@ Each aligned tuple reaches `_add_request`, which is where the offline path stamp
 
 First, **output kind is forced to `FINAL_ONLY`**, overwriting whatever the caller set. The enum makes the three modes explicit:
 
-[`vllm/sampling_params.py:182-188`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/sampling_params.py#L182-L188)
+[`vllm/sampling_params.py:182-188`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/sampling_params.py#L182-L188)
 
 ```python
 class RequestOutputKind(Enum):
@@ -206,13 +206,13 @@ Offline batch inference does not stream; `FINAL_ONLY` tells the downstream `Outp
 
 Second, **request IDs are monotonic decimal strings** drawn from the `Counter()` created in `__init__`: `"0"`, `"1"`, `"2"`, … in submission order. That ordering is the hook the final sort will exploit.
 
-One more admission-time guarantee wraps this: `_render_and_add_requests` catches any mid-batch exception and aborts every already-added request (`abort_request(..., internal=True)`) before re-raising ([`offline_utils.py:545-548`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L545-L548)). **Invariant (atomicity):** either the whole batch enters the engine or a failure leaves zero requests from this call behind — no half-added batch can pollute the drain.
+One more admission-time guarantee wraps this: `_render_and_add_requests` catches any mid-batch exception and aborts every already-added request (`abort_request(..., internal=True)`) before re-raising ([`offline_utils.py:545-548`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L545-L548)). **Invariant (atomicity):** either the whole batch enters the engine or a failure leaves zero requests from this call behind — no half-added batch can pollute the drain.
 
 ### The blocking drain and input-order restoration
 
 With requests admitted, `generate()` becomes a synchronous driver loop over the engine's own step:
 
-[`vllm/entrypoints/offline_utils.py:594-599, 623-626`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)
+[`vllm/entrypoints/offline_utils.py:594-599, 623-626`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)
 
 ```python
         while self.llm_engine.has_unfinished_requests():
@@ -232,15 +232,15 @@ With requests admitted, `generate()` becomes a synchronous driver loop over the 
 
 <p class='figure-caption'>Why the terminal `sorted(...)` exists: continuous batching lets requests finish out of submission order (the scheduler freely interleaves prefill and decode), so monotonic decimal IDs minted from `Counter()` let the wrapper layer restore input order — keeping "preserve submission order" off the scheduler's hot path.</p>
 
-Step by step: the loop condition is the *engine's* bookkeeping — `has_unfinished_requests()` is backed by the output processor ([`llm_engine.py:188-195`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L188-L195)), not a local counter — so the just-registered work is immediately visible and the loop keeps stepping until nothing is outstanding. Each `llm_engine.step()` is one full schedule → execute → process-outputs cycle (that wrapper is covered in this article's engine-step section, and the `EngineCore` loop it drives in article 04). The `assert isinstance(output, output_type)` is the runtime companion to the front-door gate: with `output_type=RequestOutput`, a pooling output could never sneak through. Because params were forced `FINAL_ONLY`, `if output.finished:` collects each request exactly once. Finally, the results are `sorted` by integer request ID.
+Step by step: the loop condition is the *engine's* bookkeeping — `has_unfinished_requests()` is backed by the output processor ([`llm_engine.py:188-195`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L188-L195)), not a local counter — so the just-registered work is immediately visible and the loop keeps stepping until nothing is outstanding. Each `llm_engine.step()` is one full schedule → execute → process-outputs cycle (that wrapper is covered in this article's engine-step section, and the `EngineCore` loop it drives in article 04). The `assert isinstance(output, output_type)` is the runtime companion to the front-door gate: with `output_type=RequestOutput`, a pooling output could never sneak through. Because params were forced `FINAL_ONLY`, `if output.finished:` collects each request exactly once. Finally, the results are `sorted` by integer request ID.
 
-That terminal sort is the whole point of the monotonic IDs. Continuous batching *intentionally* lets a later request finish before an earlier one — the scheduler is free to interleave prefill and decode across the whole running set without regard to submission order. The comment at [`offline_utils.py:623-625`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L623-L625) states the rationale verbatim. **Invariants:** the call is **blocking/synchronous** (it returns only when the engine reports no unfinished requests — the defining offline contract, versus the streaming `AsyncLLM`), and **output order equals input order** because IDs are assigned in submission order and the sort restores it at the wrapper layer. Order restoration lives here, in the convenience layer, so that the scheduler never has to treat "preserve submission order" as a GPU-hot-path constraint. Article 05 covers why that freedom matters for throughput.
+That terminal sort is the whole point of the monotonic IDs. Continuous batching *intentionally* lets a later request finish before an earlier one — the scheduler is free to interleave prefill and decode across the whole running set without regard to submission order. The comment at [`offline_utils.py:623-625`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L623-L625) states the rationale verbatim. **Invariants:** the call is **blocking/synchronous** (it returns only when the engine reports no unfinished requests — the defining offline contract, versus the streaming `AsyncLLM`), and **output order equals input order** because IDs are assigned in submission order and the sort restores it at the wrapper layer. Order restoration lives here, in the convenience layer, so that the scheduler never has to treat "preserve submission order" as a GPU-hot-path constraint. Article 05 covers why that freedom matters for throughput.
 
 ### One user request may become n engine requests
 
 The façade also holds the line on parallel sampling. When `SamplingParams.n > 1`, `LLMEngine.add_request` fans one logical request into `n` children, each with its own ID and child sampling params, but returns the *parent's* ID:
 
-[`vllm/v1/engine/llm_engine.py:279-292`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L292)
+[`vllm/v1/engine/llm_engine.py:279-292`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L292)
 
 ```python
         # Fan out child requests (for n>1).
@@ -281,7 +281,7 @@ The single most important architectural fact is *where* this work runs. V1 delib
 
 The transformation has one entry point.
 
-[`vllm/v1/engine/input_processor.py:242-255`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255)
+[`vllm/v1/engine/input_processor.py:242-255`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255)
 
 ```python
     def process_inputs(
@@ -308,7 +308,7 @@ Two type unions in this signature carry the whole design. `prompt: PromptType | 
 
 This method is called from `LLMEngine.add_request`, which is the seam that stitches input processing to the engine boundary from the previous section.
 
-[`vllm/v1/engine/llm_engine.py:249-263`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L249-L263)
+[`vllm/v1/engine/llm_engine.py:249-263`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L249-L263)
 
 ```python
         else:
@@ -334,7 +334,7 @@ Read it as a two-step handoff: `process_inputs` builds the struct, then `assign_
 
 The first thing `process_inputs` does is refuse malformed work, and it does so *before* spending a tokenizer pass on it.
 
-[`vllm/v1/engine/input_processor.py:256-267`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L256-L267)
+[`vllm/v1/engine/input_processor.py:256-267`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L256-L267)
 
 ```python
         self._validate_params(params, supported_tasks)
@@ -351,7 +351,7 @@ The first thing `process_inputs` does is refuse malformed work, and it does so *
             )
 ```
 
-`_validate_params` ([`input_processor.py:82-144`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L82-L144)) enforces task/param coherence: a `SamplingParams` must intersect `GENERATION_TASKS` — otherwise `raise ValueError("This model does not support generation")` — and a `PoolingParams` must intersect `POOLING_TASKS`. Along the way it calls `params.verify(...)`, which *validates* (raising on incoherent params — [`sampling_params.py:736-751`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/sampling_params.py#L736-L751) just dispatches to a series of pure `_validate_*` checks) but does **not** mutate; the caller's params stay untouched until they are cloned at [`input_processor.py:315`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L315), after which finalization mutates only the clone. `_validate_lora` (`:146-163`) makes a LoRA request without an enabled `lora_config` a hard error. The DP-rank bounds check above rejects an out-of-range engine target.
+`_validate_params` ([`input_processor.py:82-144`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L82-L144)) enforces task/param coherence: a `SamplingParams` must intersect `GENERATION_TASKS` — otherwise `raise ValueError("This model does not support generation")` — and a `PoolingParams` must intersect `POOLING_TASKS`. Along the way it calls `params.verify(...)`, which *validates* (raising on incoherent params — [`sampling_params.py:736-751`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/sampling_params.py#L736-L751) just dispatches to a series of pure `_validate_*` checks) but does **not** mutate; the caller's params stay untouched until they are cloned at [`input_processor.py:315`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L315), after which finalization mutates only the clone. `_validate_lora` (`:146-163`) makes a LoRA request without an enabled `lora_config` a hard error. The DP-rank bounds check above rejects an out-of-range engine target.
 
 **The invariant this protects:** no request reaches tokenization — let alone the engine core — unless the model actually advertises a matching task and the LoRA/DP targeting is legal. The cheap rejections happen at the earliest possible point in the pipeline, and none of these checks can be re-litigated later because the engine core simply trusts the struct it receives.
 
@@ -359,7 +359,7 @@ The first thing `process_inputs` does is refuse malformed work, and it does so *
 
 Here is the connective detail that surprises people reading V1 for the first time: `InputProcessor` **owns no tokenizer of its own**. Tokenization and the HF multimodal processor now live behind a `Renderer`, invoked *upstream* by the entrypoints (see article 02). `process_inputs` prefers to receive input that a renderer already finished.
 
-[`vllm/v1/engine/input_processor.py:269-296`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L269-L296)
+[`vllm/v1/engine/input_processor.py:269-296`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L269-L296)
 
 ```python
         if isinstance(prompt, dict) and "type" in prompt:
@@ -392,7 +392,7 @@ Here is the connective detail that surprises people reading V1 for the first tim
         current_platform.validate_request(processed_inputs, params)
 ```
 
-The discriminator is `isinstance(prompt, dict) and "type" in prompt`. A dict carrying a `"type"` key is treated as an already-rendered `EngineInput` and taken **as-is** — no tokenization happens here at all; `arrival_time` can even be read out of the dict. Everything else — a bare `str`, a `TokensPrompt`, an enc/dec dict — falls through to the **deprecated** `InputPreprocessor.preprocess()`, which delegates back to the renderer for actual tokenization ([`vllm/inputs/preprocess.py:68-88`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/inputs/preprocess.py#L68-L88) shows `_tokenize_prompt` proxying `self.renderer`). Both branches converge on `current_platform.validate_request(...)`.
+The discriminator is `isinstance(prompt, dict) and "type" in prompt`. A dict carrying a `"type"` key is treated as an already-rendered `EngineInput` and taken **as-is** — no tokenization happens here at all; `arrival_time` can even be read out of the dict. Everything else — a bare `str`, a `TokensPrompt`, an enc/dec dict — falls through to the **deprecated** `InputPreprocessor.preprocess()`, which delegates back to the renderer for actual tokenization ([`vllm/inputs/preprocess.py:68-88`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/inputs/preprocess.py#L68-L88) shows `_tokenize_prompt` proxying `self.renderer`). Both branches converge on `current_platform.validate_request(...)`.
 
 **The rule:** the modern flow renders (tokenizes + runs the multimodal processor) upstream and passes a finished `EngineInput`; the raw path and inline `tokenization_kwargs` survive only for backward compatibility and are flagged for removal in v0.18. Regardless of which branch runs, `processed_inputs` is an `EngineInput` with a `"type"` discriminator — a normalized shape the rest of `process_inputs` can rely on. (For how rendering itself tokenizes and expands multimodal placeholders, see article 02; for how the block hasher later consumes what this stage produces, articles 06 and 07.)
 
@@ -400,7 +400,7 @@ The discriminator is `isinstance(prompt, dict) and "type" in prompt`. A dict car
 
 After splitting encoder/decoder inputs and validating lengths and vocabulary (`:298-309`, `:387-484` — decoder prompts can't be empty, can't exceed `max_model_len`, and can't sit exactly at `max_model_len` for `generate` models, since that leaves no room for even one output token), the sampling params are cloned and finalized.
 
-[`vllm/v1/engine/input_processor.py:311-330`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L311-L330)
+[`vllm/v1/engine/input_processor.py:311-330`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L311-L330)
 
 ```python
         sampling_params = None
@@ -437,7 +437,7 @@ The caller's `params` is **cloned** so per-request finalization never mutates th
 
 Multimodal inputs arrive keyed by modality (`{"image": [...], "audio": [...]}`). This stage flattens them into a single sequence-ordered list.
 
-[`vllm/v1/engine/input_processor.py:354-368`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L354-L368)
+[`vllm/v1/engine/input_processor.py:354-368`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L354-L368)
 
 ```python
             mm_features = []
@@ -469,7 +469,7 @@ Multimodal inputs arrive keyed by modality (`{"image": [...], "audio": [...]}`).
 
 Everything converges on one constructor.
 
-[`vllm/v1/engine/input_processor.py:370-385`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L370-L385)
+[`vllm/v1/engine/input_processor.py:370-385`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L370-L385)
 
 ```python
         return EngineCoreRequest(
@@ -492,7 +492,7 @@ Everything converges on one constructor.
 
 Note `cache_salt=decoder_inputs.get("cache_salt")` — the salt rides through `process_inputs` untouched, to be consumed only later as a first-block-only prefix-cache namespace tag (article 07). The struct it builds is deliberately shaped for the wire.
 
-[`vllm/v1/engine/__init__.py:88-102`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L88-L102)
+[`vllm/v1/engine/__init__.py:88-102`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L88-L102)
 
 ```python
 class EngineCoreRequest(
@@ -512,15 +512,15 @@ class EngineCoreRequest(
     data_parallel_rank: int | None
 ```
 
-The three `msgspec.Struct` options are the point. `array_like=True` serializes fields positionally (no field-name overhead); `omit_defaults=True` skips defaulted fields on the wire; `gc=False` opts the struct out of Python's cyclic garbage collector. These choices only matter because this struct is *serialized and sent over a ZMQ socket* to a background `EngineCore` process on the default multiprocess path — the transport that the previous section's `SyncMPClient`/`AsyncMPClient` sit on (article 03 for the topology, article 04 for the loop that decodes it). A `.params` property ([`__init__.py:139-145`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L139-L145)) returns whichever of the two is set (preferring `sampling_params`) and asserts at least one is present; the never-both invariant is guaranteed at construction ([`input_processor.py:311-330`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L311-L330), exactly one branch runs), not by the property.
+The three `msgspec.Struct` options are the point. `array_like=True` serializes fields positionally (no field-name overhead); `omit_defaults=True` skips defaulted fields on the wire; `gc=False` opts the struct out of Python's cyclic garbage collector. These choices only matter because this struct is *serialized and sent over a ZMQ socket* to a background `EngineCore` process on the default multiprocess path — the transport that the previous section's `SyncMPClient`/`AsyncMPClient` sit on (article 03 for the topology, article 04 for the loop that decodes it). A `.params` property ([`__init__.py:139-145`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L139-L145)) returns whichever of the two is set (preferring `sampling_params`) and asserts at least one is present; the never-both invariant is guaranteed at construction ([`input_processor.py:311-330`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L311-L330), exactly one branch runs), not by the property.
 
 **The guarantees:** `sampling_params` and `pooling_params` are never both set; `arrival_time` is populated on every branch (so its non-optional `float` type holds); and the struct is cheap to serialize. The heterogeneity of user input — five prompt shapes, optional multimodal, optional LoRA — is gone. Downstream code branches on `sampling_params is not None` and reads a flat list of token IDs, nothing else.
 
 ### The final stamp: request-id randomization
 
-`process_inputs` returns, and back in `add_request` the request is stamped before registration (the `assign_request_id` call at [`llm_engine.py:263`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L263) above).
+`process_inputs` returns, and back in `add_request` the request is stamped before registration (the `assign_request_id` call at [`llm_engine.py:263`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L263) above).
 
-[`vllm/v1/engine/input_processor.py:222-240`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L222-L240)
+[`vllm/v1/engine/input_processor.py:222-240`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L222-L240)
 
 ```python
     @staticmethod
@@ -556,7 +556,7 @@ The previous sections followed a prompt until it became an `EngineCoreRequest` �
 
 `LLMEngine` — the synchronous engine used by the offline `LLM` path — owns exactly one channel to scheduling and execution. It is created in the constructor and typed as an abstract client, not as a concrete transport.
 
-[`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111)
+[`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111)
 
 ```python
         # EngineCore (gets EngineCoreRequests and gives EngineCoreOutputs)
@@ -571,7 +571,7 @@ The previous sections followed a prompt until it became an `EngineCoreRequest` �
 
 Read this closely. `self.engine_core` is the *only* way `LLMEngine` reaches the scheduler, the KV cache, and the GPU. Every public operation — `add_request`, `step`, `abort_request`, `sleep`, `add_lora`, `collective_rpc` — ultimately forwards to a method of the same name on this one field. `asyncio_mode=False` is hardcoded because the synchronous `LLMEngine` never uses the asyncio client; the online path (`AsyncLLM`) is the one that passes `True`. The single free variable is `multiprocess_mode`, and it flows in from a classmethod constructor:
 
-[`vllm/v1/engine/llm_engine.py:157`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L157)
+[`vllm/v1/engine/llm_engine.py:157`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L157)
 
 ```python
             multiprocess_mode=envs.VLLM_ENABLE_V1_MULTIPROCESSING,
@@ -581,7 +581,7 @@ Read this closely. `self.engine_core` is the *only* way `LLMEngine` reaches the 
 
 There is exactly one deliberate hole in this abstraction, and it is guarded:
 
-[`vllm/v1/engine/llm_engine.py:123-125`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L123-L125)
+[`vllm/v1/engine/llm_engine.py:123-125`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L123-L125)
 
 ```python
         if not multiprocess_mode:
@@ -595,7 +595,7 @@ The double hop `self.engine_core.engine_core` reaches through the *client* (`Inp
 
 The three transports live behind one abstract base class, and `make_client` is where the topology is chosen from two booleans.
 
-[`vllm/v1/engine/core_client.py:82-105`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L82-L105)
+[`vllm/v1/engine/core_client.py:82-105`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L82-L105)
 
 ```python
     @staticmethod
@@ -630,7 +630,7 @@ The three transports live behind one abstract base class, and `make_client` is w
 
 Four combinations, three outcomes: `(mp=False, async=False)` → `InprocClient`; `(mp=True, async=False)` → `SyncMPClient` (the multiprocess offline path); `(mp=True, async=True)` → the async family (`AsyncMPClient` and its DP variants, the online-server path); and `(mp=False, async=True)` is explicitly rejected — you cannot run the engine in-process under asyncio. The docstring on the base class names the contract in one place:
 
-[`vllm/v1/engine/core_client.py:71-80`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L71-L80)
+[`vllm/v1/engine/core_client.py:71-80`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L71-L80)
 
 ```python
 class EngineCoreClient(ABC):
@@ -651,13 +651,13 @@ class EngineCoreClient(ABC):
 
 It is tempting to assume the offline `LLM` runs the engine in-process — after all, there is no HTTP server. It does not. Recall the constructor default flows from `envs.VLLM_ENABLE_V1_MULTIPROCESSING`, and that env var defaults to `True`:
 
-[`vllm/envs.py:147`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L147)
+[`vllm/envs.py:147`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L147)
 
 ```python
     VLLM_ENABLE_V1_MULTIPROCESSING: bool = True
 ```
 
-[`vllm/envs.py:1311-1313`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L1311-L1313)
+[`vllm/envs.py:1311-1313`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L1311-L1313)
 
 ```python
     "VLLM_ENABLE_V1_MULTIPROCESSING": lambda: bool(
@@ -675,7 +675,7 @@ So even a plain `LLM(model=...).generate(...)` script gets `multiprocess_mode=Tr
 
 When the engine is in-process, the "client" is a thin shell that *owns* a real `EngineCore` and calls it directly — no serialization, no socket, no busy loop.
 
-[`vllm/v1/engine/core_client.py:289-299`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L289-L299)
+[`vllm/v1/engine/core_client.py:289-299`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L289-L299)
 
 ```python
     def get_output(self) -> EngineCoreOutputs:
@@ -697,7 +697,7 @@ Two things fall out. First, `add_request` is exactly two inline calls on the cal
 
 In multiprocess mode the same `add_request` becomes a serialize-and-send. Nothing about the *request* changes; only its delivery does.
 
-[`vllm/v1/engine/core_client.py:886-889`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L886-L889)
+[`vllm/v1/engine/core_client.py:886-889`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L886-L889)
 
 ```python
     def add_request(self, request: EngineCoreRequest) -> None:
@@ -706,7 +706,7 @@ In multiprocess mode the same `add_request` becomes a serialize-and-send. Nothin
         self._send_input(EngineCoreRequestType.ADD, request)
 ```
 
-[`vllm/v1/engine/core_client.py:861-873`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L861-L873)
+[`vllm/v1/engine/core_client.py:861-873`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L861-L873)
 
 ```python
     def _send_input(self, request_type: EngineCoreRequestType, request: Any):
@@ -734,7 +734,7 @@ The wire message is an ordered, self-describing multipart frame: `(engine_identi
 
 The boundary's protocol is a tiny tagged union. Each request type is a single hex byte, so it costs nothing to encode into the frame.
 
-[`vllm/v1/engine/__init__.py:251-264`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264)
+[`vllm/v1/engine/__init__.py:251-264`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264)
 
 ```python
 class EngineCoreRequestType(enum.Enum):
@@ -757,13 +757,13 @@ class EngineCoreRequestType(enum.Enum):
 
 <p class='figure-caption'>`EngineCoreRequestType` routing: `ADD` / `ABORT` / `UTILITY` cross the socket client→engine (only `ADD` gets the typed `MsgpackDecoder(EngineCoreRequest, ...)`; the rest share an untyped decoder), `START_DP_WAVE` is coordinator→engine, and `EXECUTOR_FAILED` / `WAKEUP` are in-process sentinels that never travel the wire yet reuse the same one-demux dispatch path.</p>
 
-`ADD`, `ABORT`, and `UTILITY` are the types that actually travel over the socket from the client; `START_DP_WAVE` is coordinator-to-engine; `EXECUTOR_FAILED` and `WAKEUP` are *in-process sentinels* pushed onto the engine's own input queue and never sent over the wire — they reuse the same dispatch path so the busy loop needs only one demux. Only `ADD` gets a dedicated *typed* decoder — `MsgpackDecoder(EngineCoreRequest, ...)` — because it deserializes into the typed `EngineCoreRequest` struct; every other type shares an untyped generic decoder ([`core.py:1494-1497`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1494-L1497)). (Both decoders are built with the same `oob_tensor_provider`, so out-of-band-tensor capability is *not* what distinguishes them, even though in practice only `ADD` payloads actually carry tensors.) Return-valued operations (`get_supported_tasks`, `sleep`, `add_lora`, `collective_rpc`) all ride `UTILITY`, tagged with a `call_id` and correlated back to a `Future` so an inherently async socket round-trip presents a blocking API — in-process those same methods are plain Python returns.
+`ADD`, `ABORT`, and `UTILITY` are the types that actually travel over the socket from the client; `START_DP_WAVE` is coordinator-to-engine; `EXECUTOR_FAILED` and `WAKEUP` are *in-process sentinels* pushed onto the engine's own input queue and never sent over the wire — they reuse the same dispatch path so the busy loop needs only one demux. Only `ADD` gets a dedicated *typed* decoder — `MsgpackDecoder(EngineCoreRequest, ...)` — because it deserializes into the typed `EngineCoreRequest` struct; every other type shares an untyped generic decoder ([`core.py:1494-1497`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1494-L1497)). (Both decoders are built with the same `oob_tensor_provider`, so out-of-band-tensor capability is *not* what distinguishes them, even though in practice only `ADD` payloads actually carry tensors.) Return-valued operations (`get_supported_tasks`, `sleep`, `add_lora`, `collective_rpc`) all ride `UTILITY`, tagged with a `call_id` and correlated back to a `Future` so an inherently async socket round-trip presents a blocking API — in-process those same methods are plain Python returns.
 
 ### The symmetry: same lifecycle, relocated threads
 
 The reason two transports can share one contract is that they perform the *same two operations in the same order* — the multiprocess path just splits them across a thread boundary. `InprocClient.add_request` calls `preprocess_add_request` then `scheduler`-bound `add_request` inline. The multiprocess engine does exactly the same pair, but `preprocess_add_request` runs on a dedicated input IO thread that decodes the frame, the resulting `(Request, wave)` tuple rides a thread-safe queue, and `add_request` runs on the busy-loop thread. The engine's own docstring names the intent:
 
-[`vllm/v1/engine/core.py:855-860`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L860)
+[`vllm/v1/engine/core.py:855-860`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L860)
 
 ```python
     def preprocess_add_request(self, request: EngineCoreRequest) -> tuple[Request, int]:
@@ -788,7 +788,7 @@ The previous section established that `LLMEngine` holds one polymorphic `EngineC
 
 By the time control reaches the tail of `LLMEngine.add_request`, the raw prompt has already been through `input_processor.process_inputs` (article 01 §3) and is now an `EngineCoreRequest` with fully-defaulted, cloned `SamplingParams`. What remains is registration — and it is deliberately two-sided.
 
-Source anchor: [`vllm/v1/engine/llm_engine.py:263-277`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L263-L277)
+Source anchor: [`vllm/v1/engine/llm_engine.py:263-277`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L263-L277)
 
 ```python
         self.input_processor.assign_request_id(request)
@@ -815,7 +815,7 @@ Step-by-step read. `assign_request_id` stamps the internal id (external id plus 
 
 The ordering is not incidental. The output side is registered **before** the request is submitted for execution, so no `EngineCoreOutput` can ever arrive for a request the `OutputProcessor` has not yet heard of. This closes an output-before-registration race that would otherwise drop the first token of a fast-completing request. The offline drain loop sees the registration immediately for the same reason:
 
-Source anchor: [`vllm/v1/engine/llm_engine.py:188-195`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L188-L195)
+Source anchor: [`vllm/v1/engine/llm_engine.py:188-195`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L188-L195)
 
 ```python
     def get_num_unfinished_requests(self) -> int:
@@ -834,7 +834,7 @@ Both "is there work left?" predicates are backed by the `output_processor`, not 
 
 The interesting case is `n > 1` — parallel sampling, where the user asks for several completions of one prompt. vLLM does not teach the scheduler about "n samples." It fans the single request into `n` independent engine requests and reassembles them on the way out.
 
-Source anchor: [`vllm/v1/engine/llm_engine.py:279-294`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L294)
+Source anchor: [`vllm/v1/engine/llm_engine.py:279-294`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L294)
 
 ```python
         # Fan out child requests (for n>1).
@@ -857,7 +857,7 @@ Source anchor: [`vllm/v1/engine/llm_engine.py:279-294`](https://github.com/halfr
 
 Step-by-step read. A `ParentRequest` wraps the original. For each child index it mints a child id and child sampling params:
 
-Source anchor: [`vllm/v1/engine/parallel_sampling.py:83-94`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/parallel_sampling.py#L83-L94)
+Source anchor: [`vllm/v1/engine/parallel_sampling.py:83-94`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/parallel_sampling.py#L83-L94)
 
 ```python
     def get_child_info(self, index: int) -> tuple[str, SamplingParams]:
@@ -882,7 +882,7 @@ The invariant this protects: **parallel sampling is `n` engine requests but one 
 
 `self.engine_core.add_request(child_request)` looks like a single call, but a type change happens inside it that is the real entry into engine ownership. The object the frontend passes is an `EngineCoreRequest` — the GC-free msgspec wire struct. The object the engine's scheduler receives is a `vllm.v1.request.Request`. The conversion sits in `preprocess_add_request`:
 
-Source anchor: [`vllm/v1/engine/core.py:855-877`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L877)
+Source anchor: [`vllm/v1/engine/core.py:855-877`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L877)
 
 ```python
     def preprocess_add_request(self, request: EngineCoreRequest) -> tuple[Request, int]:
@@ -905,7 +905,7 @@ Step-by-step read. `Request.from_engine_core_request` materializes the internal 
 
 The engine-side `add_request` — the method the busy loop (or `InprocClient`) finally calls — is short, and its shortness is the point.
 
-Source anchor: [`vllm/v1/engine/core.py:372-407`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L372-L407)
+Source anchor: [`vllm/v1/engine/core.py:372-407`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L372-L407)
 
 ```python
     def add_request(self, request: Request, request_wave: int = 0):
@@ -962,7 +962,7 @@ Step-by-step read. Three guards, one handoff, one edge case:
 
 That last point generalizes into the ownership invariant of the whole engine core. Abort does not have its own machinery:
 
-Source anchor: [`vllm/v1/engine/core.py:409-415`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L409-L415)
+Source anchor: [`vllm/v1/engine/core.py:409-415`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L409-L415)
 
 ```python
     def abort_requests(self, request_ids: list[str]):
@@ -980,7 +980,7 @@ Step-by-step read. Aborting a request is `scheduler.finish_requests(ids, FINISHE
 
 The online path registers the same two sides in the same order, with one addition — a per-request output mailbox created *before* submission.
 
-Source anchor: [`vllm/v1/engine/async_llm.py:400-412`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L400-L412)
+Source anchor: [`vllm/v1/engine/async_llm.py:400-412`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L400-L412)
 
 ```python
     async def _add_request(
@@ -1008,10 +1008,10 @@ Step-by-step read. The caller (`AsyncLLM.add_request`) first builds a `RequestOu
 
 Four invariants are established the instant a request enters the engine, and every later stage relies on them:
 
-- **Register-before-submit.** The output side is always registered before the forward side is triggered, so an output can never arrive for an unknown request ([`llm_engine.py:274-276`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L274-L276); [`async_llm.py:409-412`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L409-L412)).
-- **One user request, n flat engine requests.** Parallel sampling is fanned into independent children under a `ParentRequest`; the scheduler and workers never see the sibling relationship, and the caller gets back the parent id ([`llm_engine.py:279-294`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L294)).
-- **Type change marks ownership transfer.** The wire `EngineCoreRequest` becomes an internal `Request` in `preprocess_add_request`; downstream of `scheduler.add_request` the wire struct no longer exists ([`core.py:855-877`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L877), `403`).
-- **Admit and abort share one state machine.** `EngineCore` validates and delegates; it never frees blocks or mutates lifecycle state itself, and abort is just `finish_requests(..., FINISHED_ABORTED)` ([`core.py:403`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L403), `409-415`). The scheduler owns everything from here — which is precisely where article 01 §7 picks up.
+- **Register-before-submit.** The output side is always registered before the forward side is triggered, so an output can never arrive for an unknown request ([`llm_engine.py:274-276`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L274-L276); [`async_llm.py:409-412`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L409-L412)).
+- **One user request, n flat engine requests.** Parallel sampling is fanned into independent children under a `ParentRequest`; the scheduler and workers never see the sibling relationship, and the caller gets back the parent id ([`llm_engine.py:279-294`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L279-L294)).
+- **Type change marks ownership transfer.** The wire `EngineCoreRequest` becomes an internal `Request` in `preprocess_add_request`; downstream of `scheduler.add_request` the wire struct no longer exists ([`core.py:855-877`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L855-L877), `403`).
+- **Admit and abort share one state machine.** `EngineCore` validates and delegates; it never frees blocks or mutates lifecycle state itself, and abort is just `finish_requests(..., FINISHED_ABORTED)` ([`core.py:403`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L403), `409-415`). The scheduler owns everything from here — which is precisely where article 01 §7 picks up.
 
 ## The Engine Step: Schedule, Execute, Process Outputs
 
@@ -1025,7 +1025,7 @@ Everything up to this point has been adaptation: the façade normalized inputs, 
 
 Concept: one step is a transaction. It asks the scheduler what to run, launches the forward pass without blocking, prepares the structured-output bitmask concurrently, samples if execution deferred it, drains any aborts that arrived mid-frame, and only then commits sampled tokens back into request state.
 
-Source: [`vllm/v1/engine/core.py:479-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508)
+Source: [`vllm/v1/engine/core.py:479-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508)
 
 ```python
     def step(self) -> tuple[dict[int, EngineCoreOutputs], bool]:
@@ -1062,15 +1062,15 @@ Source: [`vllm/v1/engine/core.py:479-508`](https://github.com/halfrost/vllm/blob
 
 Step-by-step read:
 
-**Job 0 — the guard ([`core.py:488-489`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488-L489)).** `if not self.scheduler.has_requests(): return {}, False`. No model runs when the scheduler is empty. The comment above it — "unfinished, or finished and not yet removed from the batch" — is load-bearing: `has_requests()` is deliberately wider than "requests still generating." It stays `True` while there are finished request ids not yet flushed to clients, or a KV connector still draining, so the loop takes one more step to actually *emit* those finishes and free deferred blocks before it is allowed to idle. The internals of that predicate belong to article 04; here it is enough to know the guard counts the tail of a request's life, not just its middle.
+**Job 0 — the guard ([`core.py:488-489`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488-L489)).** `if not self.scheduler.has_requests(): return {}, False`. No model runs when the scheduler is empty. The comment above it — "unfinished, or finished and not yet removed from the batch" — is load-bearing: `has_requests()` is deliberately wider than "requests still generating." It stays `True` while there are finished request ids not yet flushed to clients, or a KV connector still draining, so the loop takes one more step to actually *emit* those finishes and free deferred blocks before it is allowed to idle. The internals of that predicate belong to article 04; here it is enough to know the guard counts the tail of a request's life, not just its middle.
 
-**Job 1 — schedule ([`core.py:490`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490)).** `scheduler.schedule(self._should_throttle_prefills())` returns a `SchedulerOutput` and runs *no model code*. It decides which requests run, how many new tokens each gets, which KV blocks are allocated or reused, which requests are preempted, and what attention/sampling metadata the worker will need. `_should_throttle_prefills()` is `False` in the base class ([`core.py:474-477`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L474-L477)) and only overridden by the data-parallel engine for prefill balancing. What "how many tokens for which requests" means — continuous batching, chunked prefill, prefix-cache reuse — is the entire subject of article 05; article 01 states only that this one call is the whole scheduling decision for the step.
+**Job 1 — schedule ([`core.py:490`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490)).** `scheduler.schedule(self._should_throttle_prefills())` returns a `SchedulerOutput` and runs *no model code*. It decides which requests run, how many new tokens each gets, which KV blocks are allocated or reused, which requests are preempted, and what attention/sampling metadata the worker will need. `_should_throttle_prefills()` is `False` in the base class ([`core.py:474-477`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L474-L477)) and only overridden by the data-parallel engine for prefill balancing. What "how many tokens for which requests" means — continuous batching, chunked prefill, prefix-cache reuse — is the entire subject of article 05; article 01 states only that this one call is the whole scheduling decision for the step.
 
-**Job 2 — execute, overlap, sample ([`core.py:491-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L491-L499)).** This is the connective-tissue trick. `execute_model(scheduler_output, non_block=True)` returns a `Future` immediately instead of blocking on the GPU. That gap is filled by `get_grammar_bitmask(scheduler_output)`, which builds the structured-output token mask on the CPU *while the forward pass runs*. `future.result()` is the synchronization point. The `model_output is None` sentinel means the executor deferred sampling to a separate call, `sample_tokens(grammar_output)`, so a structured-output mask is applied against *this* step's logits at sampling time. The executor→worker→model-runner→logits chain behind `execute_model` is article 08/09; the logits→token-ids step behind `sample_tokens` is article 10. Two facts matter for the end-to-end path: the grammar bitmask comes from the *scheduler*, not the HTTP layer, and CPU mask-prep is typically free because it hides under GPU latency.
+**Job 2 — execute, overlap, sample ([`core.py:491-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L491-L499)).** This is the connective-tissue trick. `execute_model(scheduler_output, non_block=True)` returns a `Future` immediately instead of blocking on the GPU. That gap is filled by `get_grammar_bitmask(scheduler_output)`, which builds the structured-output token mask on the CPU *while the forward pass runs*. `future.result()` is the synchronization point. The `model_output is None` sentinel means the executor deferred sampling to a separate call, `sample_tokens(grammar_output)`, so a structured-output mask is applied against *this* step's logits at sampling time. The executor→worker→model-runner→logits chain behind `execute_model` is article 08/09; the logits→token-ids step behind `sample_tokens` is article 10. Two facts matter for the end-to-end path: the grammar bitmask comes from the *scheduler*, not the HTTP layer, and CPU mask-prep is typically free because it hides under GPU latency.
 
-**The abort window ([`core.py:501-503`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503)).** `self._process_aborts_queue()` runs *after* `future.result()` — the GPU frame is done — but *before* `update_from_output`. This ordering is the whole point: an external cancellation that arrived while the GPU was busy is consumed before the sampled tokens are folded into request state, so a request cancelled mid-frame is never advanced. The drain helper ([`core.py:634-642`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L634-L642)) batches the entire queue into one `abort_requests` call; because aborting an already-finished request is idempotent, aborts can safely be dual-queued (see article 04).
+**The abort window ([`core.py:501-503`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503)).** `self._process_aborts_queue()` runs *after* `future.result()` — the GPU frame is done — but *before* `update_from_output`. This ordering is the whole point: an external cancellation that arrived while the GPU was busy is consumed before the sampled tokens are folded into request state, so a request cancelled mid-frame is never advanced. The drain helper ([`core.py:634-642`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L634-L642)) batches the entire queue into one `abort_requests` call; because aborting an already-finished request is idempotent, aborts can safely be dual-queued (see article 04).
 
-**Job 3 — commit ([`core.py:504-506`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506)).** `scheduler.update_from_output(scheduler_output, model_output)` is where sampled tokens become request progress: output ids appended, finish reasons set, finished KV blocks freed. It returns a `dict[client_index → EngineCoreOutputs]` keyed by owning client, and the second tuple element — `scheduler_output.total_num_scheduled_tokens > 0` — is the `model_executed` flag the loop wrapper consumes.
+**Job 3 — commit ([`core.py:504-506`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506)).** `scheduler.update_from_output(scheduler_output, model_output)` is where sampled tokens become request progress: output ids appended, finish reasons set, finished KV blocks freed. It returns a `dict[client_index → EngineCoreOutputs]` keyed by owning client, and the second tuple element — `scheduler_output.total_num_scheduled_tokens > 0` — is the `model_executed` flag the loop wrapper consumes.
 
 The invariant this method protects: **schedule is optimistic, but progress is committed only after model output.** Scheduling decides and allocates ahead of the GPU; nothing about request state — token counts, finish status, block frees — moves until `update_from_output` reconciles the plan against what the model actually produced. Running the model without a `SchedulerOutput`, or advancing counters before sampling completes, would decouple GPU work from KV/block accounting and make block-reuse correctness depend on timing luck. The abort window and the guard are the two edges of that same rule: a request can enter or leave the batch right up to the commit, but not during it.
 
@@ -1078,7 +1078,7 @@ The invariant this method protects: **schedule is optimistic, but progress is co
 
 `EngineCore.step()` returns `EngineCoreOutputs` — token ids, finish flags, per-client routing — not user-facing `RequestOutput`s. The offline caller never touches it. What `LLM._run_engine`'s drain loop calls is `LLMEngine.step()`, a synchronous wrapper in a different file and a different process from the core loop.
 
-Source: [`vllm/v1/engine/llm_engine.py:296-334`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L296-L334)
+Source: [`vllm/v1/engine/llm_engine.py:296-334`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L296-L334)
 
 ```python
     def step(self) -> list[RequestOutput | PoolingRequestOutput]:
@@ -1139,7 +1139,7 @@ The invariant: **`EngineCore` owns the schedule/execute/commit transaction; `Out
 
 In the default multiprocess deployment (§4), `EngineCore.step()` does not run on the caller thread at all — it runs inside a perpetual loop in the engine process:
 
-Source: [`vllm/v1/engine/core.py:1259-1267`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1259-L1267)
+Source: [`vllm/v1/engine/core.py:1259-1267`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1259-L1267)
 
 ```python
     def run_busy_loop(self):
@@ -1153,7 +1153,7 @@ Source: [`vllm/v1/engine/core.py:1259-1267`](https://github.com/halfrost/vllm/bl
         raise SystemExit
 ```
 
-Each turn absorbs client input, then takes exactly one step via `_process_engine_step` ([`core.py:1300-1317`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1300-L1317)), which calls `self.step_fn()`, pushes each `(client_index, EngineCoreOutputs)` pair onto the output queue for the IO thread to serialize, runs the spec-decode `post_step` hook, and — if the step scheduled nothing runnable but requests remain — sleeps 1 ms to yield the GIL so background KV-transfer threads make progress. `step_fn` itself is bound once at construction to either `step` or the pipeline-parallel `step_with_batch_queue` ([`core.py:221-224`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L221-L224)), so the loop never branches on parallelism per iteration. The busy-loop mechanics, shutdown draining, and finished-request bookkeeping are the deep subject of article 04; article 01's claim is only structural: **the sync offline `LLMEngine.step()` and the async busy loop are the same `EngineCore.step()` transaction wrapped two different ways** — inline-and-return for the blocking offline caller, loop-and-enqueue for the streaming server. The transaction is invariant; only its driver changes.
+Each turn absorbs client input, then takes exactly one step via `_process_engine_step` ([`core.py:1300-1317`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L1300-L1317)), which calls `self.step_fn()`, pushes each `(client_index, EngineCoreOutputs)` pair onto the output queue for the IO thread to serialize, runs the spec-decode `post_step` hook, and — if the step scheduled nothing runnable but requests remain — sleeps 1 ms to yield the GIL so background KV-transfer threads make progress. `step_fn` itself is bound once at construction to either `step` or the pipeline-parallel `step_with_batch_queue` ([`core.py:221-224`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L221-L224)), so the loop never branches on parallelism per iteration. The busy-loop mechanics, shutdown draining, and finished-request bookkeeping are the deep subject of article 04; article 01's claim is only structural: **the sync offline `LLMEngine.step()` and the async busy loop are the same `EngineCore.step()` transaction wrapped two different ways** — inline-and-return for the blocking offline caller, loop-and-enqueue for the streaming server. The transaction is invariant; only its driver changes.
 
 Cross-references for this step's internals: **05** for what `schedule()` decides; **08/09** for what happens behind `execute_model`; **10** for `sample_tokens`; **12** for the `post_step` draft-token feedback; and **04** for the busy loop, shutdown, and finished-request lifecycle. The next section zooms into the first of those arrows — the scheduler.
 
@@ -1165,7 +1165,7 @@ We just saw `EngineCore.step()` open with a single line — `scheduler.schedule(
 
 The scheduler is a pure planner. It runs on the CPU, inside the EngineCore process, and it never touches the GPU. One call answers a single question: *of the requests I am tracking, which ones run this step, and how many tokens does each one advance?* The answer is a `SchedulerOutput` — a plan. Executing that plan is a separate, later phase of the same `step()`.
 
-Source anchor: [`vllm/v1/engine/core.py:488-490`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488-L490)
+Source anchor: [`vllm/v1/engine/core.py:488-490`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488-L490)
 
 ```python
         if not self.scheduler.has_requests():
@@ -1173,7 +1173,7 @@ Source anchor: [`vllm/v1/engine/core.py:488-490`](https://github.com/halfrost/vl
         scheduler_output = self.scheduler.schedule(self._should_throttle_prefills())
 ```
 
-Source anchor: [`vllm/v1/engine/core.py:474-477`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L474-L477)
+Source anchor: [`vllm/v1/engine/core.py:474-477`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L474-L477)
 
 ```python
     def _should_throttle_prefills(self) -> bool:
@@ -1188,13 +1188,13 @@ Step-by-step read:
 - `schedule()` returns a `SchedulerOutput` and returns immediately — no forward pass, no logits. Everything after this line in `step()` (the `execute_model` future, the grammar bitmask, `sample_tokens`, `update_from_output`) consumes that plan; none of it is the plan.
 - `_should_throttle_prefills()` is `False` in the base class and only overridden by the data-parallel engine core to defer new prefills for cross-replica balancing (Article 11, Distributed Inference and Parallelism). For the single-engine path you are tracing, the argument is a constant `False`.
 
-The invariant this boundary protects: **planning is decoupled from execution, and progress is committed only after the model output comes back.** The scheduler optimistically advances its own bookkeeping when it plans (`_update_after_schedule`, [`scheduler.py:1169-1217`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1169-L1217)), but the *token results* are folded in by `update_from_output` at the end of the same step. Article 04 covers that commit-after-output rule; the point for the request path is that `schedule()` is safe to think of as "decide," entirely separate from "run."
+The invariant this boundary protects: **planning is decoupled from execution, and progress is committed only after the model output comes back.** The scheduler optimistically advances its own bookkeeping when it plans (`_update_after_schedule`, [`scheduler.py:1169-1217`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1169-L1217)), but the *token results* are folded in by `update_from_output` at the end of the same step. Article 04 covers that commit-after-output rule; the point for the request path is that `schedule()` is safe to think of as "decide," entirely separate from "run."
 
 ### One idea: no prefill phase, no decode phase
 
 The V1 blog frames the central simplification: rather than treating prefill and decode as distinct scheduler phases, V1 treats all tokens uniformly, and a scheduling decision becomes conceptually a dictionary, `{request_id: num_tokens}`. Chunked prefill then falls out for free, because a long prompt is simply a request that is granted only part of the token budget this step ([V1 blog](https://vllm.ai/blog/2025-01-27-v1-alpha-release)). The source states the same thing at the top of `schedule()`.
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:396-407`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L396-L407)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:396-407`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L396-L407)
 
 ```python
     def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
@@ -1228,7 +1228,7 @@ The invariant: **one uniform counter model absorbs four features that were separ
 
 Given a fixed per-step token budget, the scheduler prioritizes requests already in the `running` queue (decodes in flight) and only then pulls waiting prefills into the remaining budget ([Inside vLLM](https://vllm.ai/blog/2025-09-05-anatomy-of-vllm)). The loop order in the source makes this literal.
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:440-442`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L440-L442)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:440-442`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L440-L442)
 
 ```python
         # First, schedule the RUNNING requests.
@@ -1247,7 +1247,7 @@ The rule: **latency-sensitive in-flight decodes are never starved of token budge
 
 The `SchedulerOutput` is the request path's payload from CPU planning to GPU execution: it names the new and cached requests, the per-request token counts, KV block assignments, spec-decode tokens, and attention metadata. But it also carries an out-of-band channel that is easy to miss — the set of requests that *finished since the last step* — so downstream workers can drop their per-request state.
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:1105-1114`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1105-L1114)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:1105-1114`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1105-L1114)
 
 ```python
             preempted_req_ids=self.reset_preempted_req_ids,
@@ -1264,7 +1264,7 @@ Source anchor: [`vllm/v1/core/sched/scheduler.py:1105-1114`](https://github.com/
 
 That set is reset each schedule by *reassignment*, not `clear()`, precisely so the just-emitted `SchedulerOutput` keeps its own reference alive:
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:1213-1217`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1213-L1217)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:1213-1217`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1213-L1217)
 
 ```python
         # Clear the finished and preempted request IDs.
@@ -1276,7 +1276,7 @@ Source anchor: [`vllm/v1/core/sched/scheduler.py:1213-1217`](https://github.com/
 
 A finish must also travel *back to the client*, on a second channel. When a request is freed, its id is recorded per-client, and `update_from_output` attaches those ids to the outgoing `EngineCoreOutputs.finished_requests`:
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:1833-1845`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1833-L1845)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:1833-1845`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1833-L1845)
 
 ```python
         finished_req_ids = self.finished_req_ids_dict
@@ -1297,8 +1297,8 @@ Source anchor: [`vllm/v1/core/sched/scheduler.py:1833-1845`](https://github.com/
 Step-by-step read:
 
 - `finished_req_ids` (a `set`) rides the *next* `SchedulerOutput` so the worker can prune the finished request from its persistent batch state (recall the V1 differential-batch design, where the worker caches request state across steps).
-- `finished_req_ids_dict` (per `client_index`) rides the *outgoing* `EngineCoreOutputs`, so the frontend's output processor knows the request is done and can retire its `RequestState`. Both sets are populated in `_free_request` ([`scheduler.py:2116-2118`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L2116-L2118)).
-- The consequence for the request path — stated as overview, developed in Article 04 — is that **the two consumers observe the finish on two different clocks.** The client-facing notification rides the *current* step's `EngineCoreOutputs` (`finished_req_ids_dict` is folded in at the end of this very `update_from_output()`, [`scheduler.py:1833-1845`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1833-L1845)), so the frontend can close the stream immediately. Only the worker-side cleanup waits for the *next* `SchedulerOutput` to carry `finished_req_ids`. The loop's liveness predicate (`has_requests()`) is deliberately wide enough to keep the engine awake for that worker-side flush — it does not delay the client notification.
+- `finished_req_ids_dict` (per `client_index`) rides the *outgoing* `EngineCoreOutputs`, so the frontend's output processor knows the request is done and can retire its `RequestState`. Both sets are populated in `_free_request` ([`scheduler.py:2116-2118`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L2116-L2118)).
+- The consequence for the request path — stated as overview, developed in Article 04 — is that **the two consumers observe the finish on two different clocks.** The client-facing notification rides the *current* step's `EngineCoreOutputs` (`finished_req_ids_dict` is folded in at the end of this very `update_from_output()`, [`scheduler.py:1833-1845`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L1833-L1845)), so the frontend can close the stream immediately. Only the worker-side cleanup waits for the *next* `SchedulerOutput` to carry `finished_req_ids`. The loop's liveness predicate (`has_requests()`) is deliberately wide enough to keep the engine awake for that worker-side flush — it does not delay the client notification.
 
 The property: **finishing a request is bookkeeping that fans out to two consumers on two clocks** — the worker (next step, to drop state) and the client (this step's outputs, to close the stream) — and neither channel is the model's forward pass.
 
@@ -1306,7 +1306,7 @@ The property: **finishing a request is bookkeeping that fans out to two consumer
 
 The scheduler owns KV block ownership, and freeing blocks is where the "plan now, execute later" split becomes a correctness hazard: a request may finish while a forward pass it was part of is still writing its KV. So block frees can be *deferred* and are fenced behind the in-flight step.
 
-Source anchor: [`vllm/v1/core/sched/scheduler.py:2138-2151`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L2138-L2151)
+Source anchor: [`vllm/v1/core/sched/scheduler.py:2138-2151`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/core/sched/scheduler.py#L2138-L2151)
 
 ```python
     def _free_request_blocks(self, request: Request):
@@ -1346,7 +1346,7 @@ Everything above collapses to one sentence: the scheduler is the single place wh
 
 Recall the two lines from `EngineCore.step()` that hand off to execution:
 
-[`vllm/v1/engine/core.py:490-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490-L499)
+[`vllm/v1/engine/core.py:490-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490-L499)
 
 ```python
         scheduler_output = self.scheduler.schedule(self._should_throttle_prefills())
@@ -1371,7 +1371,7 @@ Recall the two lines from `EngineCore.step()` that hand off to execution:
 
 **Concept.** Just as `EngineCoreClient` (§4) hides whether the engine core is in-process or behind a ZMQ socket, the `Executor` hides whether the model runs on one GPU or many. The engine core never addresses a worker; it names an *operation* and a *target set*, and lets the executor broadcast.
 
-**Source anchor.** [`vllm/v1/executor/abstract.py:221-227`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L221-L227) and `:241-247`.
+**Source anchor.** [`vllm/v1/executor/abstract.py:221-227`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L221-L227) and `:241-247`.
 
 ```python
     def execute_model(
@@ -1396,12 +1396,12 @@ Recall the two lines from `EngineCore.step()` that hand off to execution:
 **Step-by-step read.**
 
 - Both public executor methods are thin wrappers over `collective_rpc("<method_name>", args=...)`. The named method (`"execute_model"`, `"sample_tokens"`) is invoked on *every* worker in the group; the executor is a fan-out primitive.
-- The return *shown* is the **abstract** base's `return output[0]`, but both concrete executors override these methods to request the reply from a single worker. `UniProcExecutor` uses `collective_rpc(..., single_value=True)` ([`uniproc_executor.py:108-131`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/uniproc_executor.py#L108-L131)); `MultiprocExecutor` uses `unique_reply_rank=self.output_rank` ([`multiproc_executor.py:310-332`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L310-L332)), where `output_rank = _get_output_rank()` = `world_size − tp_size × prefill_context_parallel_size` — the first TP worker of the *last PP stage* ([`multiproc_executor.py:498-512`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L498-L512)). That equals global rank 0 only for pure TP or a single GPU. Under tensor parallelism every rank runs the same forward pass over a sharded weight matrix and produces the same logits after the all-reduce, so any TP rank's `ModelRunnerOutput` is authoritative; under pipeline parallelism the authoritative output lives on the last stage, and the executor asks only that one rank for it rather than gathering all and discarding.
+- The return *shown* is the **abstract** base's `return output[0]`, but both concrete executors override these methods to request the reply from a single worker. `UniProcExecutor` uses `collective_rpc(..., single_value=True)` ([`uniproc_executor.py:108-131`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/uniproc_executor.py#L108-L131)); `MultiprocExecutor` uses `unique_reply_rank=self.output_rank` ([`multiproc_executor.py:310-332`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L310-L332)), where `output_rank = _get_output_rank()` = `world_size − tp_size × prefill_context_parallel_size` — the first TP worker of the *last PP stage* ([`multiproc_executor.py:498-512`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L498-L512)). That equals global rank 0 only for pure TP or a single GPU. Under tensor parallelism every rank runs the same forward pass over a sharded weight matrix and produces the same logits after the all-reduce, so any TP rank's `ModelRunnerOutput` is authoritative; under pipeline parallelism the authoritative output lives on the last stage, and the executor asks only that one rank for it rather than gathering all and discarding.
 - `non_block=True` is why §6's overlap works: `collective_rpc` returns a `Future` instead of a materialized `ModelRunnerOutput`, so `EngineCore.step()` can run `get_grammar_bitmask` on the CPU while the GPU forward pass is in flight, then call `future.result()` as the sync point.
 
 **Which concrete executor?** Chosen once, at construction, by `Executor.get_class` from `distributed_executor_backend`:
 
-[`vllm/v1/executor/abstract.py:69-76`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L69-L76)
+[`vllm/v1/executor/abstract.py:69-76`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L69-L76)
 
 ```python
         elif distributed_executor_backend == "mp":
@@ -1422,7 +1422,7 @@ For a single GPU the backend resolves to `UniProcExecutor`, whose `collective_rp
 
 **Concept.** Each worker owns exactly one model runner, and each model runner wraps exactly one `torch.nn.Module` — the actual model (<https://docs.vllm.ai/en/stable/design/arch_overview/>). When `collective_rpc("execute_model", ...)` lands on a worker, it calls `GPUModelRunner.execute_model`, whose first job is not the forward pass — it is reconciling the worker's persistent batch with the scheduler's plan.
 
-**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1122-1133`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1122-L1133) (excerpt; the full reconciliation is article 09's).
+**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1122-1133`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1122-L1133) (excerpt; the full reconciliation is article 09's).
 
 ```python
             self.finish_requests(scheduler_output)
@@ -1442,7 +1442,7 @@ For a single GPU the backend resolves to `UniProcExecutor`, whose `collective_rp
 
 **Concept.** A forward pass produces a hidden state for *every* scheduled token, but only the last position of each request needs to be projected to the vocabulary to sample the next token. The model runner selects those positions, then projects.
 
-**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1054-1058`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1058).
+**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1054-1058`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1058).
 
 ```python
         sample_hidden_states = hidden_states[input_batch.logits_indices]
@@ -1464,7 +1464,7 @@ For a single GPU the backend resolves to `UniProcExecutor`, whose `collective_rp
 
 **Concept.** §6 showed `EngineCore.step()` calling `execute_model`, then — only if the result is `None` — calling `sample_tokens(grammar_output)`. That `None` is a deliberate signal from the worker: "I ran the forward pass and stashed the hidden states; call me back to sample."
 
-**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1358-1371`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1358-L1371) and `:1392-1394`.
+**Source anchor.** [`vllm/v1/worker/gpu/model_runner.py:1358-1371`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1358-L1371) and `:1392-1394`.
 
 ```python
     def sample_tokens(
@@ -1522,7 +1522,7 @@ The mental model to keep: `execute_model` and `sample_tokens` are two `collectiv
 
 Concept: in the engine step (§6), `execute_model` runs `non_block=True` and returns a `Future`. When that future resolves to `None`, the executor has *deferred* sampling, and the engine makes a second call — `sample_tokens` — passing the grammar bitmask it prepared on the CPU while the GPU was busy.
 
-Source: [`vllm/v1/engine/core.py:497-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499)
+Source: [`vllm/v1/engine/core.py:497-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499)
 
 ```python
             model_output = future.result()
@@ -1542,7 +1542,7 @@ The invariant this seam protects: **the structured-output bitmask is applied to 
 
 Concept: `sample_tokens` crosses the same executor boundary as `execute_model`, using the same `collective_rpc` shape. The engine loop does not know or care whether one GPU or sixteen sit behind it.
 
-Source: [`vllm/v1/executor/abstract.py:241-247`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L241-L247)
+Source: [`vllm/v1/executor/abstract.py:241-247`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L241-L247)
 
 ```python
     def sample_tokens(
@@ -1556,8 +1556,8 @@ Source: [`vllm/v1/executor/abstract.py:241-247`](https://github.com/halfrost/vll
 
 Step-by-step read:
 
-- **`collective_rpc("sample_tokens", ...)` fans the call to the worker group** and the *abstract* base returns `output[0]`. Both concrete executors override that: `MultiprocExecutor` requests the reply from a single `output_rank` — the first TP worker of the last PP stage ([`multiproc_executor.py:310-332`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L310-L332), `498-512`) — and `UniProcExecutor` uses `single_value=True` ([`uniproc_executor.py:108-131`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/uniproc_executor.py#L108-L131)); either way exactly one worker's `ModelRunnerOutput` comes back, not a gather-and-discard. This is byte-for-byte the pattern of `execute_model` ([`abstract.py:221-227`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L221-L227)) — forward and sample are structurally identical RPCs, which is why `EngineCore.step()` can treat them as two calls on one uniform `Executor` handle.
-- **Each worker lands in `GPUModelRunner.sample_tokens`** ([`model_runner.py:1358-1363`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1358-L1363)), which retrieves the hidden states and `InputBatch` it stashed during `execute_model` (`self.execute_model_state`) and, on the last pipeline-parallel rank, calls `self.sample(hidden_states, input_batch, grammar_output)` ([`model_runner.py:1391-1394`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1391-L1394)). Non-last PP ranks instead *receive* the sampled tokens broadcast from the last rank — sampling happens once, where the final hidden states live.
+- **`collective_rpc("sample_tokens", ...)` fans the call to the worker group** and the *abstract* base returns `output[0]`. Both concrete executors override that: `MultiprocExecutor` requests the reply from a single `output_rank` — the first TP worker of the last PP stage ([`multiproc_executor.py:310-332`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/multiproc_executor.py#L310-L332), `498-512`) — and `UniProcExecutor` uses `single_value=True` ([`uniproc_executor.py:108-131`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/uniproc_executor.py#L108-L131)); either way exactly one worker's `ModelRunnerOutput` comes back, not a gather-and-discard. This is byte-for-byte the pattern of `execute_model` ([`abstract.py:221-227`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L221-L227)) — forward and sample are structurally identical RPCs, which is why `EngineCore.step()` can treat them as two calls on one uniform `Executor` handle.
+- **Each worker lands in `GPUModelRunner.sample_tokens`** ([`model_runner.py:1358-1363`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1358-L1363)), which retrieves the hidden states and `InputBatch` it stashed during `execute_model` (`self.execute_model_state`) and, on the last pipeline-parallel rank, calls `self.sample(hidden_states, input_batch, grammar_output)` ([`model_runner.py:1391-1394`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1391-L1394)). Non-last PP ranks instead *receive* the sampled tokens broadcast from the last rank — sampling happens once, where the final hidden states live.
 
 The rule: **sampling runs where the hidden states are, behind the same executor contract as the forward pass.** The engine never reaches into a worker; TP/PP fan-out and the last-rank sampling rule are article 09/11 territory. Article 01 records only that the logits-to-token step is one more `collective_rpc`, not a special path.
 
@@ -1565,7 +1565,7 @@ The rule: **sampling runs where the hidden states are, behind the same executor 
 
 Concept: inside the model runner, one method turns the forward pass's hidden states into a `SamplerOutput`. It is the exact point where the "model" ends and "sampling" begins.
 
-Source: [`vllm/v1/worker/gpu/model_runner.py:1048-1068`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1048-L1068)
+Source: [`vllm/v1/worker/gpu/model_runner.py:1048-1068`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1048-L1068)
 
 ```python
     def sample(
@@ -1596,7 +1596,7 @@ Step-by-step read:
 - **`hidden_states[input_batch.logits_indices]` selects only the positions that need a token.** The forward pass ran over a flattened batch of *all* scheduled tokens (§8), but only the last position of each sequence (and, under spec decode, a few extra) needs a logit. `logits_indices` gathers exactly those rows, so the vocab projection is done for a handful of positions, not the whole flattened batch.
 - **`self.model.compute_logits(sample_hidden_states)`** is the hidden-states-to-vocab projection — the language-model head. This single line is the boundary the whole section is named after.
 - **The grammar bitmask is applied in place, right here.** This closes the loop from §6: the mask is scheduler-owned, carried across `sample_tokens`, and stamped onto the logits *before* the sampler ever sees them — so a structured-output request cannot sample a token its grammar forbids.
-- **`self.sampler(logits, input_batch)`** is the handoff into the sampler proper (the common, no-spec-decode branch). The `else` branch ([`model_runner.py:1069-1078`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1069-L1078)) routes to `self.rejection_sampler` when draft tokens are present — speculative decoding, deferred to article 12.
+- **`self.sampler(logits, input_batch)`** is the handoff into the sampler proper (the common, no-spec-decode branch). The `else` branch ([`model_runner.py:1069-1078`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1069-L1078)) routes to `self.rejection_sampler` when draft tokens are present — speculative decoding, deferred to article 12.
 
 The property: **only final-position hidden states are projected to vocab.** The `[logits_indices]` gather is what keeps decode cheap — computing a full `[num_all_tokens, vocab_size]` logits tensor for every prompt token in every prefill would burn memory bandwidth on rows no one samples. The gather makes "cost of sampling" scale with the number of requests, not the number of tokens in the batch.
 
@@ -1604,7 +1604,7 @@ The property: **only final-position hidden states are projected to vocab.** The 
 
 Concept: `self.sampler(...)` invokes `Sampler.__call__`, which prepares per-request views and then delegates the actual token draw to `Sampler.sample`. `sample` is where logits become an index; everything upstream of the draw is a logits-processing pipeline.
 
-Source: [`vllm/v1/worker/gpu/sample/sampler.py:198-216`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L216) (excerpt; the full pipeline is article 10's):
+Source: [`vllm/v1/worker/gpu/sample/sampler.py:198-216`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L216) (excerpt; the full pipeline is article 10's):
 
 ```python
     def sample(
@@ -1625,17 +1625,17 @@ Source: [`vllm/v1/worker/gpu/sample/sampler.py:198-216`](https://github.com/half
 
 Step-by-step read:
 
-- **`Sampler.__call__` ([`sampler.py:72-102`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L72-L102)) is the true entry from the model runner.** It derives `pos` and `input_ids` from `input_batch.logits_indices`, decides whether logprobs are needed, calls `self.sample(...)`, and packs the result into a `SamplerOutput` whose `sampled_token_ids` is reshaped to `[num_requests, 1]` ([`sampler.py:134-144`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L134-L144)) — one token per request per step, before spec decode expands it.
-- **`apply_sampling_params` is the logits-processing pipeline.** In order ([`sampler.py:146-196`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L146-L196)): copy logits to a fresh fp32 tensor, then apply logit bias / `allowed_token_ids` / `min_tokens`, penalties (presence, frequency, repetition), bad-words masking, temperature, and min-p — with top-k/top-p deferred here (`skip_top_k_top_p=True`) so `sample` can route them through the FlashInfer fused path or the fallback. Each of those operators is a section of article 10; article 01 states only their existence and order.
-- **The draw itself** ([`sampler.py:217-244`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L217-L244)) picks FlashInfer's fused top-k/top-p sampler when eligible, else applies top-k/top-p and calls `gumbel_sample`, returning `(sampled, processed_logits)`.
+- **`Sampler.__call__` ([`sampler.py:72-102`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L72-L102)) is the true entry from the model runner.** It derives `pos` and `input_ids` from `input_batch.logits_indices`, decides whether logprobs are needed, calls `self.sample(...)`, and packs the result into a `SamplerOutput` whose `sampled_token_ids` is reshaped to `[num_requests, 1]` ([`sampler.py:134-144`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L134-L144)) — one token per request per step, before spec decode expands it.
+- **`apply_sampling_params` is the logits-processing pipeline.** In order ([`sampler.py:146-196`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L146-L196)): copy logits to a fresh fp32 tensor, then apply logit bias / `allowed_token_ids` / `min_tokens`, penalties (presence, frequency, repetition), bad-words masking, temperature, and min-p — with top-k/top-p deferred here (`skip_top_k_top_p=True`) so `sample` can route them through the FlashInfer fused path or the fallback. Each of those operators is a section of article 10; article 01 states only their existence and order.
+- **The draw itself** ([`sampler.py:217-244`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L217-L244)) picks FlashInfer's fused top-k/top-p sampler when eligible, else applies top-k/top-p and calls `gumbel_sample`, returning `(sampled, processed_logits)`.
 
-The invariant, visible in the first line of `apply_sampling_params` ([`sampler.py:157`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L157), `torch.empty_like(logits, dtype=torch.float32).copy_(logits)`): **sampling works on a private fp32 copy, never the model's original logits.** Penalties and temperature mutate that copy in place, so the raw logits survive intact for logprob computation and the model's own buffer is never corrupted by sampling-time edits. The defaults that make this pipeline a no-op unless asked — `temperature=1.0`, `top_p=1.0`, `top_k=0` (all tokens), `min_p=0.0`, `n=1`, `max_tokens=16` — come from the same `SamplingParams` object on both the offline and online paths ([SamplingParams API](https://docs.vllm.ai/en/stable/api/vllm/sampling_params.html)).
+The invariant, visible in the first line of `apply_sampling_params` ([`sampler.py:157`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L157), `torch.empty_like(logits, dtype=torch.float32).copy_(logits)`): **sampling works on a private fp32 copy, never the model's original logits.** Penalties and temperature mutate that copy in place, so the raw logits survive intact for logprob computation and the model's own buffer is never corrupted by sampling-time edits. The defaults that make this pipeline a no-op unless asked — `temperature=1.0`, `top_p=1.0`, `top_k=0` (all tokens), `min_p=0.0`, `n=1`, `max_tokens=16` — come from the same `SamplingParams` object on both the offline and online paths ([SamplingParams API](https://docs.vllm.ai/en/stable/api/vllm/sampling_params.html)).
 
 ### Closing the loop: the token id becomes `new_token_ids`
 
 Concept: the sampled id does not return to the caller as an integer. It rides back as a field of the wire-shaped `EngineCoreOutput`, folded into request progress by `update_from_output` (§6).
 
-Source: [`vllm/v1/engine/__init__.py:181-205`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L181-L205) (two key fields; §10 quotes the full struct):
+Source: [`vllm/v1/engine/__init__.py:181-205`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L181-L205) (two key fields; §10 quotes the full struct):
 
 ```python
     request_id: str
@@ -1650,7 +1650,7 @@ Step-by-step read:
 
 - **`new_token_ids: list[int]`, not `int`.** The path from sampler to caller is multi-token-ready from the first field. In the common case the list holds one id; under speculative decoding or other multi-token schemes it holds several accepted ids for one step (article 12). Nothing downstream — detokenizer, stop-string check, `RequestOutput` — has to special-case spec decode at this boundary because the type already accounts for it.
 - **`finished` is a derived property, not a stored flag.** It is `True` iff `finish_reason` is set. The engine core sets `finish_reason` on length/EOS finishes; stop-*string* finishes are decided later, in the output processor, over detokenized text (§10) — which is why `EngineCoreOutput.finished` and the caller-visible finish can legitimately differ for one step.
-- **`num_nans_in_logits`** is the corruption tripwire: the sampler computes it *before* penalties and temperature ([`sampler.py:84-86`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L84-L86)) so a non-zero value points at the model's own output, not at sampling.
+- **`num_nans_in_logits`** is the corruption tripwire: the sampler computes it *before* penalties and temperature ([`sampler.py:84-86`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L84-L86)) so a non-zero value points at the model's own output, not at sampling.
 
 The takeaway: **the sampled token leaves the GPU as data on a msgspec struct, not as a return value up a call stack.** The whole hidden-states-to-token computation happens in the engine (or worker) process; the caller receives `new_token_ids` only after `update_from_output` has committed them to request state and routed an `EngineCoreOutputs` back through the client. "First token," concretely, is the first `EngineCoreOutput` a request emits carrying a non-empty `new_token_ids`; the prefill-to-decode transition it marks is observed one boundary later, in the output processor (§10–§11).
 
@@ -1668,7 +1668,7 @@ Every prior section pushed a request *forward*: the façade normalized it, the i
 
 Concept: the unit crossing the boundary is intentionally minimal — token IDs plus optional metadata, not text.
 
-Source: [`vllm/v1/engine/__init__.py:175-205`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L175-L205)
+Source: [`vllm/v1/engine/__init__.py:175-205`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L175-L205)
 
 ```python
 class EngineCoreOutput(
@@ -1696,7 +1696,7 @@ The invariant this shape protects: **"finished" means "has a finish reason," and
 
 Concept: V1 minimizes Python-level per-batch loops. There is exactly one function that iterates the batch, and all per-request work is expected to live inside it.
 
-Source: [`vllm/v1/engine/output_processor.py:594-601`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L594-L601)
+Source: [`vllm/v1/engine/output_processor.py:594-601`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L594-L601)
 
 ```python
         NOTE FOR DEVELOPERS
@@ -1711,7 +1711,7 @@ Source: [`vllm/v1/engine/output_processor.py:594-601`](https://github.com/halfro
 
 The loop begins by looking up per-request state, and drops outputs it does not recognize.
 
-Source: [`vllm/v1/engine/output_processor.py:606-611`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L606-L611)
+Source: [`vllm/v1/engine/output_processor.py:606-611`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L606-L611)
 
 ```python
         for engine_core_output in engine_core_outputs:
@@ -1730,7 +1730,7 @@ The rule: **the output processor is a pure function of `request_states`; any out
 
 Concept: for non-pooling requests, new IDs are fed to an incremental detokenizer that appends decoded text and checks stop strings. A matched stop string *upgrades* the finish state locally.
 
-Source: [`vllm/v1/engine/output_processor.py:635-644`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L635-L644)
+Source: [`vllm/v1/engine/output_processor.py:635-644`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L635-L644)
 
 ```python
             if pooling_output is None:
@@ -1747,7 +1747,7 @@ Source: [`vllm/v1/engine/output_processor.py:635-644`](https://github.com/halfro
 
 The detokenizer's `update` is where token IDs become characters. Its subtlety is that the *token* stream and the *text* stream are deliberately allowed to disagree.
 
-Source: [`vllm/v1/engine/detokenizer.py:107-142`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/detokenizer.py#L107-L142) (excerpt; the full incremental-decode loop is article 10's):
+Source: [`vllm/v1/engine/detokenizer.py:107-142`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/detokenizer.py#L107-L142) (excerpt; the full incremental-decode loop is article 10's):
 
 ```python
         if stop_terminated and not self.include_stop_str_in_output:
@@ -1789,7 +1789,7 @@ The invariants: **(1) `token_ids` is the complete sampled sequence; `output_text
 
 Concept: not every `EngineCoreOutput` becomes a `RequestOutput`. `make_request_output` applies the output-kind gates and returns `None` when nothing should be emitted.
 
-Source: [`vllm/v1/engine/output_processor.py:280-331`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L280-L331)
+Source: [`vllm/v1/engine/output_processor.py:280-331`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L280-L331)
 
 ```python
         finished = finish_reason is not None
@@ -1843,7 +1843,7 @@ The guarantees: **`FINAL_ONLY` yields exactly one output; `stream_interval` coal
 
 Concept: the final wrapper stamps the user-facing identity onto the result.
 
-Source: [`vllm/v1/engine/output_processor.py:363-373`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L373)
+Source: [`vllm/v1/engine/output_processor.py:363-373`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L373)
 
 ```python
         return RequestOutput(
@@ -1868,7 +1868,7 @@ The invariant: **every user-facing `RequestOutput.request_id` is the external id
 
 Concept: a single `if` decides whether a materialized output is pushed into a per-request async mailbox or appended to a returned list.
 
-Source: [`vllm/v1/engine/output_processor.py:650-681`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L650-L681)
+Source: [`vllm/v1/engine/output_processor.py:650-681`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L650-L681)
 
 ```python
             # 4) Create and handle RequestOutput objects.
@@ -1911,9 +1911,9 @@ The output processor is where token IDs re-acquire meaning. It owns four things 
 
 ## Streaming, the Async Generator, and Why the First Token Is Special
 
-The offline path we traced earlier ends in a blocking `while has_unfinished_requests(): step()` loop that accumulates finished outputs into a list and sorts them ([`offline_utils.py:594-599`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)). Online serving cannot do that. An OpenAI-compatible SSE stream has to deliver each token to the HTTP client the moment it is sampled, for hundreds of concurrent requests, without any one slow client stalling the GPU. The V1 answer is to keep the engine step identical and change only the *return path*: instead of collecting a list, the same per-step batch of `EngineCoreOutputs` is fanned out into one mailbox per request, and one asyncio generator per request drains its mailbox. This section follows that return path, then uses it to pin down what "the first token" actually is.
+The offline path we traced earlier ends in a blocking `while has_unfinished_requests(): step()` loop that accumulates finished outputs into a list and sorts them ([`offline_utils.py:594-599`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)). Online serving cannot do that. An OpenAI-compatible SSE stream has to deliver each token to the HTTP client the moment it is sampled, for hundreds of concurrent requests, without any one slow client stalling the GPU. The V1 answer is to keep the engine step identical and change only the *return path*: instead of collecting a list, the same per-step batch of `EngineCoreOutputs` is fanned out into one mailbox per request, and one asyncio generator per request drains its mailbox. This section follows that return path, then uses it to pin down what "the first token" actually is.
 
-The online return path is **two producer/consumer boundaries stacked and decoupled by asyncio**. Boundary A: a background task owns the ZMQ output socket, decodes each frame into an `EngineCoreOutputs` batch (one per engine step, covering every in-flight request), and pushes it onto `AsyncMPClient.outputs_queue`, an `asyncio.Queue` ([`core_client.py:973`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L973), `1005-1062`). Boundary B: a single `output_handler` task per `AsyncLLM` awaits that queue, runs `OutputProcessor.process_outputs`, and dispatches each per-request result into its own mailbox. The socket topology behind Boundary A is article 03's territory; here we care about what crosses Boundary B and reaches the caller.
+The online return path is **two producer/consumer boundaries stacked and decoupled by asyncio**. Boundary A: a background task owns the ZMQ output socket, decodes each frame into an `EngineCoreOutputs` batch (one per engine step, covering every in-flight request), and pushes it onto `AsyncMPClient.outputs_queue`, an `asyncio.Queue` ([`core_client.py:973`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core_client.py#L973), `1005-1062`). Boundary B: a single `output_handler` task per `AsyncLLM` awaits that queue, runs `OutputProcessor.process_outputs`, and dispatches each per-request result into its own mailbox. The socket topology behind Boundary A is article 03's territory; here we care about what crosses Boundary B and reaches the caller.
 
 <a href='images/vllm-01-09-prefill-decode-timeline.svg' target='_blank'><img src='images/vllm-01-09-prefill-decode-timeline.svg' alt='vllm-01-09-prefill-decode-timeline'></a>
 
@@ -1923,7 +1923,7 @@ The online return path is **two producer/consumer boundaries stacked and decoupl
 
 The public online API, `AsyncLLM.generate`, is an async generator. Crucially it does **not** drive the engine — it only consumes its own mailbox.
 
-[`vllm/v1/engine/async_llm.py:575-586`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L575-L586):
+[`vllm/v1/engine/async_llm.py:575-586`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L575-L586):
 
 ```python
             finished = False
@@ -1946,10 +1946,10 @@ The public online API, `AsyncLLM.generate`, is an async generator. Crucially it 
 
 Step-by-step read:
 
-1. `q` is the per-request `RequestOutputCollector` returned by `add_request` ([`async_llm.py:559`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L559)), which also registered the request with the `OutputProcessor` and submitted it to EngineCore in the same await-chain (§5). By the time this loop runs, the mailbox is already wired into the fan-out.
+1. `q` is the per-request `RequestOutputCollector` returned by `add_request` ([`async_llm.py:559`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L559)), which also registered the request with the `OutputProcessor` and submitted it to EngineCore in the same await-chain (§5). By the time this loop runs, the mailbox is already wired into the fan-out.
 2. `out = q.get_nowait() or await q.get()` (L579) tries the non-blocking grab first; only an empty mailbox forces an `await`. The comment (L577-578) states the intent: skipping the event-loop task switch matters under load, because at high concurrency a token is usually already waiting.
 3. The terminal condition rides *on the data*: `finished = out.finished` (L584). The producer stamps `finished=True` on the last `RequestOutput`; the consumer stops after yielding it. `generate()` needs zero visibility into scheduler or EngineCore lifecycle to know when to stop.
-4. `STREAM_FINISHED` (a sentinel `RequestOutput` with `finished=True` and empty `outputs`, [`outputs.py:191-199`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/outputs.py#L191-L199)) is filtered out (L585) — it unblocks the loop on streaming-input completion without emitting a spurious empty chunk.
+4. `STREAM_FINISHED` (a sentinel `RequestOutput` with `finished=True` and empty `outputs`, [`outputs.py:191-199`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/outputs.py#L191-L199)) is filtered out (L585) — it unblocks the loop on streaming-input completion without emitting a spurious empty chunk.
 
 The invariant: **the consuming task never blocks the event loop when data is ready, and it terminates exactly on a `finished` output.** Because the loop condition lives on the yielded object, `generate()` is decoupled from every process boundary below it — the request could be served by an in-process engine, a child process over ZMQ, or one of several data-parallel cores (§4), and this loop is unchanged.
 
@@ -1957,7 +1957,7 @@ The invariant: **the consuming task never blocks the event loop when data is rea
 
 The hand-off from the shared `output_handler` (producer) to the per-request `generate()` (consumer) is deliberately *not* an unbounded queue. It is a single-slot mailbox plus an `asyncio.Event`, and if the producer outruns the consumer, successive outputs are **merged in place**.
 
-[`vllm/v1/engine/output_processor.py:62-86`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L62-L86):
+[`vllm/v1/engine/output_processor.py:62-86`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L62-L86):
 
 ```python
     def put(self, output: RequestOutput | PoolingRequestOutput | Exception) -> None:
@@ -1990,22 +1990,22 @@ The hand-off from the shared `output_handler` (producer) to the per-request `gen
 Step-by-step read:
 
 1. `put()` runs synchronously from the producer. If the slot is empty (or the item is an `Exception`), install it and `self.ready.set()` — an exception always wins the slot immediately and is never coalesced away, so a dead engine surfaces to the waiter at once.
-2. If the slot already holds a `RequestOutput`, the new one is folded in via `self.output.add(output, aggregate=self.aggregate)` (L72) rather than overwriting. `aggregate` is `True` only in `DELTA` mode (`self.aggregate = output_kind == RequestOutputKind.DELTA`, L55). The merge ([`outputs.py:145-173`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/outputs.py#L145-L173)) concatenates text/token-ids/logprobs for DELTA streaming, replaces the whole snapshot for cumulative streaming, and OR-folds `finished` so a coalesced batch that swallowed the terminal chunk still stops the generate loop.
+2. If the slot already holds a `RequestOutput`, the new one is folded in via `self.output.add(output, aggregate=self.aggregate)` (L72) rather than overwriting. `aggregate` is `True` only in `DELTA` mode (`self.aggregate = output_kind == RequestOutputKind.DELTA`, L55). The merge ([`outputs.py:145-173`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/outputs.py#L145-L173)) concatenates text/token-ids/logprobs for DELTA streaming, replaces the whole snapshot for cumulative streaming, and OR-folds `finished` so a coalesced batch that swallowed the terminal chunk still stops the generate loop.
 3. `get()` awaits `self.ready` until the slot is non-`None`, then clears both slot and event.
 
 The property: **at most one pending output per request at any instant, and coalescing is lossless.** Per-request live memory is O(1) regardless of how far a slow client lags — the mailbox merges instead of growing a backlog — while a DELTA consumer still receives every token exactly once, in order, because merge equals concatenation. This is the back-pressure story that the synchronous offline list has no need for: the driver thread there consumes each step's outputs immediately, so nothing can accumulate.
 
 ### One loop, one flag: where sync and async fork
 
-Both engines share the single hottest CPU loop over the batch — `process_outputs`, "the only function that should loop over EngineCoreOutputs" ([`output_processor.py:594-601`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L594-L601)). §10 already opened the one branch inside it that forks sync from async: `if req_state.queue is not None:` pushes the materialized `RequestOutput` into the per-request mailbox (async) instead of appending it to a returned list (sync) ([`output_processor.py:650-666`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L650-L666)). The async engine registers that `queue` at admission (§5); the sync engine passes `queue=None`.
+Both engines share the single hottest CPU loop over the batch — `process_outputs`, "the only function that should loop over EngineCoreOutputs" ([`output_processor.py:594-601`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L594-L601)). §10 already opened the one branch inside it that forks sync from async: `if req_state.queue is not None:` pushes the materialized `RequestOutput` into the per-request mailbox (async) instead of appending it to a returned list (sync) ([`output_processor.py:650-666`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L650-L666)). The async engine registers that `queue` at admission (§5); the sync engine passes `queue=None`.
 
-What is genuinely §11's own is that fork's consequence for streaming. Because a queue is present, async dispatch is provably *push-only* — which is why the `output_handler` can `assert not processed_outputs.request_outputs` ([`async_llm.py:679`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L679)): with a queue wired in, the return list is never touched. So streaming adds *no second loop* over the batch — it reuses the one offline already runs and swaps only the last statement. The detokenization, stop-string checks, and logprob assembly that `make_request_output` depends on are article 10's subject; article 04 details the finished-request bookkeeping and the `reqs_to_abort` path.
+What is genuinely §11's own is that fork's consequence for streaming. Because a queue is present, async dispatch is provably *push-only* — which is why the `output_handler` can `assert not processed_outputs.request_outputs` ([`async_llm.py:679`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L679)): with a queue wired in, the return list is never touched. So streaming adds *no second loop* over the batch — it reuses the one offline already runs and swaps only the last statement. The detokenization, stop-string checks, and logprob assembly that `make_request_output` depends on are article 10's subject; article 04 details the finished-request bookkeeping and the `reqs_to_abort` path.
 
 ### Why the first token is special
 
 Prefill and decode are two different forward passes. From the "Inside vLLM" walkthrough ([Inside vLLM](https://vllm.ai/blog/2025-09-05-anatomy-of-vllm)): **prefill** is "a forward pass over all prompt tokens," typically compute-bound; **decode** is "a forward pass over just the most recent token," memory-bandwidth-bound. V1 does not run them as separate phases — it treats all tokens uniformly and a scheduling decision is conceptually `{request_id: num_tokens}` ([V1 blog](https://vllm.ai/blog/2025-01-27-v1-alpha-release)), so a long prompt can be split across several steps (chunked prefill, article 05). The consequence for streaming: a request can occupy the GPU for one or more steps producing *no* sampled token, because only the final prefill position yields logits to sample. The first `EngineCoreOutput` that carries a real `new_token_ids` is therefore a distinct event, and the output processor marks it.
 
-[`vllm/v1/engine/output_processor.py:628-633`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L628-L633):
+[`vllm/v1/engine/output_processor.py:628-633`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L628-L633):
 
 ```python
             if req_state.is_prefilling:
@@ -2016,15 +2016,15 @@ Prefill and decode are two different forward passes. From the "Inside vLLM" walk
                 req_state.is_prefilling = False
 ```
 
-Step-by-step read: `is_prefilling` starts `True` at `RequestState` construction ([`output_processor.py:172`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L172)); it is later reset to `True` only when a streaming-input request resumes prefilling (`apply_streaming_update`, [`output_processor.py:191-208`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L191-L208)). The first output to reach the processor captures `num_cached_tokens` once — the prefix-cache hit count for this request, article 07's metric — and flips `is_prefilling` to `False`. Every later step is decode. The elapsed time from admission to the first `RequestOutput` the caller receives is essentially the sum of: any wait in the scheduler's queue before first being scheduled, (possibly multi-step chunked) prefill latency, one sampling call, incremental detokenization, and the two-hop fan-out through Boundaries A and B. That sum is *time-to-first-token* (TTFT), and it is structurally different from the inter-token latency of decode, which is one step apiece.
+Step-by-step read: `is_prefilling` starts `True` at `RequestState` construction ([`output_processor.py:172`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L172)); it is later reset to `True` only when a streaming-input request resumes prefilling (`apply_streaming_update`, [`output_processor.py:191-208`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L191-L208)). The first output to reach the processor captures `num_cached_tokens` once — the prefix-cache hit count for this request, article 07's metric — and flips `is_prefilling` to `False`. Every later step is decode. The elapsed time from admission to the first `RequestOutput` the caller receives is essentially the sum of: any wait in the scheduler's queue before first being scheduled, (possibly multi-step chunked) prefill latency, one sampling call, incremental detokenization, and the two-hop fan-out through Boundaries A and B. That sum is *time-to-first-token* (TTFT), and it is structurally different from the inter-token latency of decode, which is one step apiece.
 
-The full first-token chain across process boundaries is: `EngineCore.step()` commits the sampled token in `update_from_output` and returns a per-client `dict[int, EngineCoreOutputs]` ([`core.py:504-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L508)); Boundary A enqueues that batch; the `output_handler` runs `process_outputs`, which flips `is_prefilling` (above) and pushes the first `RequestOutput` into the mailbox; `generate()` yields it ([`async_llm.py:585-586`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L585-L586)). No single call stack spans that chain — it is a relay across the async client, the shared handler, the per-request mailbox, and the consumer task.
+The full first-token chain across process boundaries is: `EngineCore.step()` commits the sampled token in `update_from_output` and returns a per-client `dict[int, EngineCoreOutputs]` ([`core.py:504-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L508)); Boundary A enqueues that batch; the `output_handler` runs `process_outputs`, which flips `is_prefilling` (above) and pushes the first `RequestOutput` into the mailbox; `generate()` yields it ([`async_llm.py:585-586`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L585-L586)). No single call stack spans that chain — it is a relay across the async client, the shared handler, the per-request mailbox, and the consumer task.
 
 ### Cancellation closes the loop
 
-Because `generate()` is consumed by an HTTP client that can disconnect, cancellation must tear the request down on *both* sides or the engine keeps decoding a dead request. [`async_llm.py:591-596`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L591-L596) catches `CancelledError`/`GeneratorExit`, calls `self.abort(q.request_id, internal=True)` (which aborts in both the OutputProcessor and EngineCore), and re-raises; the `finally` at [`async_llm.py:633-635`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L633-L635) calls `q.close()` to cancel any streaming-input feeder. The offline loop needs no analogue: its driver thread owns the requests and simply stops iterating.
+Because `generate()` is consumed by an HTTP client that can disconnect, cancellation must tear the request down on *both* sides or the engine keeps decoding a dead request. [`async_llm.py:591-596`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L591-L596) catches `CancelledError`/`GeneratorExit`, calls `self.abort(q.request_id, internal=True)` (which aborts in both the OutputProcessor and EngineCore), and re-raises; the `finally` at [`async_llm.py:633-635`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L633-L635) calls `q.close()` to cancel any streaming-input feeder. The offline loop needs no analogue: its driver thread owns the requests and simply stops iterating.
 
-So the streaming path is the offline path with the return channel replaced by asyncio plumbing: `LLMEngine.step` is the `output_handler` body run inline with `queue=None` and a returned list ([`llm_engine.py:296-334`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L296-L334)), and `LLM._run_engine`'s `while has_unfinished_requests(): step()` ([`offline_utils.py:594-599`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)) stands in for the whole task/queue/yield apparatus. The engine step, the scheduler, the workers, and the sampler never learn which one they are serving. Article 02 covers the OpenAI server that wraps `generate()`; article 03 covers Boundary A's ZMQ client and the socket-drain task; article 04 covers `process_outputs`, finished-request handling, and the `reqs_to_abort` closure in depth.
+So the streaming path is the offline path with the return channel replaced by asyncio plumbing: `LLMEngine.step` is the `output_handler` body run inline with `queue=None` and a returned list ([`llm_engine.py:296-334`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L296-L334)), and `LLM._run_engine`'s `while has_unfinished_requests(): step()` ([`offline_utils.py:594-599`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L599)) stands in for the whole task/queue/yield apparatus. The engine step, the scheduler, the workers, and the sampler never learn which one they are serving. Article 02 covers the OpenAI server that wraps `generate()`; article 03 covers Boundary A's ZMQ client and the socket-drain task; article 04 covers `process_outputs`, finished-request handling, and the `reqs_to_abort` closure in depth.
 
 ## The Full End-to-End Trace, and What to Remember
 
@@ -2038,31 +2038,31 @@ We have now crossed every boundary on the request path once. This closing sectio
 
 Follow one prompt. The line anchors point at the exact code each hop executes.
 
-1. **`LLM.generate()` validates and delegates** — [`vllm/entrypoints/llm.py:465-485`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485). The runner-type gate rejects non-generative models, `sampling_params` is defaulted so it is never `None` downstream, and control passes to `_run_completion`. No scheduling, no allocation. *(Article 02.)*
+1. **`LLM.generate()` validates and delegates** — [`vllm/entrypoints/llm.py:465-485`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485). The runner-type gate rejects non-generative models, `sampling_params` is defaulted so it is never `None` downstream, and control passes to `_run_completion`. No scheduling, no allocation. *(Article 02.)*
 
-2. **The offline mixin stamps the request and admits it** — [`vllm/entrypoints/offline_utils.py:559-563`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563). `output_kind` is forced to `FINAL_ONLY` and a monotonic decimal `request_id` is minted from a `Counter()`. Then `LLMEngine.add_request` ([`vllm/v1/engine/llm_engine.py:218-294`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L218-L294)) registers the work on *both* sides — the output processor (for detokenization and aggregation) and the engine core (for scheduling) — and, when `n > 1`, fans one logical request into `n` children under a `ParentRequest`. *(Article 02 for the façade, 04 for the two-sided registration.)*
+2. **The offline mixin stamps the request and admits it** — [`vllm/entrypoints/offline_utils.py:559-563`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563). `output_kind` is forced to `FINAL_ONLY` and a monotonic decimal `request_id` is minted from a `Counter()`. Then `LLMEngine.add_request` ([`vllm/v1/engine/llm_engine.py:218-294`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L218-L294)) registers the work on *both* sides — the output processor (for detokenization and aggregation) and the engine core (for scheduling) — and, when `n > 1`, fans one logical request into `n` children under a `ParentRequest`. *(Article 02 for the façade, 04 for the two-sided registration.)*
 
-3. **The input processor turns a prompt into a wire struct** — [`vllm/v1/engine/input_processor.py:242-255`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255). `process_inputs(request_id, prompt, params, ...) -> EngineCoreRequest` runs the validation gauntlet, clones and finalizes the sampling params (so `max_tokens` is concrete), tokenizes or accepts token IDs, and flattens any multimodal inputs. Its output is an `EngineCoreRequest` — a compact `msgspec` struct designed to cross a socket. *(Article 03.)*
+3. **The input processor turns a prompt into a wire struct** — [`vllm/v1/engine/input_processor.py:242-255`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255). `process_inputs(request_id, prompt, params, ...) -> EngineCoreRequest` runs the validation gauntlet, clones and finalizes the sampling params (so `max_tokens` is concrete), tokenizes or accepts token IDs, and flattens any multimodal inputs. Its output is an `EngineCoreRequest` — a compact `msgspec` struct designed to cross a socket. *(Article 03.)*
 
-4. **The client abstraction moves it across the process boundary** — [`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111). `LLMEngine` holds one polymorphic `EngineCoreClient`. In the multiprocess default the request is serialized behind a one-byte type tag ([`vllm/v1/engine/__init__.py:251-264`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264): `ADD = b"\x00"`) and ROUTER-sent over ZMQ to a busy-looping `EngineCore` process; with the in-process client it is a direct method call. Same `add_request`/`get_output` surface either way. *(Article 03 for the ZMQ topology, 11 for DP routing.)*
+4. **The client abstraction moves it across the process boundary** — [`vllm/v1/engine/llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111). `LLMEngine` holds one polymorphic `EngineCoreClient`. In the multiprocess default the request is serialized behind a one-byte type tag ([`vllm/v1/engine/__init__.py:251-264`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264): `ADD = b"\x00"`) and ROUTER-sent over ZMQ to a busy-looping `EngineCore` process; with the in-process client it is a direct method call. Same `add_request`/`get_output` surface either way. *(Article 03 for the ZMQ topology, 11 for DP routing.)*
 
-5. **`EngineCore.step()` runs the transaction** — [`vllm/v1/engine/core.py:479-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508). Schedule, launch the forward pass non-blocking, build the grammar bitmask on the CPU while the GPU runs, synchronize, drain aborts, then commit. This is the repeated heartbeat the whole system is built around, and step 6–9 all happen *inside* it. A tail hook, `post_step` ([`core.py:510-517`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L510-L517)), feeds speculative draft tokens back to the scheduler for the next step. *(Article 04.)*
+5. **`EngineCore.step()` runs the transaction** — [`vllm/v1/engine/core.py:479-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508). Schedule, launch the forward pass non-blocking, build the grammar bitmask on the CPU while the GPU runs, synchronize, drain aborts, then commit. This is the repeated heartbeat the whole system is built around, and step 6–9 all happen *inside* it. A tail hook, `post_step` ([`core.py:510-517`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L510-L517)), feeds speculative draft tokens back to the scheduler for the next step. *(Article 04.)*
 
-6. **The scheduler plans tokens, not tensors** — the single call `scheduler.schedule(...)` at [`core.py:490`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490) answers "which requests run, and how many tokens does each advance," expressed as the uniform counter model `{request_id: num_tokens}`. It returns a `SchedulerOutput` plan and touches no GPU. *(Article 05; KV allocation 06, prefix reuse 07, draft tokens 12.)*
+6. **The scheduler plans tokens, not tensors** — the single call `scheduler.schedule(...)` at [`core.py:490`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490) answers "which requests run, and how many tokens does each advance," expressed as the uniform counter model `{request_id: num_tokens}`. It returns a `SchedulerOutput` plan and touches no GPU. *(Article 05; KV allocation 06, prefix reuse 07, draft tokens 12.)*
 
-7. **The executor fans the plan out to the GPU** — [`vllm/v1/executor/abstract.py:210-227`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L210-L227). `execute_model` is a `collective_rpc` that names an *operation*, not a device, so one or N workers run the same call and one authoritative worker's answer is taken (the last PP stage's first TP rank; §8). On each worker the model runner reconciles its persistent batch, runs the flattened forward pass, and at the hinge ([`vllm/v1/worker/gpu/model_runner.py:1054-1055`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1055)) selects final-position hidden states and projects them to logits. *(Articles 08–09 for kernels/CUDA graphs, 11 for parallelism.)*
+7. **The executor fans the plan out to the GPU** — [`vllm/v1/executor/abstract.py:210-227`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L210-L227). `execute_model` is a `collective_rpc` that names an *operation*, not a device, so one or N workers run the same call and one authoritative worker's answer is taken (the last PP stage's first TP rank; §8). On each worker the model runner reconciles its persistent batch, runs the flattened forward pass, and at the hinge ([`vllm/v1/worker/gpu/model_runner.py:1054-1055`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1055)) selects final-position hidden states and projects them to logits. *(Articles 08–09 for kernels/CUDA graphs, 11 for parallelism.)*
 
-8. **The sampler draws token IDs** — either inline or, when the worker deferred it, via the second `collective_rpc`, `sample_tokens(grammar_output)` at [`core.py:497-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499), reaching `Sampler.sample` ([`vllm/v1/worker/gpu/sample/sampler.py:198-210`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L210)). The grammar bitmask is applied to *these* logits in place before drawing. *(Article 10; rejection sampling for spec decode is 12.)*
+8. **The sampler draws token IDs** — either inline or, when the worker deferred it, via the second `collective_rpc`, `sample_tokens(grammar_output)` at [`core.py:497-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499), reaching `Sampler.sample` ([`vllm/v1/worker/gpu/sample/sampler.py:198-210`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L210)). The grammar bitmask is applied to *these* logits in place before drawing. *(Article 10; rejection sampling for spec decode is 12.)*
 
-9. **The commit folds tokens into progress** — `scheduler.update_from_output(...)` at [`core.py:504-506`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506) appends the sampled IDs, sets finish reasons, and frees the KV blocks of anything that finished. Its result is a `dict[client_index -> EngineCoreOutputs]` — token IDs and finish flags, *not* user-facing text. *(Article 04.)*
+9. **The commit folds tokens into progress** — `scheduler.update_from_output(...)` at [`core.py:504-506`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506) appends the sampled IDs, sets finish reasons, and frees the KV blocks of anything that finished. Its result is a `dict[client_index -> EngineCoreOutputs]` — token IDs and finish flags, *not* user-facing text. *(Article 04.)*
 
-10. **The output processor turns IDs back into text** — [`vllm/v1/engine/output_processor.py:576-693`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L576-L693), the one function allowed to loop over the whole batch. It detokenizes incrementally, promotes a detected stop *string* to a finish (and, if the core did not also stop, appends the id to `reqs_to_abort`), and materializes a `RequestOutput`. *(Articles 04 and 10.)*
+10. **The output processor turns IDs back into text** — [`vllm/v1/engine/output_processor.py:576-693`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L576-L693), the one function allowed to loop over the whole batch. It detokenizes incrementally, promotes a detected stop *string* to a finish (and, if the core did not also stop, appends the id to `reqs_to_abort`), and materializes a `RequestOutput`. *(Articles 04 and 10.)*
 
-11. **The result returns two ways.** Offline: the drain loop collects finished outputs and restores input order with a terminal sort ([`offline_utils.py:594-626`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L626)). Online: `process_outputs` pushes each `RequestOutput` into a per-request mailbox that the `generate()` async generator yields ([`vllm/v1/engine/async_llm.py:576-586`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L576-L586)). Both are the *same* `process_outputs` output, dispatched by a single `if req_state.queue is not None:` fork. *(Article 02 offline, 03/11 online streaming.)*
+11. **The result returns two ways.** Offline: the drain loop collects finished outputs and restores input order with a terminal sort ([`offline_utils.py:594-626`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L626)). Online: `process_outputs` pushes each `RequestOutput` into a per-request mailbox that the `generate()` async generator yields ([`vllm/v1/engine/async_llm.py:576-586`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L576-L586)). Both are the *same* `process_outputs` output, dispatched by a single `if req_state.queue is not None:` fork. *(Article 02 offline, 03/11 online streaming.)*
 
 The satisfying bookend: the `request_id` you get back is exactly the one you handed in.
 
-[`vllm/v1/engine/output_processor.py:363-364`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L364):
+[`vllm/v1/engine/output_processor.py:363-364`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L364):
 
 ```python
         return RequestOutput(
@@ -2075,41 +2075,41 @@ The satisfying bookend: the `request_id` you get back is exactly the one you han
 
 | Hop | Owner / anchor | Invariant it buys | Deep article |
 |---|---|---|---|
-| `generate()` | [`entrypoints/llm.py:465-485`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485) | validate; params never `None`; generative-only | 02 |
-| admit + fan-out | [`offline_utils.py:559-563`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563), [`llm_engine.py:218-294`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L218-L294) | `FINAL_ONLY`; monotonic id; one user output per logical request | 02, 04 |
-| input processing | [`input_processor.py:242-255`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255) | prompt → owned, fully-defaulted `EngineCoreRequest` | 03 |
-| client boundary | [`llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111), [`__init__.py:251-264`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264) | transport is a deployment choice, invisible to semantics | 03, 11 |
-| `step()` | [`core.py:479-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508) | schedule → execute → commit is one atomic transaction | 04 |
-| schedule | [`core.py:490`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490) | tokens, not tensors: `{request_id: num_tokens}` | 05, 06, 07, 12 |
-| execute → logits | [`abstract.py:210-227`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L210-L227), [`model_runner.py:1054-1055`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1055) | name an operation, not a device; project final positions only | 08, 09, 11 |
-| sample | [`sampler.py:198-210`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L210), [`core.py:497-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499) | grammar mask applied to *this* batch's logits | 10, 12 |
-| commit | [`core.py:504-506`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506) | progress moves only after model output | 04 |
-| output processing | [`output_processor.py:576-693`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L576-L693) | detok, stop strings, external-id `RequestOutput` | 04, 10 |
-| return | [`offline_utils.py:594-626`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L626) / [`async_llm.py:576-586`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L576-L586) | order restored (offline) / streamed (online) | 02, 03 |
+| `generate()` | [`entrypoints/llm.py:465-485`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/llm.py#L465-L485) | validate; params never `None`; generative-only | 02 |
+| admit + fan-out | [`offline_utils.py:559-563`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L563), [`llm_engine.py:218-294`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L218-L294) | `FINAL_ONLY`; monotonic id; one user output per logical request | 02, 04 |
+| input processing | [`input_processor.py:242-255`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/input_processor.py#L242-L255) | prompt → owned, fully-defaulted `EngineCoreRequest` | 03 |
+| client boundary | [`llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111), [`__init__.py:251-264`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/__init__.py#L251-L264) | transport is a deployment choice, invisible to semantics | 03, 11 |
+| `step()` | [`core.py:479-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508) | schedule → execute → commit is one atomic transaction | 04 |
+| schedule | [`core.py:490`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L490) | tokens, not tensors: `{request_id: num_tokens}` | 05, 06, 07, 12 |
+| execute → logits | [`abstract.py:210-227`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/executor/abstract.py#L210-L227), [`model_runner.py:1054-1055`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/model_runner.py#L1054-L1055) | name an operation, not a device; project final positions only | 08, 09, 11 |
+| sample | [`sampler.py:198-210`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/worker/gpu/sample/sampler.py#L198-L210), [`core.py:497-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L497-L499) | grammar mask applied to *this* batch's logits | 10, 12 |
+| commit | [`core.py:504-506`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506) | progress moves only after model output | 04 |
+| output processing | [`output_processor.py:576-693`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L576-L693) | detok, stop strings, external-id `RequestOutput` | 04, 10 |
+| return | [`offline_utils.py:594-626`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L594-L626) / [`async_llm.py:576-586`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/async_llm.py#L576-L586) | order restored (offline) / streamed (online) | 02, 03 |
 
 ### Five things to remember
 
-**1. The engine is one repeated transaction, not a pipeline.** The four canonical functions — input processing, scheduling, model execution, output processing ([arch](https://docs.vllm.ai/en/stable/design/arch_overview/)) — are not traversed once per request. Three of them (schedule, execute, commit) are the body of `EngineCore.step()` ([`core.py:479-508`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508)), run over and over, advancing in-flight requests a few tokens per turn until they finish ([Inside vLLM](https://vllm.ai/blog/2025-09-05-anatomy-of-vllm)). Internalize that one method and the shape of everything else follows.
+**1. The engine is one repeated transaction, not a pipeline.** The four canonical functions — input processing, scheduling, model execution, output processing ([arch](https://docs.vllm.ai/en/stable/design/arch_overview/)) — are not traversed once per request. Three of them (schedule, execute, commit) are the body of `EngineCore.step()` ([`core.py:479-508`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L479-L508)), run over and over, advancing in-flight requests a few tokens per turn until they finish ([Inside vLLM](https://vllm.ai/blog/2025-09-05-anatomy-of-vllm)). Internalize that one method and the shape of everything else follows.
 
 **2. The three generation entrypoints this article compared are each an adapter over `add_request` + drain.** The offline `LLM.generate`, the async `AsyncLLM.generate`, and the OpenAI-compatible server differ only in how they *drive* the transaction and *collect* its outputs — a blocking loop with a terminal sort, or an async task fanning outputs into per-request mailboxes. The transaction they drive is identical. That is why learning the request path once generalizes across these three surfaces (other entrypoints — embedding, pooling, tokenization — have their own semantics; article 02 maps them).
 
 **3. The path is a chain of ownership boundaries, each buying one invariant.** Public API (validate, default, monotonic IDs, order restore) → input processor (task/param coherence, cloned params, wire struct) → client (transport-agnostic surface) → `EngineCore` (the schedule/execute/commit transaction, delegating *all* lifecycle state to the scheduler) → scheduler (token and memory decisions) → worker/runner (tensors, logits) → sampler (token IDs) → output processor (detok, stop strings, external-id `RequestOutput`). When a question arises — who decides `max_tokens`? where is a stop string detected? when are blocks freed? — you already know which boundary to open.
 
-**4. Process boundaries are a deployment decision, not a semantic one.** `LLMEngine` holds exactly one `EngineCoreClient` handle ([`llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111)); the transport is fixed once at construction and never leaks into request meaning. Note the counterintuitive default: even the "offline" `LLM` runs a background `EngineCore` process, because `VLLM_ENABLE_V1_MULTIPROCESSING` defaults to true ([`vllm/envs.py:147`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L147); set via [`llm_engine.py:157`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L157)) — the in-process client is the opt-out, not the default. This is precisely what lets article 01 trace the path as a single logical thread and defer the real ZMQ topology to article 03.
+**4. Process boundaries are a deployment decision, not a semantic one.** `LLMEngine` holds exactly one `EngineCoreClient` handle ([`llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111)); the transport is fixed once at construction and never leaks into request meaning. Note the counterintuitive default: even the "offline" `LLM` runs a background `EngineCore` process, because `VLLM_ENABLE_V1_MULTIPROCESSING` defaults to true ([`vllm/envs.py:147`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/envs.py#L147); set via [`llm_engine.py:157`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L157)) — the in-process client is the opt-out, not the default. This is precisely what lets article 01 trace the path as a single logical thread and defer the real ZMQ topology to article 03.
 
-**5. Progress commits only after model output — and a finish fans out on two clocks.** Scheduling is optimistic and allocates ahead of the GPU, but no request state moves until `update_from_output` reconciles the plan against what the model produced ([`core.py:504-506`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506)). The abort window ([`core.py:501-503`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503), drained *before* the commit) and the wide liveness guard ([`core.py:488`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488), which counts finished-but-unflushed requests) are the two edges of that rule: a request can enter or leave the batch right up to the commit but never during it. When a request finishes, the client notification rides the *current* step's `EngineCoreOutputs` (the stream can close immediately), while the worker-side cleanup rides the *next* `SchedulerOutput` — the liveness guard exists to keep the engine awake for that second, worker-facing flush.
+**5. Progress commits only after model output — and a finish fans out on two clocks.** Scheduling is optimistic and allocates ahead of the GPU, but no request state moves until `update_from_output` reconciles the plan against what the model produced ([`core.py:504-506`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L504-L506)). The abort window ([`core.py:501-503`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503), drained *before* the commit) and the wide liveness guard ([`core.py:488`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L488), which counts finished-but-unflushed requests) are the two edges of that rule: a request can enter or leave the batch right up to the commit but never during it. When a request finishes, the client notification rides the *current* step's `EngineCoreOutputs` (the stream can close immediately), while the worker-side cleanup rides the *next* `SchedulerOutput` — the liveness guard exists to keep the engine awake for that second, worker-facing flush.
 
 ### The key invariants, with anchors
 
 For quick reference, the invariants this article leaned on, each pinned to where it lives:
 
-- **Exactly one offline output per request** — `FINAL_ONLY` at [`offline_utils.py:559-561`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L561).
-- **Output order equals input order** — terminal sort at [`offline_utils.py:626`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L626), keyed on monotonic IDs.
-- **Transport never leaks into semantics** — single client handle at [`llm_engine.py:104-111`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111).
-- **Aborts fenced before commit** — [`core.py:501-503`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503) runs before `update_from_output`.
-- **The grammar bitmask is scheduler-owned**, built on the CPU under GPU latency — [`core.py:492-499`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L492-L499).
-- **A detected stop string promotes the finish and closes the loop** via `reqs_to_abort` — [`output_processor.py:678-681`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L678-L681); this is why `EngineCoreOutput.finished` and the processor's finish reason can legitimately diverge for one step.
-- **The surfaced `request_id` is always the external one** — [`output_processor.py:363-364`](https://github.com/halfrost/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L364).
+- **Exactly one offline output per request** — `FINAL_ONLY` at [`offline_utils.py:559-561`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L559-L561).
+- **Output order equals input order** — terminal sort at [`offline_utils.py:626`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/entrypoints/offline_utils.py#L626), keyed on monotonic IDs.
+- **Transport never leaks into semantics** — single client handle at [`llm_engine.py:104-111`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/llm_engine.py#L104-L111).
+- **Aborts fenced before commit** — [`core.py:501-503`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L501-L503) runs before `update_from_output`.
+- **The grammar bitmask is scheduler-owned**, built on the CPU under GPU latency — [`core.py:492-499`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/core.py#L492-L499).
+- **A detected stop string promotes the finish and closes the loop** via `reqs_to_abort` — [`output_processor.py:678-681`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L678-L681); this is why `EngineCoreOutput.finished` and the processor's finish reason can legitimately diverge for one step.
+- **The surfaced `request_id` is always the external one** — [`output_processor.py:363-364`](https://github.com/vllm-project/vllm/blob/6cf7b26bd4bff60bf378e1af14044280ac0d214c/vllm/v1/engine/output_processor.py#L363-L364).
 
 ### Where each arrow goes
 
@@ -2141,4 +2141,4 @@ Read this article once, end to end, to fix the shape and the vocabulary. From he
 - https://vllm.ai/blog/2025-09-05-anatomy-of-vllm
 - https://docs.vllm.ai/en/stable/api/vllm/sampling_params.html
 
-*All code conclusions are anchored to [`halfrost/vllm@6cf7b26bd`](https://github.com/halfrost/vllm/tree/6cf7b26bd4bff60bf378e1af14044280ac0d214c).*
+*All code conclusions are anchored to [`vllm-project/vllm@6cf7b26bd`](https://github.com/vllm-project/vllm/tree/6cf7b26bd4bff60bf378e1af14044280ac0d214c).*
