@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Offline and Online Entrypoints">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Offline and Online Entrypoints</tspan></text>
+<rect x="70" y="110" width="390" height="300" rx="16" fill="#dfeeff" stroke="#30363d" stroke-width="1.6" stroke-dasharray="8 7"/><text x="88" y="140.12" text-anchor="start" font-size="17" font-weight="700" fill="#66717a"><tspan x="88" dy="0">Offline</tspan></text><rect x="620" y="110" width="390" height="300" rx="16" fill="#e5f4e9" stroke="#30363d" stroke-width="1.6" stroke-dasharray="8 7"/><text x="638" y="140.12" text-anchor="start" font-size="17" font-weight="700" fill="#66717a"><tspan x="638" dy="0">Online</tspan></text><rect class="rough" x="130" y="180" width="270" height="62" rx="10" fill="#fff" stroke="#30363d" stroke-width="2"/><text x="265" y="218.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="265" dy="0">Python script</tspan></text><rect class="rough" x="130" y="290" width="270" height="62" rx="10" fill="#fff" stroke="#30363d" stroke-width="2"/><text x="265" y="328.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="265" dy="0">LLM.generate()</tspan></text><path d="M 265 246 L 265.0 277.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 265 284 L 260.6 273.0 L 269.4 273.0 z" fill="#30363d"/><rect class="rough" x="680" y="180" width="270" height="62" rx="10" fill="#fff" stroke="#30363d" stroke-width="2"/><text x="815" y="218.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="815" dy="0">HTTP client</tspan></text><rect class="rough" x="680" y="290" width="270" height="62" rx="10" fill="#fff" stroke="#30363d" stroke-width="2"/><text x="815" y="315.8" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="815" dy="0">OpenAI-compatible</tspan><tspan x="815" dy="24.8">API</tspan></text><path d="M 815 246 L 815.0 277.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 815 284 L 810.6 273.0 L 819.4 273.0 z" fill="#30363d"/><rect class="rough" x="390" y="450" width="300" height="62" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="540" y="488.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">EngineCore</tspan></text><path d="M 265 356 L 473.6 445.2" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 480 448 L 468.2 447.7 L 471.6 439.6 z" fill="#30363d"/><path d="M 815 356 L 606.4 445.2" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 600 448 L 608.4 439.6 L 611.8 447.7 z" fill="#30363d"/><text x="540" y="266.48" text-anchor="middle" font-size="18" font-weight="500" fill="#66717a"><tspan x="540" dy="0">different doors, same engine</tspan></text>
+</svg>
