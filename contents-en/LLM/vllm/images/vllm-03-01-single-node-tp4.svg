@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Single Node, Tensor Parallel Size 4">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Single Node, Tensor Parallel Size 4</tspan></text>
+<rect class="rough" x="390" y="112" width="300" height="66" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="152.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">API Server</tspan></text><text x="540" y="222.84" text-anchor="middle" font-size="19" font-weight="500" fill="#66717a"><tspan x="540" dy="0">ZMQ IPC</tspan></text><path d="M 540 184 L 540.0 243.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 250 L 535.6 239.0 L 544.4 239.0 z" fill="#30363d"/><rect class="rough" x="390" y="252" width="300" height="66" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="540" y="292.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">EngineCore</tspan></text><rect class="rough" x="160" y="430" width="130" height="72" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="225" y="473.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="225" dy="0">GPU W0</tspan></text><path d="M 540 322 L 231.6 423.8" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 225 426 L 234.1 418.4 L 236.8 426.7 z" fill="#30363d"/><rect class="rough" x="370" y="430" width="130" height="72" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="435" y="473.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="435" dy="0">GPU W1</tspan></text><path d="M 540 322 L 440.0 421.1" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 435 426 L 439.7 415.1 L 445.9 421.4 z" fill="#30363d"/><rect class="rough" x="580" y="430" width="130" height="72" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="645" y="473.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="645" dy="0">GPU W2</tspan></text><path d="M 540 322 L 640.0 421.1" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 645 426 L 634.1 421.4 L 640.3 415.1 z" fill="#30363d"/><rect class="rough" x="790" y="430" width="130" height="72" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="855" y="473.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="855" dy="0">GPU W3</tspan></text><path d="M 540 322 L 848.4 423.8" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 855 426 L 843.2 426.7 L 845.9 418.4 z" fill="#30363d"/>
+</svg>
