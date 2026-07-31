@@ -45,7 +45,7 @@
 
 | Project | Version | Article |
 |:-------:|:-------:|:------|
-|vLLM|v1 @ 6cf7b26bd|[vLLM 源码导读：从 `generate()` 到第一个 Token](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/01-from-generate-to-first-token.md)<br>[Entrypoints：`LLM`、CLI 与 OpenAI-Compatible Server](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/02-entrypoints-llm-cli-openai-server.md)|
+|vLLM|v1 @ 6cf7b26bd|[vLLM 源码导读：从 `generate()` 到第一个 Token](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/01-from-generate-to-first-token.md)<br>[Entrypoints：`LLM`、CLI 与 OpenAI-Compatible Server](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/02-entrypoints-llm-cli-openai-server.md)<br>[V1 进程架构：API Server、EngineCore 与 GPU Workers](https://github.com/halfrost/Halfrost-Field/blob/master/contents/LLM/vllm/03-v1-process-architecture.md)|
 
 
 ---------------------------
