@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="请求状态">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">请求状态</tspan></text>
+<rect class="rough" x="420" y="116" width="240" height="64" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="155.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">WAITING</tspan></text><rect class="rough" x="420" y="256" width="240" height="64" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="540" y="295.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="540" dy="0">RUNNING</tspan></text><rect class="rough" x="175" y="420" width="220" height="64" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="285" y="459.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="285" dy="0">PREEMPT</tspan></text><rect class="rough" x="685" y="420" width="220" height="64" rx="10" fill="#ffe3de" stroke="#30363d" stroke-width="2"/><text x="795" y="459.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="795" dy="0">FINISHED</tspan></text><path d="M 540 184 L 540.0 245.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 540 252 L 535.6 241.0 L 544.4 241.0 z" fill="#30363d"/><path d="M 460 322 L 335.7 411.9" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 330 416 L 336.3 406.0 L 341.5 413.1 z" fill="#30363d"/><path d="M 620 322 L 769.0 412.4" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 775 416 L 763.3 414.1 L 767.9 406.5 z" fill="#30363d"/><path d="M 285 414 L 420.5 180.1" fill="none" stroke="#30363d" stroke-width="2.2" stroke-dasharray="8 7"/><path d="M 424 174 L 422.3 185.7 L 414.7 181.3 z" fill="#30363d"/>
+</svg>
