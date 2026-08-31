@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="两个正交的上限、两条轴">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="53.72" text-anchor="start" font-size="27" font-weight="800" fill="#27323a"><tspan x="54" dy="0">两个正交的上限、两条轴</tspan></text>
+<rect x="150" y="180" width="490" height="290" fill="#dfeeff" opacity="0.5"/><rect class="rough" x="150" y="180" width="490" height="290" fill="none" stroke="#3b6fb0" stroke-width="2" stroke-dasharray="9 6"/><path d="M 150 470 L 673.0 470.0" fill="none" stroke="#30363d" stroke-width="2.4"/><path d="M 680 470 L 669.0 474.4 L 669.0 465.6 z" fill="#30363d"/><path d="M 150 470 L 150.0 157.0" fill="none" stroke="#30363d" stroke-width="2.4"/><path d="M 150 150 L 154.4 161.0 L 145.6 161.0 z" fill="#30363d"/><text x="395" y="507.04" text-anchor="middle" font-size="14" font-weight="700" fill="#27323a"><tspan x="395" dy="0">token 总数（一次前向的 token）→ max_num_scheduled_tokens</tspan></text><g transform="rotate(-90 116 325)"><text x="116" y="321.36" text-anchor="middle" font-size="14" font-weight="700" fill="#27323a"><tspan x="116" dy="0">批宽（运行中的序列数）→</tspan><tspan x="116" dy="17.36">max_num_running_reqs</tspan></text></g><text x="640" y="171.04" text-anchor="end" font-size="14" font-weight="700" fill="#66717a"><tspan x="640" dy="0">max_num_scheduled_tokens</tspan></text><text x="154" y="171.04" text-anchor="start" font-size="14" font-weight="700" fill="#66717a"><tspan x="154" dy="0">max_num_running_reqs</tspan></text><text x="246" y="451.04" text-anchor="start" font-size="14" font-weight="700" fill="#3b6fb0"><tspan x="246" dy="0">可行域</tspan></text><rect class="rough" x="544" y="340" width="76" height="112" rx="10" fill="#f6c77c" stroke="#30363d" stroke-width="2"/><text x="582" y="403.2" text-anchor="middle" font-size="20" font-weight="800" fill="#27323a"><tspan x="582" dy="0">A</tspan></text><rect class="rough" x="160" y="196" width="300" height="40" rx="10" fill="#b9dfc3" stroke="#30363d" stroke-width="2"/><text x="310" y="223.2" text-anchor="middle" font-size="20" font-weight="800" fill="#27323a"><tspan x="310" dy="0">B</tspan></text><rect class="rough" x="700" y="172" width="336" height="300" rx="10" fill="#f1f3f4" stroke="#30363d" stroke-width="2"/><text x="716" y="201.04" text-anchor="start" font-size="14" font-weight="800" fill="#27323a"><tspan x="716" dy="0">谁检查哪条轴</tspan></text><text x="716" y="262.24" text-anchor="start" font-size="14" font-weight="500" fill="#27323a"><tspan x="716" dy="0">A · 受 token 约束：少量长 prefill 使</tspan><tspan x="716" dy="17.36">X 接近 max_num_scheduled_tokens，Y</tspan><tspan x="716" dy="17.36">很小</tspan><tspan x="716" dy="17.36">B · 受批宽约束：大量微小 decode 使 Y</tspan><tspan x="716" dy="17.36">接近 max_num_running_reqs，X 很小</tspan><tspan x="716" dy="17.36">运行循环：抽干 X，从不检查 Y</tspan><tspan x="716" dy="17.36">等待循环：检查 Y —— if num_running</tspan><tspan x="716" dy="17.36">≥ max_num_running_reqs:</tspan><tspan x="716" dy="17.36">break（:644-645），同时也抽干 X</tspan><tspan x="716" dy="17.36">max_model_len =</tspan><tspan x="716" dy="17.36">每请求的位置裁剪，而非一条轴</tspan></text><text x="540" y="552.36" text-anchor="middle" font-size="14" font-weight="500" fill="#66717a"><tspan x="540" dy="0">max_num_scheduled_tokens 约束一次前向的 token 总数，max_num_seqs（=max_num_running_reqs）约束批宽 ——</tspan><tspan x="540" dy="17.36">只有等待循环检查批宽，运行循环从不检查。</tspan></text>
+</svg>

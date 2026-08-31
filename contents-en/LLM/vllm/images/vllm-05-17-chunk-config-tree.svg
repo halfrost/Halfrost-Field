@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Config-Time Chunking Guardrails and Their Runtime Dual">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="53.72" text-anchor="start" font-size="27" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Config-Time Chunking Guardrails and Their Runtime Dual</tspan></text>
+<rect class="rough" x="44" y="98" width="992" height="32" rx="10" fill="#efe9ff" stroke="#30363d" stroke-width="2"/><text x="540" y="119.04" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">config-time guardrails · SchedulerConfig.__post_init__ (config/scheduler.py:80-90)</tspan></text><rect class="rough" x="44" y="144" width="992" height="52" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="166.35999999999999" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">① max_num_partial_prefills &gt; 1 and long_prefill_token_threshold == 0  →  long_prefill_token_threshold =</tspan><tspan x="540" dy="17.36">int(max_model_len * 0.04)  (:257-259)</tspan></text><rect class="rough" x="44" y="210" width="992" height="40" rx="10" fill="#f1f3f4" stroke="#30363d" stroke-width="2"/><text x="540" y="235.04" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">max_num_partial_prefills (:70-72) · max_long_partial_prefills (:74-78)</tspan></text><rect class="rough" x="44" y="264" width="992" height="52" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="540" y="286.36" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">② encoder-decoder model  →  enable_chunked_prefill = False, threshold = 0  (:238-246) — bidirectional</tspan><tspan x="540" dy="17.36">cross-attn can't be split</tspan></text><rect class="rough" x="44" y="330" width="992" height="52" rx="10" fill="#f6c77c" stroke="#30363d" stroke-width="2"/><text x="540" y="352.36" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">③ max_num_batched_tokens &lt; max_model_len and not enable_chunked_prefill  →  _verify_max_model_len raises </tspan><tspan x="540" dy="17.36">(:272-284)</tspan></text><path d="M 540 384 L 540 436" fill="none" stroke="#c0392b" stroke-width="2.4"/><path d="M 540 384 L 544.4 395.0 L 535.6 395.0 z" fill="#c0392b"/><path d="M 540 436 L 535.6 425.0 L 544.4 425.0 z" fill="#c0392b"/><text x="560" y="415.04" text-anchor="start" font-size="14" font-weight="700" fill="#c0392b"><tspan x="560" dy="0">config-time vs run-time forms of one rule</tspan></text><rect class="rough" x="44" y="438" width="992" height="64" rx="10" fill="#ffe3de" stroke="#30363d" stroke-width="2"/><text x="540" y="466.36" text-anchor="middle" font-size="14" font-weight="600" fill="#27323a"><tspan x="540" dy="0">runtime dual — WAITING loop: if not enable_chunked_prefill and num_new_tokens &gt; token_budget: break </tspan><tspan x="540" dy="17.36">(scheduler.py:836-842)</tspan></text><text x="540" y="552.36" text-anchor="middle" font-size="14" font-weight="500" fill="#66717a"><tspan x="540" dy="0">Partial-prefill auto-cap int(max_model_len*0.04), encoder-decoder force-off, and the disable-path length</tspan><tspan x="540" dy="17.36">guard that mirrors the runtime break at scheduler.py:836-842.</tspan></text>
+</svg>

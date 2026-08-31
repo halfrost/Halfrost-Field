@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Token Budget in One Step">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Token Budget in One Step</tspan></text>
+<text x="80" y="129.92" text-anchor="start" font-size="22" font-weight="700" fill="#27323a"><tspan x="80" dy="0">token budget for this step = 8192</tspan></text><rect class="rough" x="90" y="170" width="70" height="78" rx="6" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="125" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="125" dy="0">A</tspan></text><rect class="rough" x="160" y="170" width="70" height="78" rx="6" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="195" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="195" dy="0">B</tspan></text><rect class="rough" x="230" y="170" width="120" height="78" rx="6" fill="#efe9ff" stroke="#30363d" stroke-width="2"/><text x="290" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="290" dy="0">C spec</tspan></text><rect class="rough" x="350" y="170" width="260" height="78" rx="6" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="480" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="480" dy="0">D prefill</tspan></text><rect class="rough" x="610" y="170" width="190" height="78" rx="6" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="705" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="705" dy="0">E prefill</tspan></text><rect class="rough" x="800" y="170" width="190" height="78" rx="6" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="895" y="215.12" text-anchor="middle" font-size="17" font-weight="600" fill="#27323a"><tspan x="895" dy="0">F chunk</tspan></text><path d="M 90 272 L 990 272" fill="none" stroke="#30363d" stroke-width="2"/><text x="200" y="338.8" text-anchor="middle" font-size="20" font-weight="500" fill="#66717a"><tspan x="200" dy="0">decode requests protect</tspan><tspan x="200" dy="24.8">streaming latency</tspan></text><text x="700" y="337.2" text-anchor="middle" font-size="20" font-weight="500" fill="#66717a"><tspan x="700" dy="0">long prompts receive chunks</tspan></text><path d="M 210 310 L 210.0 259.0" fill="none" stroke="#66717a" stroke-width="2.2" stroke-dasharray="8 7"/><path d="M 210 252 L 214.4 263.0 L 205.6 263.0 z" fill="#66717a"/><path d="M 720 310 L 813.9 255.5" fill="none" stroke="#66717a" stroke-width="2.2" stroke-dasharray="8 7"/><path d="M 820 252 L 812.7 261.3 L 808.3 253.7 z" fill="#66717a"/>
+</svg>
