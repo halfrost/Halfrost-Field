@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Prefix Cache 命中">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Prefix Cache 命中</tspan></text>
+<rect x="90" y="120" width="410" height="300" rx="16" fill="#dfeeff" stroke="#30363d" stroke-width="1.6" stroke-dasharray="8 7"/><text x="108" y="150.12" text-anchor="start" font-size="17" font-weight="700" fill="#66717a"><tspan x="108" dy="0">Request 1</tspan></text><rect x="580" y="120" width="410" height="300" rx="16" fill="#e5f4e9" stroke="#30363d" stroke-width="1.6" stroke-dasharray="8 7"/><text x="598" y="150.12" text-anchor="start" font-size="17" font-weight="700" fill="#66717a"><tspan x="598" dy="0">Request 2</tspan></text><rect class="rough" x="150" y="240" width="100" height="62" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="200" y="278.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="200" dy="0">P0</tspan></text><rect class="rough" x="290" y="240" width="100" height="62" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="340" y="278.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="340" dy="0">P1</tspan></text><path d="M 250 308 L 250.0 359.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 250 366 L 245.6 355.0 L 254.4 355.0 z" fill="#30363d"/><path d="M 390 308 L 390.0 359.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 390 366 L 385.6 355.0 L 394.4 355.0 z" fill="#30363d"/><rect class="rough" x="190" y="372" width="260" height="42" rx="21" fill="#f1f3f4" stroke="#30363d" stroke-width="1.8"/><text x="320" y="399.48" text-anchor="middle" font-size="18" font-weight="600" fill="#27323a"><tspan x="320" dy="0">cache full blocks</tspan></text><rect class="rough" x="640" y="230" width="100" height="62" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="690" y="268.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="690" dy="0">P0</tspan></text><rect class="rough" x="780" y="230" width="100" height="62" rx="10" fill="#ffe3de" stroke="#30363d" stroke-width="2"/><text x="830" y="268.2" text-anchor="middle" font-size="20" font-weight="600" fill="#27323a"><tspan x="830" dy="0">X</tspan></text><path d="M 634 260 L 403.0 260.0" fill="none" stroke="#66717a" stroke-width="2.2" stroke-dasharray="8 7"/><path d="M 396 260 L 407.0 255.6 L 407.0 264.4 z" fill="#66717a"/><text x="785" y="357.2" text-anchor="middle" font-size="20" font-weight="500" fill="#66717a"><tspan x="785" dy="0">命中 P0，分叉处重新计算</tspan></text>
+</svg>

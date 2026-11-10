@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="600" viewBox="0 0 1080 600" role="img" aria-label="Block Hash Chain">
+<defs>
+  <filter id="roughen">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 12 12" refX="9.2" refY="6" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M 1.5 2 L 11 6 L 1.5 10 z" fill="#30363d"/>
+  </marker>
+  <style>
+    text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+    .rough { filter: url(#roughen); }
+  </style>
+</defs>
+<rect width="1080" height="600" fill="#fbfaf7"/>
+<path d="M 40 86 H 1040" stroke="#e9e2d7" stroke-width="1"/>
+<text x="54" y="54.08" text-anchor="start" font-size="28" font-weight="800" fill="#27323a"><tspan x="54" dy="0">Block Hash Chain</tspan></text>
+<rect class="rough" x="150" y="220" width="230" height="92" rx="10" fill="#dfeeff" stroke="#30363d" stroke-width="2"/><text x="265" y="261.32" text-anchor="middle" font-size="18" font-weight="600" fill="#27323a"><tspan x="265" dy="0">H0 = H(tokens,</tspan><tspan x="265" dy="22.32">meta)</tspan></text><path d="M 386 266 L 427.0 266.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 434 266 L 423.0 270.4 L 423.0 261.6 z" fill="#30363d"/><rect class="rough" x="440" y="220" width="230" height="92" rx="10" fill="#e5f4e9" stroke="#30363d" stroke-width="2"/><text x="555" y="261.32" text-anchor="middle" font-size="18" font-weight="600" fill="#27323a"><tspan x="555" dy="0">H1 = H(H0, tokens,</tspan><tspan x="555" dy="22.32">meta)</tspan></text><path d="M 676 266 L 717.0 266.0" fill="none" stroke="#30363d" stroke-width="2.2"/><path d="M 724 266 L 713.0 270.4 L 713.0 261.6 z" fill="#30363d"/><rect class="rough" x="730" y="220" width="230" height="92" rx="10" fill="#fff0d8" stroke="#30363d" stroke-width="2"/><text x="845" y="261.32" text-anchor="middle" font-size="18" font-weight="600" fill="#27323a"><tspan x="845" dy="0">H2 = H(H1, tokens,</tspan><tspan x="845" dy="22.32">meta)</tspan></text><text x="540" y="417.56" text-anchor="middle" font-size="21" font-weight="500" fill="#66717a"><tspan x="540" dy="0">每个 hash 表示截至该 block 边界的完整 prefix</tspan></text>
+</svg>
